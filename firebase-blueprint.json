@@ -1,0 +1,208 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "ISP User details and subscription status",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "pppoeUsername": { "type": "string" },
+        "pppoePassword": { "type": "string" },
+        "macAddress": { "type": "string" },
+        "onuDetails": { "type": "string" },
+        "address": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "packageId": { "type": "string" },
+        "subdealerId": { "type": "string" },
+        "expiryDate": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["active", "expired", "suspended"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "balance": { "type": "number" },
+        "walletBalance": { "type": "number" }
+      },
+      "required": ["name", "pppoeUsername", "packageId", "status", "expiryDate"]
+    },
+    "Subdealer": {
+      "title": "Subdealer",
+      "description": "Subdealer details and earnings",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "area": { "type": "string" },
+        "commissionType": { "type": "string", "enum": ["percentage", "fixed"] },
+        "commissionValue": { "type": "number" },
+        "walletBalance": { "type": "number" },
+        "totalEarnings": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "suspended"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "area", "commissionType", "commissionValue"]
+    },
+    "Package": {
+      "title": "Package",
+      "description": "Internet service packages",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "speed": { "type": "string" },
+        "price": { "type": "number" },
+        "subdealerShare": { "type": "number" },
+        "adminShare": { "type": "number" },
+        "tax": { "type": "number" },
+        "validity": { "type": "number" },
+        "uploadSpeed": { "type": "string" },
+        "downloadSpeed": { "type": "string" },
+        "enabled": { "type": "boolean" }
+      },
+      "required": ["name", "speed", "price", "validity"]
+    },
+    "Log": {
+      "title": "Activity Log",
+      "description": "System activity auditing",
+      "type": "object",
+      "properties": {
+        "adminId": { "type": "string" },
+        "adminName": { "type": "string" },
+        "action": { "type": "string" },
+        "target": { "type": "string" },
+        "details": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "ipAddress": { "type": "string" },
+        "userAgent": { "type": "string" },
+        "type": { "type": "string", "enum": ["user", "payment", "package", "auth", "system", "withdrawal"] }
+      },
+      "required": ["action", "date", "type"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "SMS and system alerts history",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "phone": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["reminder", "expiry_alert", "payment_confirmation"] },
+        "status": { "type": "string", "enum": ["sent", "failed"] },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["phone", "message", "date"]
+    },
+    "Setting": {
+      "title": "System Setting",
+      "description": "Application configurations",
+      "type": "object",
+      "properties": {
+        "easypaisaNumber": { "type": "string" },
+        "jazzcashNumber": { "type": "string" },
+        "bankDetails": { "type": "string" },
+        "smsGatewayKey": { "type": "string" },
+        "dailyDeductionHour": { "type": "number" }
+      }
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Financial transactions",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "subdealerId": { "type": "string" },
+        "amount": { "type": "number" },
+        "method": { "type": "string", "enum": ["easypaisa", "jazzcash", "bank", "cash"] },
+        "date": { "type": "string", "format": "date-time" },
+        "reference": { "type": "string" },
+        "screenshot": { "type": "string" },
+        "type": { "type": "string", "enum": ["in", "out"] },
+        "category": { "type": "string", "enum": ["subscription", "expense", "commission", "withdrawal"] },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "approvedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "method", "date", "type", "status"]
+    },
+    "Commission": {
+      "title": "Commission",
+      "description": "Earnings for subdealers",
+      "type": "object",
+      "properties": {
+        "paymentId": { "type": "string" },
+        "subdealerId": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["paymentId", "subdealerId", "amount", "date"]
+    },
+    "Request": {
+      "title": "Request",
+      "description": "Support tickets and connection requests",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "type": { "type": "string", "enum": ["new_connection", "complaint", "speed_issue", "router_issue", "package_change", "withdrawal"] },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "assigned", "resolved", "reopened", "rejected"] },
+        "technician": { "type": "string" },
+        "amount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "type", "description", "status", "createdAt"]
+    },
+    "Treasury": {
+      "title": "Treasury",
+      "description": "Overall financial state",
+      "type": "object",
+      "properties": {
+        "balance": { "type": "number" },
+        "todayIn": { "type": "number" },
+        "todayOut": { "type": "number" },
+        "monthIn": { "type": "number" },
+        "monthOut": { "type": "number" },
+        "monthlyGrowth": { "type": "number" }
+      },
+      "required": ["balance"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of ISP users"
+    },
+    "/subdealers/{subdealerId}": {
+      "schema": "Subdealer",
+      "description": "Collection of subdealers"
+    },
+    "/packages/{packageId}": {
+      "schema": "Package",
+      "description": "Available internet packages"
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Transaction history"
+    },
+    "/commissions/{commissionId}": {
+      "schema": "Commission",
+      "description": "Commission history"
+    },
+    "/requests/{requestId}": {
+      "schema": "Request",
+      "description": "Support tickets and withdrawal requests"
+    },
+    "/treasury/current": {
+      "schema": "Treasury",
+      "description": "Current treasury balance"
+    },
+    "/logs/{logId}": {
+      "schema": "Log",
+      "description": "System activity logs"
+    },
+    "/notifications/{notifId}": {
+      "schema": "Notification",
+      "description": "Notification history"
+    },
+    "/settings/config": {
+      "schema": "Setting",
+      "description": "Global system configuration"
+    }
+  }
+}

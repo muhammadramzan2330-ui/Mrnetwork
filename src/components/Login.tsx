@@ -1,0 +1,41 @@
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { signInWithGoogle } from '@/services/firebase';
+import { LogIn, Shield } from 'lucide-react';
+import { motion } from 'motion/react';
+
+export default function Login() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md"
+      >
+        <Card className="border-none shadow-2xl rounded-3xl overflow-hidden">
+          <div className="h-32 bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center">
+            <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-md">
+              <Shield className="w-10 h-10 text-white" />
+            </div>
+          </div>
+          <CardHeader className="text-center pt-8">
+            <CardTitle className="text-2xl font-bold text-slate-900">ISP Admin Panel</CardTitle>
+            <CardDescription>Secure access for network administrators</CardDescription>
+          </CardHeader>
+          <CardContent className="p-8">
+            <Button 
+              onClick={signInWithGoogle}
+              className="w-full h-12 rounded-xl bg-purple-600 hover:bg-purple-700 gap-3 text-lg font-medium"
+            >
+              <LogIn className="w-5 h-5" /> Sign in with Google
+            </Button>
+            <p className="mt-6 text-center text-slate-400 text-xs">
+              By signing in, you agree to our Terms of Service and Privacy Policy.
+            </p>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
+  );
+}

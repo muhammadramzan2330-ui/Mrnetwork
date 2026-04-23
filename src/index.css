@@ -1,0 +1,70 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@theme inline {
+    --font-sans: 'Inter', sans-serif;
+    --color-primary: #7C3AED;
+    --color-primary-dark: #5B21B6;
+    --color-secondary: #A78BFA;
+    --color-bg-gray: #F9FAFB;
+    --color-text-main: #1F2937;
+    --color-text-muted: #6B7280;
+    --color-glass: rgba(255, 255, 255, 0.7);
+    --color-border: #F3F4F6;
+    --color-ring: #7C3AED;
+}
+
+:root {
+    --background: #EEF2FF;
+    --foreground: #1F2937;
+    --card: #FFFFFF;
+    --card-foreground: #1F2937;
+    --popover: #FFFFFF;
+    --popover-foreground: #1F2937;
+    --primary: #7C3AED;
+    --primary-foreground: #FFFFFF;
+    --secondary: #A78BFA;
+    --secondary-foreground: #FFFFFF;
+    --muted: #F3F4F6;
+    --muted-foreground: #6B7280;
+    --accent: #F3F4F6;
+    --accent-foreground: #1F2937;
+    --destructive: #EF4444;
+    --border: #F3F4F6;
+    --input: #F3F4F6;
+    --ring: #7C3AED;
+    --radius: 1.25rem;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-[#EEF2FF] text-text-main font-sans;
+  }
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.header-gradient {
+  background: linear-gradient(to right, #6D28D9 0%, #9333EA 100%);
+}
+
+.treasury-gradient {
+  background: linear-gradient(135deg, #5B21B6 0%, #7C3AED 100%);
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

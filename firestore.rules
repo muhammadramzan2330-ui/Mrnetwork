@@ -1,0 +1,156 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Fields: name, pppoeUsername, pppoePassword, macAddress, onuDetails, address, whatsapp, packageId, subdealerId, expiryDate, status, createdAt, balance, walletBalance
+    //
+    // Collection: subdealers
+    // Fields: name, area, commissionType, commissionValue, walletBalance, totalEarnings, status, createdAt
+    //
+    // Collection: packages
+    // Fields: name, speed, price, tax, validity, uploadSpeed, downloadSpeed, enabled
+    //
+    // Collection: payments
+    // Fields: userId, userName, subdealerId, amount, method, date, reference, type, category, status, approvedAt
+    //
+    // Collection: commissions
+    // Fields: paymentId, subdealerId, amount, date
+    //
+    // Collection: requests
+    // Fields: userId, userName, type, description, status, technician, amount, createdAt, updatedAt
+    //
+    // Collection: treasury
+    // Fields: balance, todayIn, todayOut, monthIn, monthOut, monthlyGrowth
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "muhammadramzan2330@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['name', 'pppoeUsername', 'packageId', 'status', 'expiryDate']) &&
+             data.name is string && data.name.size() < 100 &&
+             data.pppoeUsername is string && data.pppoeUsername.size() < 50 &&
+             data.status in ['active', 'expired', 'suspended'];
+    }
+
+    function isValidPackage(data) {
+      return data.keys().hasAll(['name', 'speed', 'price', 'validity']) &&
+             data.name is string && data.name.size() < 100 &&
+             data.price is number && data.price >= 0;
+    }
+
+    function isValidPayment(data) {
+      return data.keys().hasAll(['userId', 'amount', 'method', 'date', 'type', 'status']) &&
+             data.amount is number && data.amount > 0 &&
+             data.type in ['in', 'out'] &&
+             data.method in ['easypaisa', 'jazzcash', 'bank', 'cash'] &&
+             data.status in ['pending', 'approved', 'rejected'];
+    }
+
+    function isValidRequest(data) {
+      return data.keys().hasAll(['userId', 'type', 'description', 'status', 'createdAt']) &&
+             data.type in ['new_connection', 'complaint', 'speed_issue', 'router_issue', 'package_change', 'withdrawal'] &&
+             data.status in ['pending', 'assigned', 'resolved', 'reopened', 'rejected'];
+    }
+
+    function isValidSubdealer(data) {
+      return data.keys().hasAll(['name', 'area', 'commissionType', 'commissionValue']) &&
+             data.commissionType in ['percentage', 'fixed'] &&
+             data.commissionValue is number && data.commissionValue >= 0;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow create: if isAdmin() && isValidUser(request.resource.data);
+      allow update: if (isAdmin() || isOwner(userId)) && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['walletBalance', 'balance', 'packageId', 'expiryDate', 'status'])
+        || isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /subdealers/{subdealerId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidSubdealer(request.resource.data);
+    }
+
+    match /packages/{packageId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidPackage(request.resource.data);
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isAdmin() || (isAuthenticated() && (resource.data.userId == request.auth.uid || resource.data.subdealerId == request.auth.uid));
+      allow create: if isAuthenticated() && isValidPayment(request.resource.data);
+      allow update: if isAdmin() && isValidPayment(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /commissions/{commissionId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.subdealerId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    match /requests/{requestId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && isValidRequest(request.resource.data);
+      allow update: if isAdmin() && isValidRequest(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /treasury/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /notifications/{notifId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    match /settings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
