@@ -1,11 +1,31 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { signInWithGoogle } from '@/services/firebase';
-import { LogIn, Shield } from 'lucide-react';
+import { LogIn, Shield, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
+import { toast } from 'sonner';
 
 export default function Login() {
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (loading) return;
+    
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (error: any) {
+      // Don't show toast for user-initiated cancellations
+      if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+        console.error('Login error:', error);
+        toast.error('Login failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
       <motion.div
@@ -25,10 +45,16 @@ export default function Login() {
           </CardHeader>
           <CardContent className="p-8">
             <Button 
-              onClick={signInWithGoogle}
+              onClick={handleLogin}
+              disabled={loading}
               className="w-full h-12 rounded-xl bg-purple-600 hover:bg-purple-700 gap-3 text-lg font-medium"
             >
-              <LogIn className="w-5 h-5" /> Sign in with Google
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <LogIn className="w-5 h-5" />
+              )}
+              {loading ? 'Connecting...' : 'Sign in with Google'}
             </Button>
             <p className="mt-6 text-center text-slate-400 text-xs">
               By signing in, you agree to our Terms of Service and Privacy Policy.

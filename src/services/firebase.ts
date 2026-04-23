@@ -1,5 +1,12 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signOut, 
+  onAuthStateChanged, 
+  type User as FirebaseUser 
+} from 'firebase/auth';
 import { 
   getFirestore, 
   collection, 
@@ -12,17 +19,19 @@ import {
   where, 
   orderBy, 
   getDoc,
-  Timestamp
+  Timestamp,
+  type QueryConstraint
 } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
 
-// Initialize Firebase
+import firebaseConfig from "../../firebase-applet-config.json";
+
+// Initialize Firebase services
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
 export const googleProvider = new GoogleAuthProvider();
 
-// Error Handling
+// Standardize error reporting
 export enum OperationType {
   CREATE = 'create',
   UPDATE = 'update',
@@ -37,11 +46,11 @@ interface FirestoreErrorInfo {
   operationType: OperationType;
   path: string | null;
   authInfo: {
-    userId: string | undefined;
-    email: string | null | undefined;
-    emailVerified: boolean | undefined;
-    isAnonymous: boolean | undefined;
-    tenantId: string | null | undefined;
+    userId?: string;
+    email?: string | null;
+    emailVerified?: boolean;
+    isAnonymous?: boolean;
+    tenantId?: string | null;
     providerInfo: any[];
   }
 }
@@ -64,20 +73,20 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     },
     operationType,
     path
-  }
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  };
+  console.error('[Firebase Service Error]', JSON.stringify(errInfo, null, 2));
   throw new Error(JSON.stringify(errInfo));
 }
 
-// Auth Helper
+// Authentication Wrappers
 export const signInWithGoogle = () => signInWithPopup(auth, googleProvider);
-export const logout = () => auth.signOut();
+export const logout = () => signOut(auth);
 
-// Generic CRUD Helpers
-export const subscribeToCollection = <T>(
+// Type-safe generic helpers
+export const subscribeToCollection = <T extends { id: string }>(
   collectionPath: string, 
   callback: (data: T[]) => void,
-  queryConstraints: any[] = []
+  queryConstraints: QueryConstraint[] = []
 ) => {
   const q = query(collection(db, collectionPath), ...queryConstraints);
   return onSnapshot(q, (snapshot) => {
@@ -120,3 +129,5 @@ export const deleteDocument = async (collectionPath: string, id: string) => {
     handleFirestoreError(error, OperationType.DELETE, `${collectionPath}/${id}`);
   }
 };
+
+export { onAuthStateChanged, type FirebaseUser };
