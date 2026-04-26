@@ -164,7 +164,7 @@
     }
   },
   "firestore": {
-    "/users/{userId}": {
+    "/user/{userId}": {
       "schema": "User",
       "description": "Collection of ISP users"
     },

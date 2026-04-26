@@ -8,15 +8,19 @@ interface LayoutProps {
   children: React.ReactNode;
 }
 
+import { useAuth } from '../hooks/useAuth';
+
 export default function Layout({ children }: LayoutProps) {
+  const { isAdmin } = useAuth();
+  
   const navItems = [
-    { icon: LayoutDashboard, label: 'Dash', to: '/' },
-    { icon: CreditCard, label: 'Bills', to: '/payments' },
-    { icon: Users, label: 'Users', to: '/users' },
-    { icon: Store, label: 'Dealer', to: '/subdealers' },
-    { icon: Castle, label: 'Vault', to: '/treasury' },
-    { icon: Package, label: 'Plans', to: '/packages' },
-  ];
+    { icon: LayoutDashboard, label: 'Dash', to: '/', show: true },
+    { icon: CreditCard, label: 'Bills', to: '/payments', show: isAdmin },
+    { icon: Users, label: 'Users', to: '/users', show: isAdmin },
+    { icon: Store, label: 'Dealer', to: '/subdealers', show: isAdmin },
+    { icon: Castle, label: 'Vault', to: '/treasury', show: isAdmin },
+    { icon: Package, label: 'Plans', to: '/packages', show: isAdmin },
+  ].filter(item => item.show);
 
   return (
     <div className="min-h-screen bg-[#EEF2FF] flex justify-center items-start sm:items-center p-0 sm:p-4">

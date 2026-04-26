@@ -3,8 +3,10 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   signOut, 
-  onAuthStateChanged, 
+  onAuthStateChanged,
   type User as FirebaseUser 
 } from 'firebase/auth';
 import { 
@@ -16,73 +18,47 @@ import {
   updateDoc, 
   deleteDoc, 
   query, 
-  where, 
-  orderBy, 
-  getDoc,
   Timestamp,
   type QueryConstraint
 } from 'firebase/firestore';
 
-import firebaseConfig from "../../firebase-applet-config.json";
+import firebaseConfigData from "../../firebase-applet-config.json";
 
-// Initialize Firebase services
-const app = initializeApp(firebaseConfig);
+interface FirebaseConfig {
+  apiKey: string;
+  authDomain: string;
+  projectId: string;
+  storageBucket: string;
+  messagingSenderId: string;
+  appId: string;
+  firestoreDatabaseId?: string;
+  measurementId?: string;
+}
+
+const firebaseConfig = firebaseConfigData as FirebaseConfig;
+
+// Initialize Firebase
+export const app = initializeApp(firebaseConfig);
+
+// Initialize Services
 export const auth = getAuth(app);
-export const db = getFirestore(app, (firebaseConfig as any).firestoreDatabaseId);
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
 export const googleProvider = new GoogleAuthProvider();
 
-// Standardize error reporting
-export enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
-
-interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId?: string;
-    email?: string | null;
-    emailVerified?: boolean;
-    isAnonymous?: boolean;
-    tenantId?: string | null;
-    providerInfo: any[];
+// Essential Helpers used by the app
+export const signInWithGoogle = async () => {
+  try {
+    return await signInWithPopup(auth, googleProvider);
+  } catch (error: any) {
+    console.warn("Popup blocked or failed, trying redirect...", error.code);
+    if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+      return await signInWithRedirect(auth, googleProvider);
+    }
+    throw error;
   }
-}
-
-export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData.map(provider => ({
-        providerId: provider.providerId,
-        displayName: provider.displayName,
-        email: provider.email,
-        photoUrl: provider.photoURL
-      })) || []
-    },
-    operationType,
-    path
-  };
-  console.error('[Firebase Service Error]', JSON.stringify(errInfo, null, 2));
-  throw new Error(JSON.stringify(errInfo));
-}
-
-// Authentication Wrappers
-export const signInWithGoogle = () => signInWithPopup(auth, googleProvider);
+};
 export const logout = () => signOut(auth);
 
-// Type-safe generic helpers
 export const subscribeToCollection = <T extends { id: string }>(
   collectionPath: string, 
   callback: (data: T[]) => void,
@@ -92,42 +68,29 @@ export const subscribeToCollection = <T extends { id: string }>(
   return onSnapshot(q, (snapshot) => {
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
     callback(data);
-  }, (error) => {
-    handleFirestoreError(error, OperationType.LIST, collectionPath);
   });
 };
 
 export const addDocument = async (collectionPath: string, data: any) => {
-  try {
-    return await addDoc(collection(db, collectionPath), {
-      ...data,
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now()
-    });
-  } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, collectionPath);
-  }
+  return await addDoc(collection(db, collectionPath), {
+    ...data,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now()
+  });
 };
 
 export const updateDocument = async (collectionPath: string, id: string, data: any) => {
-  try {
-    const docRef = doc(db, collectionPath, id);
-    return await updateDoc(docRef, {
-      ...data,
-      updatedAt: Timestamp.now()
-    });
-  } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `${collectionPath}/${id}`);
-  }
+  const docRef = doc(db, collectionPath, id);
+  return await updateDoc(docRef, {
+    ...data,
+    updatedAt: Timestamp.now()
+  });
 };
 
 export const deleteDocument = async (collectionPath: string, id: string) => {
-  try {
-    const docRef = doc(db, collectionPath, id);
-    return await deleteDoc(docRef);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `${collectionPath}/${id}`);
-  }
+  const docRef = doc(db, collectionPath, id);
+  return await deleteDoc(docRef);
 };
 
 export { onAuthStateChanged, type FirebaseUser };
+export default app;

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { signInWithGoogle } from '@/services/firebase';
+import { signInWithGoogle, auth } from '@/services/firebase';
 import { LogIn, Shield, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
@@ -14,12 +14,18 @@ export default function Login() {
     
     setLoading(true);
     try {
-      await signInWithGoogle();
+      // Clear any existing session before trying to log in
+      await auth.signOut();
+      localStorage.clear();
+      sessionStorage.clear();
+      
+      const result = await signInWithGoogle();
+      console.log('Login success:', result.user.email);
     } catch (error: any) {
+      console.error('Detailed login error:', error);
       // Don't show toast for user-initiated cancellations
       if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-        console.error('Login error:', error);
-        toast.error('Login failed. Please try again.');
+        toast.error(`Login failed: ${error.message || 'Unknown error'}`);
       }
     } finally {
       setLoading(false);
