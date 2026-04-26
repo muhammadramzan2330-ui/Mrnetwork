@@ -50,8 +50,15 @@ export const signInWithGoogle = async () => {
   try {
     return await signInWithPopup(auth, googleProvider);
   } catch (error: any) {
-    console.warn("Popup blocked or failed, trying redirect...", error.code);
-    if (error.code === 'auth/popup-blocked' || error.code === 'auth/cancelled-popup-request') {
+    console.warn("Auth operation failed, trying redirect fallback...", error.code);
+    const redirectCodes = [
+      'auth/popup-blocked',
+      'auth/cancelled-popup-request',
+      'auth/internal-error',
+      'auth/network-request-failed'
+    ];
+    
+    if (redirectCodes.includes(error.code)) {
       return await signInWithRedirect(auth, googleProvider);
     }
     throw error;

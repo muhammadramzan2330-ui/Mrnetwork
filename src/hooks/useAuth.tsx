@@ -57,15 +57,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (firebaseUser) {
         // Clear previous profile subscription if any
-        if (unsubscribeProfile) unsubscribeProfile();
+        if (unsubscribeProfile) {
+          unsubscribeProfile();
+          unsubscribeProfile = undefined;
+        }
 
         // Query Firestore "user" collection where uid == current user UID
+        console.log("Searching profile for UID:", firebaseUser.uid);
         const q = query(
           collection(db, 'user'), 
           where('uid', '==', firebaseUser.uid)
         );
 
         unsubscribeProfile = onSnapshot(q, (snapshot) => {
+          console.log(`Query result count: ${snapshot.size}`);
           if (!snapshot.empty) {
             const userData = snapshot.docs[0].data() as UserProfile;
             setProfile(userData);
@@ -73,19 +78,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             console.warn("User profile not found in Firestore for UID:", firebaseUser.uid);
             setProfile(null);
-            setError("User profile not found");
+            setError(`User profile not found for UID: ${firebaseUser.uid}`);
           }
           setLoading(false);
         }, (err) => {
-          console.error("Profile fetch error:", err);
+          console.error("Firestore Profile Error:", err);
           setError("Failed to load user profile");
           setLoading(false);
         });
       } else {
-        if (unsubscribeProfile) unsubscribeProfile();
+        if (unsubscribeProfile) {
+          unsubscribeProfile();
+          unsubscribeProfile = undefined;
+        }
         setProfile(null);
         setError(null);
         setLoading(false);
+        // Force clear local storage on clear logout
+        localStorage.clear();
+        sessionStorage.clear();
       }
     });
 

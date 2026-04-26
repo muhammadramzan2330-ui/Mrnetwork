@@ -66,7 +66,7 @@ export default function Dashboard() {
     try {
       setShowLogoutConfirm(false);
       // signOut will trigger onAuthStateChanged in useAuth, which clears state
-      await auth.signOut();
+      await signOut(auth);
       localStorage.clear();
       sessionStorage.clear();
     } catch (error) {

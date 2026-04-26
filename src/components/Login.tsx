@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { signInWithGoogle, auth } from '@/services/firebase';
+import { signOut } from 'firebase/auth';
 import { LogIn, Shield, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
@@ -14,20 +15,19 @@ export default function Login() {
     
     setLoading(true);
     try {
-      // Clear any existing session before trying to log in
-      await auth.signOut();
-      localStorage.clear();
-      sessionStorage.clear();
-      
       const result = await signInWithGoogle();
-      console.log('Login success:', result.user.email);
+      if (result) {
+        console.log('Login success:', result.user.email);
+        toast.success("Successfully logged in!");
+      }
     } catch (error: any) {
       console.error('Detailed login error:', error);
-      // Don't show toast for user-initiated cancellations
-      if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+      // Don't show toast for user-initiated cancellations or redirects
+      if (error.code !== 'auth/popup-closed-by-user' && 
+          error.code !== 'auth/cancelled-popup-request' &&
+          error.code !== 'auth/redirect-cancelled-by-user') {
         toast.error(`Login failed: ${error.message || 'Unknown error'}`);
       }
-    } finally {
       setLoading(false);
     }
   };

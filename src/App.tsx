@@ -16,6 +16,7 @@ import { SystemProvider } from './contexts/SystemContext';
 import { Toaster } from '@/components/ui/sonner';
 import { ShieldOff } from 'lucide-react';
 import { auth } from '@/services/firebase';
+import { signOut } from 'firebase/auth';
 
 function AppRoutes() {
   const { user, profile, loading, isAdmin, isCustomer, error } = useAuth();
@@ -32,7 +33,9 @@ function AppRoutes() {
     return <Login />;
   }
 
-  if (error && error !== "User profile not found") {
+  const isProfileError = error?.startsWith("User profile not found");
+
+  if (error && !isProfileError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-6 text-center">
         <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
@@ -43,7 +46,7 @@ function AppRoutes() {
           An unexpected error occurred while loading your profile.
         </p>
         <button 
-          onClick={() => auth.signOut()}
+          onClick={() => signOut(auth)}
           className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-sm"
         >
           Sign Out
@@ -52,22 +55,37 @@ function AppRoutes() {
     );
   }
 
-  if (user && !profile && error === "User profile not found") {
+  if (user && !profile && isProfileError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-6 text-center">
         <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-4">
           <ShieldOff className="w-8 h-8" />
         </div>
-        <h1 className="text-xl font-bold text-slate-900 mb-2">{error}</h1>
-        <p className="text-sm text-slate-500 mb-6 max-w-xs">
-          Your Google account is (<strong>{user.email}</strong>) authenticated, but no matching ISP profile was found.
+        <h2 className="text-xl font-bold text-slate-900 mb-2">User Profile Not Found</h2>
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 mb-6 text-left max-w-sm w-full mx-auto">
+          <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider mb-2">Authenticated As</p>
+          <p className="text-sm font-mono bg-slate-50 p-2 rounded mb-4 break-all">{user.email}</p>
+          
+          <p className="text-xs text-slate-500 uppercase font-semibold tracking-wider mb-2">Searched UID</p>
+          <p className="text-sm font-mono bg-slate-50 p-2 rounded break-all">{user.uid}</p>
+        </div>
+        <p className="text-sm text-slate-600 mb-8 max-w-xs">
+          Your account is authenticated, but no profile exists in our <strong>user</strong> collection for this identifier.
         </p>
-        <button 
-          onClick={() => auth.signOut()}
-          className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-sm"
-        >
-          Use Different Account
-        </button>
+        <div className="flex gap-4 justify-center">
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-6 py-2 bg-slate-200 text-slate-900 rounded-xl font-bold text-sm"
+          >
+            Retry Login
+          </button>
+          <button 
+            onClick={() => signOut(auth)}
+            className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-sm"
+          >
+            Use Different Account
+          </button>
+        </div>
       </div>
     );
   }
