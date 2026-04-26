@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 import { auth, db } from '@/services/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from 'sonner';
 
 interface UserProfile {
@@ -63,22 +63,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Query Firestore "user" collection where uid == current user UID
-        console.log("Searching profile for UID:", firebaseUser.uid);
+        const currentUserUid = firebaseUser.uid.trim();
+        console.log("Current Auth UID:", currentUserUid);
+        
         const q = query(
           collection(db, 'user'), 
-          where('uid', '==', firebaseUser.uid)
+          where('uid', '==', currentUserUid)
         );
 
-        unsubscribeProfile = onSnapshot(q, (snapshot) => {
-          console.log(`Query result count: ${snapshot.size}`);
+        unsubscribeProfile = onSnapshot(q, async (snapshot) => {
+          console.log(`Query "user" result count for ${currentUserUid}: ${snapshot.size}`);
+          
           if (!snapshot.empty) {
             const userData = snapshot.docs[0].data() as UserProfile;
-            setProfile(userData);
+            console.log("Profile found:", snapshot.docs[0].id);
+            // Inject doc ID as 'id' for easier reference in SystemContext
+            setProfile({ ...userData, id: snapshot.docs[0].id } as any);
             setError(null);
           } else {
-            console.warn("User profile not found in Firestore for UID:", firebaseUser.uid);
-            setProfile(null);
-            setError(`User profile not found for UID: ${firebaseUser.uid}`);
+            console.warn("User profile not found in Firestore for UID:", currentUserUid);
+            
+            // Auto-create profile if missing
+            try {
+              console.log("Auto-creating profile for:", firebaseUser.email);
+              const docRef = await addDoc(collection(db, 'user'), {
+                uid: currentUserUid,
+                email: firebaseUser.email || "",
+                name: firebaseUser.displayName || "Muhammad Ramzan",
+                phone: "",
+                role: "admin",
+                status: "active",
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+              });
+              console.log("Created profile with ID:", docRef.id);
+              // onSnapshot will fire again when document is created
+            } catch (createErr: any) {
+              console.error("Error auto-creating profile:", createErr);
+              setProfile(null);
+              setError(`Profile creation failed: ${createErr.message}`);
+            }
           }
           setLoading(false);
         }, (err) => {

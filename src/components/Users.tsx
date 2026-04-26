@@ -51,7 +51,7 @@ export default function Users() {
     if (!newUser.name || !newUser.pppoeUsername) return;
     
     try {
-      await addDocument('users', {
+      await addDocument('user', {
         ...newUser,
         status: 'active',
         balance: 0,
@@ -70,7 +70,7 @@ export default function Users() {
   const handleUpdateUser = async () => {
     if (!editingUser) return;
     try {
-      await updateDocument('users', editingUser.id, editingUser);
+      await updateDocument('user', editingUser.id, editingUser);
       setIsEditOpen(false);
       toast.success('User updated');
     } catch (e) {
@@ -81,7 +81,7 @@ export default function Users() {
   const toggleStatus = async (user: any) => {
     const newStatus = user.status === 'suspended' ? 'active' : 'suspended';
     try {
-      await updateDocument('users', user.id, { status: newStatus });
+      await updateDocument('user', user.id, { status: newStatus });
       toast.info(`User ${newStatus}`);
     } catch (e) {
       toast.error('Failed to update status');
@@ -91,7 +91,7 @@ export default function Users() {
   const handleDelete = async (id: string) => {
     if (window.confirm('Delete this user permanently?')) {
       try {
-        await deleteDocument('users', id);
+        await deleteDocument('user', id);
         toast.success('User deleted');
       } catch (e) {
         toast.error('Delete failed');

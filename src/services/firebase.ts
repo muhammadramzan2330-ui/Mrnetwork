@@ -48,18 +48,28 @@ export const googleProvider = new GoogleAuthProvider();
 // Essential Helpers used by the app
 export const signInWithGoogle = async () => {
   try {
+    console.log("Attempting signInWithPopup...");
     return await signInWithPopup(auth, googleProvider);
   } catch (error: any) {
-    console.warn("Auth operation failed, trying redirect fallback...", error.code);
+    console.error("signInWithPopup failed:", error.code, error.message);
+    
     const redirectCodes = [
       'auth/popup-blocked',
       'auth/cancelled-popup-request',
       'auth/internal-error',
-      'auth/network-request-failed'
+      'auth/network-request-failed',
+      'auth/popup-closed-by-user',
+      'auth/web-storage-unsupported'
     ];
     
     if (redirectCodes.includes(error.code)) {
-      return await signInWithRedirect(auth, googleProvider);
+      console.warn("Switching to signInWithRedirect due to error:", error.code);
+      try {
+        return await signInWithRedirect(auth, googleProvider);
+      } catch (redirectError: any) {
+        console.error("signInWithRedirect failed as well:", redirectError.code, redirectError.message);
+        throw redirectError;
+      }
     }
     throw error;
   }

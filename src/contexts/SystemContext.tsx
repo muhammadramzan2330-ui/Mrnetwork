@@ -58,7 +58,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    const unsubUsers = subscribeToCollection('users', (data) => setState(prev => ({ ...prev, users: data })));
+    const unsubUsers = subscribeToCollection('user', (data) => setState(prev => ({ ...prev, users: data })));
     const unsubPayments = subscribeToCollection('payments', (data) => setState(prev => ({ ...prev, payments: data })), [orderBy('date', 'desc')]);
     const unsubSubdealers = subscribeToCollection('subdealers', (data) => setState(prev => ({ ...prev, subdealers: data })));
     const unsubPackages = subscribeToCollection('packages', (data) => setState(prev => ({ ...prev, packages: data })));
@@ -131,7 +131,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
         // Auto Renew
         try {
           await runTransaction(db, async (transaction) => {
-            const userRef = doc(db, 'users', user.id);
+            const userRef = doc(db, 'user', user.id);
             const treasuryRef = doc(db, 'treasury', 'current');
             
             const newExpiry = new Date();
@@ -178,7 +178,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
         }
       } else {
         // Mark as expired
-        await updateDocument('users', user.id, { status: 'expired' });
+        await updateDocument('user', user.id, { status: 'expired' });
         await addLog('Account Expired', user.name, 'system');
         await sendSMS(user.id, user.whatsapp || user.phone, `Your package has expired. Please recharge to continue service.`, 'expiry_alert');
       }
@@ -224,7 +224,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
         const payment = paymentDoc.data();
         if (payment.status !== 'pending') throw new Error("Already processed");
 
-        const userDoc = await transaction.get(doc(db, 'users', payment.userId));
+        const userDoc = await transaction.get(doc(db, 'user', payment.userId));
         if (!userDoc.exists()) throw new Error("User missing");
         const user = userDoc.data();
 
@@ -251,7 +251,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
           approvedAt: Timestamp.now()
         });
 
-        transaction.update(doc(db, 'users', payment.userId), {
+        transaction.update(doc(db, 'user', payment.userId), {
           walletBalance: increment(payment.amount),
           updatedAt: Timestamp.now()
         });
