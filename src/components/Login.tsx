@@ -1,14 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { signInWithGoogle, auth } from '@/services/firebase';
-import { signOut } from 'firebase/auth';
+import { signOut, getRedirectResult } from 'firebase/auth';
 import { LogIn, Shield, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const handleRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          console.log('Redirect login success:', result.user.email);
+          toast.success("Successfully logged in via redirect!");
+        }
+      } catch (error: any) {
+        if (error.code !== 'auth/redirect-cancelled-by-user') {
+          console.error('Redirect login error:', error);
+          toast.error(`Login failed: ${error.message}`);
+        }
+      }
+    };
+    handleRedirect();
+  }, []);
 
   const handleLogin = async () => {
     if (loading) return;

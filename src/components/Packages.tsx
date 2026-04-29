@@ -86,99 +86,103 @@ export default function Packages() {
 
   return (
     <div className="p-2 space-y-4 pb-4">
-      <div className="flex justify-between items-center px-1">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-1">
         <h2 className="text-xl font-black text-text-main">Internet Plans</h2>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger
             render={
-              <Button className="bg-primary hover:bg-primary-dark rounded-[14px] gap-2 h-10 text-xs font-bold px-4 shadow-lg shadow-primary/20">
+              <Button className="w-full sm:w-auto bg-primary hover:bg-primary-dark rounded-[14px] gap-2 h-10 text-xs font-bold px-4 shadow-lg shadow-primary/20">
                 <Plus className="w-4 h-4" /> Add Plan
               </Button>
             }
           />
-          <DialogContent className="sm:max-w-[425px] rounded-[30px] border-none shadow-2xl p-6">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-black text-text-main">New Internet Plan</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-5 py-4">
-              <div className="grid gap-2">
-                <Label className="text-[10px] font-black uppercase tracking-wider text-text-muted ml-1">Plan Name</Label>
-                <Input 
-                  placeholder="Pro Gamer Pack" 
-                  className="rounded-2xl bg-bg-gray border-none h-12 px-4 font-bold"
-                  value={newPkg.name}
-                  onChange={(e) => setNewPkg({ ...newPkg, name: e.target.value })}
-                />
+          <DialogContent className="sm:max-w-[500px] rounded-[32px] border-none shadow-2xl p-0 overflow-hidden">
+            <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
+              <div className="p-8">
+                <DialogHeader className="mb-6">
+                  <DialogTitle className="text-2xl font-black text-text-main tracking-tight">New Internet Plan</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-6 py-2">
+                  <div className="grid gap-2">
+                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Plan Name</Label>
+                    <Input 
+                      placeholder="Pro Gamer Pack" 
+                      className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base focus-visible:ring-primary/20"
+                      value={newPkg.name}
+                      onChange={(e) => setNewPkg({ ...newPkg, name: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Speed Label</Label>
+                      <Input 
+                        placeholder="50 Mbps" 
+                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base focus-visible:ring-primary/20"
+                        value={newPkg.speed}
+                        onChange={(e) => setNewPkg({ ...newPkg, speed: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Base Price</Label>
+                      <Input 
+                        type="number" 
+                        placeholder="3000" 
+                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-lg focus-visible:ring-emerald-500/20 text-emerald-600"
+                        value={newPkg.price}
+                        onChange={(e) => setNewPkg({ ...newPkg, price: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Subdealer Share</Label>
+                      <Input 
+                        type="number"
+                        placeholder="590"
+                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-emerald-600 focus-visible:ring-emerald-500/20"
+                        value={newPkg.subdealerShare}
+                        onChange={(e) => setNewPkg({ ...newPkg, subdealerShare: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Admin Share</Label>
+                      <Input 
+                        type="number"
+                        placeholder="910"
+                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-primary focus-visible:ring-primary/20"
+                        value={newPkg.adminShare}
+                        onChange={(e) => setNewPkg({ ...newPkg, adminShare: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Upload Speed</Label>
+                      <Input 
+                        placeholder="25 Mbps" 
+                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base focus-visible:ring-primary/20"
+                        value={newPkg.upload}
+                        onChange={(e) => setNewPkg({ ...newPkg, upload: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Download Speed</Label>
+                      <Input 
+                        placeholder="50 Mbps" 
+                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base focus-visible:ring-primary/20"
+                        value={newPkg.download}
+                        onChange={(e) => setNewPkg({ ...newPkg, download: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={handleAddPackage}
+                    className="bg-primary hover:bg-primary-dark rounded-2xl mt-4 h-16 font-black text-lg shadow-xl shadow-primary/30 transition-all active:scale-95"
+                  >
+                    Launch Plan
+                  </Button>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label className="text-[10px] font-black uppercase tracking-wider text-text-muted ml-1">Speed String</Label>
-                  <Input 
-                    placeholder="50 Mbps" 
-                    className="rounded-2xl bg-bg-gray border-none h-12 px-4 font-bold"
-                    value={newPkg.speed}
-                    onChange={(e) => setNewPkg({ ...newPkg, speed: e.target.value })}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-[10px] font-black uppercase tracking-wider text-text-muted ml-1">Base Price</Label>
-                  <Input 
-                    type="number" 
-                    placeholder="3000" 
-                    className="rounded-2xl bg-bg-gray border-none h-12 px-4 font-bold"
-                    value={newPkg.price}
-                    onChange={(e) => setNewPkg({ ...newPkg, price: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label className="text-[10px] font-black uppercase tracking-wider text-text-muted ml-1">Subdealer Share</Label>
-                  <Input 
-                    type="number"
-                    placeholder="590"
-                    className="rounded-2xl bg-bg-gray border-none h-12 px-4 font-bold text-emerald-600"
-                    value={newPkg.subdealerShare}
-                    onChange={(e) => setNewPkg({ ...newPkg, subdealerShare: e.target.value })}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-[10px] font-black uppercase tracking-wider text-text-muted ml-1">Admin Share</Label>
-                  <Input 
-                    type="number"
-                    placeholder="910"
-                    className="rounded-2xl bg-bg-gray border-none h-12 px-4 font-bold text-primary"
-                    value={newPkg.adminShare}
-                    onChange={(e) => setNewPkg({ ...newPkg, adminShare: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label className="text-[10px] font-black uppercase tracking-wider text-text-muted ml-1">Upload</Label>
-                  <Input 
-                    placeholder="25 Mbps" 
-                    className="rounded-2xl bg-bg-gray border-none h-12 px-4 font-bold"
-                    value={newPkg.upload}
-                    onChange={(e) => setNewPkg({ ...newPkg, upload: e.target.value })}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-[10px] font-black uppercase tracking-wider text-text-muted ml-1">Download</Label>
-                  <Input 
-                    placeholder="50 Mbps" 
-                    className="rounded-2xl bg-bg-gray border-none h-12 px-4 font-bold"
-                    value={newPkg.download}
-                    onChange={(e) => setNewPkg({ ...newPkg, download: e.target.value })}
-                  />
-                </div>
-              </div>
-              <Button 
-                onClick={handleAddPackage}
-                className="bg-primary hover:bg-primary-dark rounded-2xl mt-4 h-14 font-black shadow-xl"
-              >
-                Launch Plan
-              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -194,45 +198,45 @@ export default function Packages() {
         />
       </div>
 
-      <div className="grid gap-4 px-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 px-1">
         {filteredPackages.map((pkg, i) => (
           <motion.div
             key={pkg.id}
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: i * 0.05 }}
-            className={`bg-white rounded-[28px] border border-[#F3F4F6] shadow-sm overflow-hidden transition-all ${!pkg.enabled ? 'opacity-60 saturate-50' : ''}`}
+            className={`bg-white rounded-[32px] border border-[#F3F4F6] shadow-sm overflow-hidden flex flex-col h-full group hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 ${!pkg.enabled ? 'opacity-60 saturate-50' : ''}`}
           >
-            <div className="p-5">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex gap-4">
-                  <div className={`w-14 h-14 rounded-[22px] flex items-center justify-center ${pkg.enabled ? 'bg-indigo-50 text-indigo-600' : 'bg-bg-gray text-text-muted'}`}>
+            <div className="p-6 flex flex-col h-full">
+              <div className="flex justify-between items-start mb-6">
+                <div className="flex gap-4 min-w-0">
+                  <div className={`w-14 h-14 rounded-[22px] flex items-center justify-center shrink-0 transition-colors duration-300 ${pkg.enabled ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-bg-gray text-text-muted'}`}>
                     <Globe className="w-8 h-8" />
                   </div>
-                  <div>
-                    <h4 className="font-black text-text-main text-base">{pkg.name}</h4>
-                    <p className="text-indigo-600 text-[11px] font-black uppercase tracking-widest">{pkg.speed}</p>
+                  <div className="min-w-0">
+                    <h4 className="font-black text-text-main text-base truncate">{pkg.name}</h4>
+                    <p className="text-indigo-600 text-[11px] font-black uppercase tracking-widest mt-1">{pkg.speed}</p>
                   </div>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 shrink-0 ml-2">
                   <Button 
                     onClick={() => togglePackage(pkg.id, pkg.enabled)}
-                    variant="ghost" size="icon" className={`h-10 w-10 rounded-xl ${pkg.enabled ? 'text-emerald-500 bg-emerald-50' : 'text-slate-400 bg-slate-50' }`}
+                    variant="ghost" size="icon" className={`h-10 w-10 rounded-xl transition-all ${pkg.enabled ? 'text-emerald-500 bg-emerald-50' : 'text-slate-400 bg-slate-50' }`}
                   >
                     <Power className="w-5 h-5" />
                   </Button>
                   <Button 
                     onClick={() => handleDelete(pkg.id)}
-                    variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-rose-500 hover:bg-rose-50"
+                    variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-rose-500 hover:bg-rose-50 transition-all"
                   >
                     <Trash2 className="w-5 h-5" />
                   </Button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-5">
+              <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="bg-bg-gray/40 p-4 rounded-2xl border border-white">
-                  <p className="text-text-muted text-[9px] font-black uppercase tracking-widest mb-1">TOTAL COST</p>
+                  <p className="text-text-muted text-[9px] font-black uppercase tracking-widest mb-1">RETAIL COST</p>
                   <p className="text-lg font-black text-text-main">Rs. {(pkg.price + (pkg.tax || 0)).toLocaleString()}</p>
                 </div>
                 <div className="bg-bg-gray/40 p-4 rounded-2xl border border-white">
@@ -241,20 +245,20 @@ export default function Packages() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between border-t border-slate-50 pt-4">
-                <div className="flex gap-5">
+              <div className="flex items-center justify-between border-t border-slate-50 pt-5 mt-auto">
+                <div className="flex gap-6">
                   <div className="flex flex-col">
-                    <span className="text-[9px] font-black text-text-muted uppercase tracking-wider">UPLOAD</span>
-                    <span className="text-xs font-bold flex items-center gap-1"><ArrowUp className="w-3 h-3 text-emerald-500" /> {pkg.upload}</span>
+                    <span className="text-[9px] font-black text-text-muted uppercase tracking-widest mb-0.5">UPLOAD</span>
+                    <span className="text-xs font-bold text-text-main flex items-center gap-1.5"><ArrowUp className="w-3.5 h-3.5 text-emerald-500" /> {pkg.upload}</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[9px] font-black text-text-muted uppercase tracking-wider">DOWNLOAD</span>
-                    <span className="text-xs font-bold flex items-center gap-1"><ArrowDown className="w-3 h-3 text-indigo-500" /> {pkg.download}</span>
+                    <span className="text-[9px] font-black text-text-muted uppercase tracking-widest mb-0.5">DOWNLOAD</span>
+                    <span className="text-xs font-bold text-text-main flex items-center gap-1.5"><ArrowDown className="w-3.5 h-3.5 text-indigo-500" /> {pkg.download}</span>
                   </div>
                 </div>
                 {pkg.enabled && (
-                  <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-[8px] tracking-widest uppercase py-1 px-3">
-                    Active
+                  <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-[9px] tracking-widest uppercase py-1.5 px-3.5 rounded-lg shadow-sm">
+                    ACTIVE
                   </Badge>
                 )}
               </div>

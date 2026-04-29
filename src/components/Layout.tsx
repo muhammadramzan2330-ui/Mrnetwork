@@ -23,15 +23,17 @@ export default function Layout({ children }: LayoutProps) {
   ].filter(item => item.show);
 
   return (
-    <div className="min-h-screen bg-[#EEF2FF] flex justify-center items-start sm:items-center p-0 sm:p-4">
-      <div className="w-full max-w-md min-h-screen sm:min-h-[720px] sm:h-[720px] bg-bg-gray sm:rounded-[40px] relative overflow-hidden shadow-2xl sm:border-[8px] sm:border-slate-900 flex flex-col">
-        <main className="flex-1 overflow-y-auto pb-20 scrollbar-hide">
-          {children}
+    <div className="min-h-screen bg-[#EEF2FF] flex flex-col">
+      <div className="w-full flex-1 flex flex-col relative max-w-7xl mx-auto md:px-6 lg:px-8">
+        <main className="flex-1 overflow-y-auto pb-24 md:pb-8 pt-4">
+          <div className="bg-bg-gray md:rounded-[40px] min-h-full shadow-xl md:border-[8px] border-slate-900 overflow-hidden flex flex-col">
+            {children}
+          </div>
         </main>
 
-        {/* Bottom Navigation */}
-        <nav className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-[#F1F5F9] px-1 py-2 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.06)] pb-[calc(env(safe-area-inset-bottom)+8px)]">
-          <div className="flex justify-around items-center max-w-md mx-auto">
+        {/* Bottom Navigation for Mobile/Tablet */}
+        <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-[#F1F5F9] px-1 py-2 z-[100] shadow-[0_-10px_40px_rgba(0,0,0,0.06)] pb-[calc(env(safe-area-inset-bottom)+8px)] md:relative md:bg-transparent md:border-none md:shadow-none md:pb-4 md:px-0">
+          <div className="flex justify-around items-center max-w-md mx-auto md:max-w-none md:justify-center md:gap-8">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}

@@ -43,16 +43,16 @@ export default function Treasury() {
 
   return (
     <div className="p-2 space-y-3 pb-4">
-      <div className="flex justify-between items-center px-1">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-1">
         <h2 className="text-xl font-black text-text-main">Wallet Dashboard</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           <Dialog open={isWithdrawOpen} onOpenChange={(val) => {
             setIsWithdrawOpen(val);
             if (!val) setIsConfirming(false);
           }}>
             <DialogTrigger
               render={
-                <Button className="bg-rose-500 hover:bg-rose-600 rounded-[14px] gap-2 h-10 text-xs font-bold px-4 shadow-lg shadow-rose-200">
+                <Button className="flex-1 sm:flex-none bg-rose-500 hover:bg-rose-600 rounded-[14px] gap-2 h-10 text-xs font-bold px-4 shadow-lg shadow-rose-200">
                   <TrendingDown className="w-4 h-4" /> Withdraw
                 </Button>
               }
@@ -140,12 +140,12 @@ export default function Treasury() {
       </motion.div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-3 px-1">
-        <div className="bg-emerald-50 p-4 rounded-[24px] border border-emerald-100/50">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-1">
+        <div className="bg-emerald-50 p-4 rounded-[24px] border border-emerald-100/50 flex flex-col justify-center">
           <p className="text-emerald-600 text-[9px] font-black uppercase tracking-widest mb-1">Today's Revenue</p>
           <p className="text-lg font-black text-emerald-700">Rs. {treasury?.todayIn?.toLocaleString() || '0'}</p>
         </div>
-        <div className="bg-rose-50 p-4 rounded-[24px] border border-rose-100/50">
+        <div className="bg-rose-50 p-4 rounded-[24px] border border-rose-100/50 flex flex-col justify-center">
           <p className="text-rose-600 text-[9px] font-black uppercase tracking-widest mb-1">Today's Expenses</p>
           <p className="text-lg font-black text-rose-700">Rs. {treasury?.todayOut?.toLocaleString() || '0'}</p>
         </div>

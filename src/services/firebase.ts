@@ -22,27 +22,23 @@ import {
   type QueryConstraint
 } from 'firebase/firestore';
 
-import firebaseConfigData from "../../firebase-applet-config.json";
-
-interface FirebaseConfig {
-  apiKey: string;
-  authDomain: string;
-  projectId: string;
-  storageBucket: string;
-  messagingSenderId: string;
-  appId: string;
-  firestoreDatabaseId?: string;
-  measurementId?: string;
-}
-
-const firebaseConfig = firebaseConfigData as FirebaseConfig;
+// Hardcoded config for Firebase project isp-billing-app-eda7c
+const firebaseConfig = {
+  apiKey: "AIzaSyDlMAnRnRVx_UXpfWS1LFu8jAwDbc130iQ",
+  authDomain: "isp-billing-app-eda7c.firebaseapp.com",
+  projectId: "isp-billing-app-eda7c",
+  storageBucket: "isp-billing-app-eda7c.firebasestorage.app",
+  messagingSenderId: "11751714792",
+  appId: "1:11751714792:web:1d65fa8eb13333bfd8fe5d",
+  measurementId: "G-X2BQGLBCC4"
+};
 
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
 
 // Initialize Services
 export const auth = getAuth(app);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
+export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
 // Essential Helpers used by the app
@@ -53,21 +49,26 @@ export const signInWithGoogle = async () => {
   } catch (error: any) {
     console.error("signInWithPopup failed:", error.code, error.message);
     
+    // Explicitly handle unauthorized domain by informing or trying redirect
+    // Sometimes redirect works better with iframe/popup constraints
     const redirectCodes = [
       'auth/popup-blocked',
       'auth/cancelled-popup-request',
       'auth/internal-error',
       'auth/network-request-failed',
       'auth/popup-closed-by-user',
-      'auth/web-storage-unsupported'
+      'auth/web-storage-unsupported',
+      'auth/unauthorized-domain' // Adding it to trigger redirect fallback
     ];
     
     if (redirectCodes.includes(error.code)) {
       console.warn("Switching to signInWithRedirect due to error:", error.code);
       try {
-        return await signInWithRedirect(auth, googleProvider);
+        await signInWithRedirect(auth, googleProvider);
+        // signInWithRedirect doesn't return anything; the page will reload
+        return null;
       } catch (redirectError: any) {
-        console.error("signInWithRedirect failed as well:", redirectError.code, redirectError.message);
+        console.error("signInWithRedirect error:", redirectError.code, redirectError.message);
         throw redirectError;
       }
     }

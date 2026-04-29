@@ -80,64 +80,65 @@ export default function Requests() {
 
   return (
     <div className="p-2 space-y-2">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-extrabold text-text-main">Requests</h2>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-1">
+        <h2 className="text-xl font-black text-text-main">Requests</h2>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger
             render={
-              <Button className="bg-primary hover:bg-primary-dark rounded-xl gap-2 h-9 text-xs font-bold">
+              <Button className="w-full sm:w-auto bg-primary hover:bg-primary-dark rounded-[14px] gap-2 h-10 text-xs font-bold px-4 shadow-lg shadow-primary/20">
                 <Plus className="w-4 h-4" /> New Request
               </Button>
             }
           />
-          <DialogContent className="sm:max-w-[425px] rounded-[30px] border-none shadow-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-bold">Create Support Ticket</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="user" className="text-xs font-bold text-text-muted">Select User</Label>
-                <Select onValueChange={(val: string) => setNewReq({ ...newReq, user: val })}>
-                  <SelectTrigger className="rounded-xl bg-bg-gray border-none h-11">
-                    <SelectValue placeholder="Search user..." />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="1">Muhammad Ramzan</SelectItem>
-                    <SelectItem value="2">Ali Khan</SelectItem>
-                  </SelectContent>
-                </Select>
+          <DialogContent className="sm:max-w-[450px] rounded-[32px] border-none shadow-2xl p-0 overflow-hidden">
+            <div className="max-h-[90vh] overflow-y-auto custom-scrollbar p-8">
+              <DialogHeader className="mb-6">
+                <DialogTitle className="text-2xl font-black text-text-main tracking-tight">Create Support Ticket</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-6 py-2">
+                <div className="grid gap-2">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Select Customer</Label>
+                  <Select onValueChange={(val: string) => setNewReq({ ...newReq, user: val })}>
+                    <SelectTrigger className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base">
+                      <SelectValue placeholder="Search customer..." />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
+                      <SelectItem value="1" className="rounded-xl font-bold py-3 cursor-pointer">Muhammad Ramzan</SelectItem>
+                      <SelectItem value="2" className="rounded-xl font-bold py-3 cursor-pointer">Ali Khan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Request Type</Label>
+                  <Select onValueChange={(val: string) => setNewReq({ ...newReq, type: val })}>
+                    <SelectTrigger className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
+                      <SelectItem value="new_connection" className="rounded-xl font-bold py-3 cursor-pointer">New Connection</SelectItem>
+                      <SelectItem value="complaint" className="rounded-xl font-bold py-3 cursor-pointer">General Complaint</SelectItem>
+                      <SelectItem value="speed_issue" className="rounded-xl font-bold py-3 cursor-pointer">Speed Issue</SelectItem>
+                      <SelectItem value="router_issue" className="rounded-xl font-bold py-3 cursor-pointer">Router Issue</SelectItem>
+                      <SelectItem value="package_change" className="rounded-xl font-bold py-3 cursor-pointer">Package Change</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Description</Label>
+                  <Textarea 
+                    placeholder="Describe the issue in detail..." 
+                    className="rounded-2xl bg-bg-gray border-none min-h-[120px] p-5 font-medium text-sm focus-visible:ring-primary/20"
+                    value={newReq.description}
+                    onChange={(e) => setNewReq({ ...newReq, description: e.target.value })}
+                  />
+                </div>
+                <Button 
+                  onClick={handleAddRequest}
+                  className="bg-primary hover:bg-primary-dark rounded-2xl mt-4 h-16 font-black text-lg shadow-xl shadow-primary/30 transition-all hover:scale-[1.01] active:scale-95"
+                >
+                  Create Ticket
+                </Button>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="type" className="text-xs font-bold text-text-muted">Request Type</Label>
-                <Select onValueChange={(val: string) => setNewReq({ ...newReq, type: val })}>
-                  <SelectTrigger className="rounded-xl bg-bg-gray border-none h-11">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="new_connection">New Connection</SelectItem>
-                    <SelectItem value="complaint">General Complaint</SelectItem>
-                    <SelectItem value="speed_issue">Speed Issue</SelectItem>
-                    <SelectItem value="router_issue">Router Issue</SelectItem>
-                    <SelectItem value="package_change">Package Change</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="desc" className="text-xs font-bold text-text-muted">Description</Label>
-                <Textarea 
-                  id="desc" 
-                  placeholder="Describe the issue..." 
-                  className="rounded-xl bg-bg-gray border-none min-h-[100px] p-4"
-                  value={newReq.description}
-                  onChange={(e) => setNewReq({ ...newReq, description: e.target.value })}
-                />
-              </div>
-              <Button 
-                onClick={handleAddRequest}
-                className="bg-primary hover:bg-primary-dark rounded-xl mt-2 h-11 font-bold"
-              >
-                Create Ticket
-              </Button>
             </div>
           </DialogContent>
         </Dialog>
