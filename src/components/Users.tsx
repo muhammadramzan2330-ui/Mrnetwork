@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, MoreVertical, Phone, MapPin, Calendar, Shield, ShieldOff, RefreshCw, Package, Edit2, Ban, Trash2, DollarSign, Wallet, ArrowRightLeft, UserCircle2, Smartphone, CreditCard, Eye, EyeOff, QrCode, Lock, CheckCircle2, Download } from 'lucide-react';
+import { Plus, Search, MoreVertical, Phone, MapPin, Calendar, Shield, ShieldOff, RefreshCw, Package, Edit2, Ban, Trash2, DollarSign, Wallet, ArrowRightLeft, UserCircle2, Smartphone, CreditCard, Eye, EyeOff, QrCode, Lock, CheckCircle2, Download, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion } from 'motion/react';
 import { useSystem } from '../contexts/SystemContext';
-import { addDocument, updateDocument, deleteDocument } from '../services/firebase';
+import { addDocument, updateDocument, deleteDocument, secondaryAuth } from '../services/firebase';
+import { createUserWithEmailAndPassword, signOut as secondarySignOut } from 'firebase/auth';
 import { toast } from 'sonner';
 import { cn, formatDate } from '@/lib/utils';
 
@@ -37,33 +38,74 @@ export default function Users() {
   const [screenshot, setScreenshot] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState('easypaisa');
   const [showPasswords, setShowPasswords] = useState<{ [key: string]: boolean }>({});
+  const [creating, setCreating] = useState(false);
 
   const [newUser, setNewUser] = useState({
     name: '',
-    pppoeUsername: '',
-    pppoePassword: '',
+    email: '',
+    password: '',
     packageId: '',
     phone: '',
     subdealerId: 'admin',
+    pppoeUsername: '',
+    pppoePassword: '',
   });
 
   const handleAddUser = async () => {
-    if (!newUser.name || !newUser.pppoeUsername) return;
+    if (!newUser.name || !newUser.email || !newUser.password) {
+      toast.error('Name, Email and Password are required');
+      return;
+    }
     
+    setCreating(true);
     try {
+      // 1. Create Auth User using secondary instance
+      const userCredential = await createUserWithEmailAndPassword(
+        secondaryAuth, 
+        newUser.email, 
+        newUser.password
+      );
+      
+      const uid = userCredential.user.uid;
+
+      // 2. Create Firestore Profile
       await addDocument('user', {
-        ...newUser,
+        uid: uid,
+        name: newUser.name,
+        email: newUser.email,
+        phone: newUser.phone,
+        pppoeUsername: newUser.pppoeUsername || newUser.email.split('@')[0],
+        pppoePassword: newUser.pppoePassword || newUser.password,
+        packageId: newUser.packageId,
+        subdealerId: newUser.subdealerId,
+        role: 'customer',
         status: 'active',
         balance: 0,
         walletBalance: 0,
         expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         createdAt: new Date().toISOString()
       });
-      setNewUser({ name: '', pppoeUsername: '', pppoePassword: '', packageId: '', phone: '', subdealerId: 'admin' });
+
+      // 3. Immediately sign out from secondary app to keep it clean
+      await secondarySignOut(secondaryAuth);
+
+      setNewUser({ 
+        name: '', 
+        email: '', 
+        password: '', 
+        packageId: '', 
+        phone: '', 
+        subdealerId: 'admin',
+        pppoeUsername: '',
+        pppoePassword: '',
+      });
       setIsOpen(false);
-      toast.success('User created successfully');
-    } catch (e) {
-      toast.error('Failed to create user');
+      toast.success('Customer account created successfully');
+    } catch (e: any) {
+      console.error('Error creating user:', e);
+      toast.error(e.message || 'Failed to create customer');
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -128,86 +170,123 @@ export default function Users() {
   );
 
   return (
-    <div className="p-2 space-y-4 pb-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-1">
-        <h2 className="text-xl font-black text-text-main">Customers</h2>
+    <div className="p-3 sm:p-4 space-y-6 pb-24 md:pb-8 max-w-7xl mx-auto w-full overflow-x-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
+        <div className="flex flex-col">
+          <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Customers</h2>
+          <p className="text-slate-500 text-xs font-medium">Manage and monitor client accounts</p>
+        </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger
             render={
-              <Button className="w-full sm:w-auto bg-primary hover:bg-primary-dark rounded-[14px] gap-2 h-10 text-xs font-bold px-4 shadow-lg shadow-primary/20">
-                <Plus className="w-4 h-4" /> New Customer
+              <Button className="w-full sm:w-auto bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] hover:opacity-90 rounded-xl gap-2 h-11 text-sm font-bold px-6 shadow-lg shadow-primary/20 transition-all active:scale-95">
+                <Plus className="w-4 h-4" /> Add Customer
               </Button>
             }
           />
-          <DialogContent className="sm:max-w-[500px] rounded-[32px] border-none shadow-2xl p-0 overflow-hidden">
+          <DialogContent className="sm:max-w-[500px] rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
             <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
-              <div className="p-8">
-                <DialogHeader className="mb-6">
-                  <DialogTitle className="text-2xl font-black tracking-tight">Register Customer</DialogTitle>
+              <div className="bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] p-8 text-white">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-bold tracking-tight">New Registration</DialogTitle>
                 </DialogHeader>
+                <p className="text-white/70 text-xs font-medium mt-1 uppercase tracking-widest">Client Onboarding</p>
+              </div>
+              <div className="p-8">
                 <div className="grid gap-6">
-                  <div className="grid gap-2">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Full Name</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Full Name</Label>
                     <Input 
-                      placeholder="Muhammad Ramzan" 
-                      className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base focus-visible:ring-primary/20"
+                      placeholder="e.g. Muhammad Ramzan" 
+                      className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-semibold text-sm focus:bg-white transition-all"
                       value={newUser.name}
                       onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">PPPoE Username</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Email Address</Label>
                       <Input 
-                        placeholder="ramzan123" 
-                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base focus-visible:ring-primary/20"
+                        type="email"
+                        placeholder="customer@isp.com" 
+                        className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-semibold text-sm focus:bg-white transition-all"
+                        value={newUser.email}
+                        onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Account Password</Label>
+                      <Input 
+                        type="password" 
+                        placeholder="••••••••"
+                        className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-semibold text-sm focus:bg-white transition-all"
+                        value={newUser.password}
+                        onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Phone Number</Label>
+                    <Input 
+                      placeholder="+92 3XX XXXXXXX" 
+                      className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-semibold text-sm focus:bg-white transition-all"
+                      value={newUser.phone}
+                      onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">PPPoE Credentials</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input 
+                        placeholder="Username"
+                        className="rounded-xl bg-slate-50 border-slate-200 h-11 px-4 font-semibold text-xs"
                         value={newUser.pppoeUsername}
                         onChange={(e) => setNewUser({ ...newUser, pppoeUsername: e.target.value })}
                       />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Password</Label>
                       <Input 
-                        type="password" 
-                        placeholder="••••••"
-                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base focus-visible:ring-primary/20"
+                        placeholder="Password"
+                        type="password"
+                        className="rounded-xl bg-slate-50 border-slate-200 h-11 px-4 font-semibold text-xs"
                         value={newUser.pppoePassword}
                         onChange={(e) => setNewUser({ ...newUser, pppoePassword: e.target.value })}
                       />
                     </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Package Plan</Label>
-                    <Select onValueChange={(val: string) => setNewUser({ ...newUser, packageId: val })}>
-                      <SelectTrigger className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base">
-                        <SelectValue placeholder="Select Plan" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
-                        {packages.map(p => (
-                          <SelectItem key={p.id} value={p.id} className="font-bold rounded-xl py-3 cursor-pointer">{p.name} - Rs. {p.price}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Assigned Subdealer</Label>
-                    <Select onValueChange={(val: string) => setNewUser({ ...newUser, subdealerId: val })}>
-                      <SelectTrigger className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base">
-                        <SelectValue placeholder="Select Dealer" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
-                        <SelectItem value="admin" className="font-bold rounded-xl py-3 cursor-pointer">Main Branch (Admin)</SelectItem>
-                        {subdealers.map(s => (
-                          <SelectItem key={s.id} value={s.id} className="font-bold rounded-xl py-3 cursor-pointer">{s.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Select Package</Label>
+                      <Select onValueChange={(val: string) => setNewUser({ ...newUser, packageId: val })}>
+                        <SelectTrigger className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-semibold text-sm">
+                          <SelectValue placeholder="Choose Plan" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-slate-100 shadow-xl p-1">
+                          {packages.map(p => (
+                            <SelectItem key={p.id} value={p.id} className="font-semibold text-slate-700 rounded-lg py-2.5 cursor-pointer">{p.name} - Rs.{p.price}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Assigned Branch</Label>
+                      <Select onValueChange={(val: string) => setNewUser({ ...newUser, subdealerId: val })}>
+                        <SelectTrigger className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-semibold text-sm">
+                          <SelectValue placeholder="Choose Dealer" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl border-slate-100 shadow-xl p-1">
+                          <SelectItem value="admin" className="font-semibold text-slate-700 rounded-lg py-2.5 cursor-pointer">Main Branch</SelectItem>
+                          {subdealers.map(s => (
+                            <SelectItem key={s.id} value={s.id} className="font-semibold text-slate-700 rounded-lg py-2.5 cursor-pointer">{s.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <Button 
                     onClick={handleAddUser}
-                    className="bg-primary hover:bg-primary-dark rounded-2xl mt-4 h-16 font-black text-lg shadow-xl shadow-primary/30 transition-all hover:-translate-y-0.5 active:scale-95"
+                    disabled={creating}
+                    className="bg-primary hover:bg-primary/90 text-white rounded-xl mt-4 h-14 font-bold text-base shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
                   >
-                    Create Account
+                    {creating ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Register New User'}
                   </Button>
                 </div>
               </div>
@@ -217,111 +296,120 @@ export default function Users() {
       </div>
 
       <div className="relative px-1">
-        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <Input
-          placeholder="Search by name or username..."
-          className="pl-12 rounded-[18px] border border-[#F3F4F6] bg-white h-12 text-sm font-medium shadow-sm"
+          placeholder="Search by name, username or ID..."
+          className="pl-12 rounded-2xl border-slate-100 bg-white h-12 text-sm font-medium shadow-sm transition-all focus:shadow-md"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 px-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 px-1">
         {filteredUsers.map((user, i) => {
           const pkg = packages.find(p => p.id === user.packageId);
           return (
             <motion.div
               key={user.id}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-white p-6 rounded-[32px] border border-[#F3F4F6] shadow-sm relative overflow-hidden flex flex-col h-full group hover:shadow-xl hover:shadow-primary/5 transition-all duration-300"
+              className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden flex flex-col h-full group hover:shadow-md transition-all duration-300"
             >
-              <div className="flex justify-between items-start mb-4">
+              <div className="flex justify-between items-start mb-6">
                 <div className="flex gap-4">
-                  <div className="w-14 h-14 rounded-[20px] bg-primary/10 flex items-center justify-center text-primary">
-                    <UserCircle2 className="w-8 h-8" />
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-primary/5 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
+                    <UserCircle2 className="w-7 h-7 sm:w-8 sm:h-8" />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="font-black text-text-main text-base truncate">{user.name}</h4>
-                    <p className="text-text-muted text-[10px] font-black uppercase tracking-widest truncate">@{user.pppoeUsername}</p>
+                    <h4 className="font-bold text-slate-800 text-base sm:text-lg truncate">{user.name}</h4>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest truncate">@{user.pppoeUsername}</p>
                   </div>
                 </div>
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     render={
-                      <Button variant="ghost" size="icon" className="h-10 w-10 text-text-muted hover:bg-bg-gray rounded-xl">
+                      <Button variant="ghost" size="icon" className="h-9 w-9 text-slate-400 hover:bg-slate-50 rounded-lg">
                         <MoreVertical className="w-5 h-5" />
                       </Button>
                     }
                   />
-                  <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl w-48 p-2">
+                  <DropdownMenuContent align="end" className="rounded-xl border-slate-100 shadow-xl w-48 p-1">
                     <DropdownMenuItem 
                       onClick={() => { setEditingUser(user); setIsEditOpen(true); }}
-                      className="gap-3 text-xs font-black py-3 rounded-xl cursor-pointer"
+                      className="gap-3 text-[11px] font-bold py-2.5 rounded-lg cursor-pointer"
                     >
-                      <Edit2 className="w-4 h-4 text-blue-500" /> EDIT PROFILE
+                      <Edit2 className="w-4 h-4 text-primary" /> Modify Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => toggleStatus(user)}
+                      className="gap-3 text-[11px] font-bold py-2.5 rounded-lg cursor-pointer"
+                    >
+                      {user.status === 'active' ? <Ban className="w-4 h-4 text-amber-500" /> : <CheckCircle2 className="w-4 h-4 text-emerald-500" />} 
+                      {user.status === 'active' ? 'Suspend Account' : 'Activate Account'}
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => handleDelete(user.id)}
-                      className="gap-3 text-xs font-black py-3 rounded-xl cursor-pointer text-rose-600"
+                      className="gap-3 text-[11px] font-bold py-2.5 rounded-lg cursor-pointer text-rose-500 mt-1 bg-rose-50/50"
                     >
-                      <Trash2 className="w-4 h-4" /> DELETE USER
+                      <Trash2 className="w-4 h-4" /> Permanent Delete
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-5">
-                <div className="bg-bg-gray/40 p-4 rounded-2xl border border-white">
-                  <p className="text-text-muted text-[9px] font-black uppercase tracking-widest mb-1">WALLET CREDIT</p>
-                  <p className="text-lg font-black text-emerald-600">Rs. {user.walletBalance?.toLocaleString() || '0'}</p>
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="bg-emerald-50/30 p-3 sm:p-4 rounded-xl border border-emerald-50/50">
+                  <p className="text-emerald-600/60 text-[9px] font-bold uppercase tracking-widest mb-1">Credit</p>
+                  <p className="text-base sm:text-lg font-bold text-emerald-600">Rs.{user.walletBalance?.toLocaleString() || '0'}</p>
                 </div>
-                <div className="bg-bg-gray/40 p-4 rounded-2xl border border-white">
-                  <p className="text-text-muted text-[9px] font-black uppercase tracking-widest mb-1">DUE BALANCE</p>
-                  <p className="text-lg font-black text-rose-500">Rs. {user.balance?.toLocaleString() || '0'}</p>
+                <div className="bg-rose-50/30 p-3 sm:p-4 rounded-xl border border-rose-50/50">
+                  <p className="text-rose-600/60 text-[9px] font-bold uppercase tracking-widest mb-1">Dues</p>
+                  <p className="text-base sm:text-lg font-bold text-rose-600">Rs.{user.balance?.toLocaleString() || '0'}</p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap justify-between items-center border-t border-slate-50 pt-4 gap-4">
-                <div className="flex flex-wrap gap-4">
+              <div className="space-y-4 mb-6">
+                <div className="flex flex-wrap gap-4 px-1">
                   <div className="flex items-center gap-2">
-                    <Package className="w-4 h-4 text-primary/60" />
-                    <span className="text-[11px] font-bold text-text-main">{pkg?.name || 'No Plan'}</span>
+                    <Package className="w-4 h-4 text-slate-300" />
+                    <span className="text-xs font-semibold text-slate-600">{pkg?.name || 'No Active Plan'}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-primary/60" />
-                    <span className="text-[11px] font-bold text-text-main">{formatDate(user.expiryDate, { month: 'short', day: 'numeric' })}</span>
+                    <Calendar className="w-4 h-4 text-slate-300" />
+                    <span className="text-xs font-semibold text-slate-600">{formatDate(user.expiryDate, { month: 'short', day: 'numeric' })}</span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-1.5 ml-auto">
-                  <div className="flex items-center gap-2 bg-bg-gray/50 px-2 py-1 rounded-lg">
-                    <Lock className="w-3 h-3 text-text-muted" />
-                    <span className="text-[10px] font-bold font-mono text-text-main">
+
+                <div className="flex items-center justify-between bg-slate-50/80 px-3 py-2.5 rounded-xl border border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="text-[11px] font-bold font-mono text-slate-600">
                       {showPasswords[user.id] ? user.pppoePassword : '••••••••'}
                     </span>
-                    <button 
-                      onClick={() => setShowPasswords(prev => ({ ...prev, [user.id]: !prev[user.id] }))}
-                      className="p-1 hover:bg-white rounded-md transition-colors"
-                    >
-                      {showPasswords[user.id] ? <EyeOff className="w-3 h-3 text-primary" /> : <Eye className="w-3 h-3 text-slate-400" />}
-                    </button>
                   </div>
-                  <div className="flex items-center gap-2 justify-end w-full">
-                    <Button 
-                      onClick={() => { setRenewTarget(user); setIsRenewOpen(true); }}
-                      className="h-8 px-3 rounded-lg bg-primary hover:bg-primary-dark text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20"
-                    >
-                      Renew
-                    </Button>
-                    <Badge className={cn(
-                      "rounded-lg font-black text-[9px] px-3 py-1 border-none tracking-widest shadow-none",
-                      user.status === 'active' ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
-                    )}>
-                      {user.status.toUpperCase()}
-                    </Badge>
-                  </div>
+                  <button 
+                    onClick={() => setShowPasswords(prev => ({ ...prev, [user.id]: !prev[user.id] }))}
+                    className="p-1 hover:bg-white rounded-lg transition-colors shadow-sm"
+                  >
+                    {showPasswords[user.id] ? <EyeOff className="w-3.5 h-3.5 text-primary" /> : <Eye className="w-3.5 h-3.5 text-slate-400" />}
+                  </button>
                 </div>
+              </div>
+
+              <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between gap-4">
+                <Badge className={cn(
+                  "rounded-full font-bold text-[10px] px-4 py-1 border-none shadow-none uppercase tracking-widest",
+                  user.status === 'active' ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+                )}>
+                  {user.status}
+                </Badge>
+                <Button 
+                  onClick={() => { setRenewTarget(user); setIsRenewOpen(true); }}
+                  className="h-9 px-6 rounded-xl bg-primary hover:bg-primary/90 text-white text-[11px] font-bold uppercase tracking-widest shadow-md shadow-primary/20 transition-all active:scale-[0.98]"
+                >
+                  Renew Plan
+                </Button>
               </div>
             </motion.div>
           );
@@ -330,45 +418,48 @@ export default function Users() {
 
       {/* Edit User Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="sm:max-w-[500px] rounded-[32px] border-none shadow-2xl p-0 overflow-hidden">
-          <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div className="p-8">
-              <DialogHeader className="mb-6">
-                <DialogTitle className="text-2xl font-black">Edit Customer</DialogTitle>
-              </DialogHeader>
-              {editingUser && (
-                <div className="grid gap-6 py-2">
-                  <div className="grid gap-2">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Full Name</Label>
+        <DialogContent className="sm:max-w-[480px] rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
+          {editingUser && (
+            <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
+              <div className="bg-slate-900 p-8 text-white">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-bold tracking-tight">Edit Client</DialogTitle>
+                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Profile Management</p>
+                </DialogHeader>
+              </div>
+              <div className="p-8">
+                <div className="grid gap-6">
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Full Name</Label>
                     <Input 
-                      className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold focus-visible:ring-primary/20"
+                      className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-semibold text-sm"
                       value={editingUser.name}
                       onChange={(e) => setEditingUser({ ...editingUser, name: e.target.value })}
                     />
                   </div>
-                  <div className="grid gap-2">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Phone Number</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Phone Number</Label>
                     <Input 
-                      className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold focus-visible:ring-primary/20"
+                      className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-semibold text-sm"
                       value={editingUser.phone}
                       onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Wallet Credit</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold uppercase tracking-widest text-emerald-500/60 ml-1">Wallet Amount</Label>
                       <Input 
                         type="number"
-                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-emerald-600 focus-visible:ring-emerald-500/20"
+                        className="rounded-xl bg-emerald-50/20 border-emerald-100 h-12 px-4 font-bold text-emerald-600"
                         value={editingUser.walletBalance}
                         onChange={(e) => setEditingUser({ ...editingUser, walletBalance: Number(e.target.value) })}
                       />
                     </div>
-                    <div className="grid gap-2">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Due Balance</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold uppercase tracking-widest text-rose-500/60 ml-1">Due Amount</Label>
                       <Input 
                         type="number"
-                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-rose-600 focus-visible:ring-rose-500/20"
+                        className="rounded-xl bg-rose-50/20 border-rose-100 h-12 px-4 font-bold text-rose-600"
                         value={editingUser.balance}
                         onChange={(e) => setEditingUser({ ...editingUser, balance: Number(e.target.value) })}
                       />
@@ -376,131 +467,127 @@ export default function Users() {
                   </div>
                   <Button 
                     onClick={handleUpdateUser}
-                    className="bg-primary hover:bg-primary-dark rounded-2xl mt-4 h-16 font-black text-lg shadow-xl shadow-primary/30"
+                    className="bg-primary hover:bg-primary/90 text-white rounded-xl mt-4 h-14 font-bold text-base shadow-lg shadow-primary/20"
                   >
-                    Save Changes
+                    Confirm Changes
                   </Button>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
 
       {/* Renew Package Dialog */}
       <Dialog open={isRenewOpen} onOpenChange={setIsRenewOpen}>
-        <DialogContent className="sm:max-w-[450px] rounded-[32px] border-none shadow-2xl p-0 overflow-hidden">
-          <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
-            <div className="p-8">
-              <DialogHeader className="mb-6">
-                <DialogTitle className="text-2xl font-black">Renew Service</DialogTitle>
-              </DialogHeader>
-              {renewTarget && (
-                <div className="space-y-6 py-2">
-                  <div className="bg-primary/5 p-6 rounded-3xl border border-primary/10">
-                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Package Price</p>
-                    <div className="flex justify-between items-end">
-                      <h3 className="text-3xl font-black text-primary">Rs. {packages.find(p => p.id === renewTarget.packageId)?.price || '0'}</h3>
-                      <span className="text-[11px] font-bold text-slate-400 mb-1 italic">Incl. all taxes</span>
+        <DialogContent className="sm:max-w-[450px] rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
+          {renewTarget && (
+            <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
+              <div className="bg-primary p-8 text-white relative overflow-hidden">
+                <div className="relative z-10">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-bold tracking-tight">Service Renewal</DialogTitle>
+                    <p className="text-white/50 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Transaction Portal</p>
+                  </DialogHeader>
+                  <div className="mt-8 flex justify-between items-end">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-white/40 mb-1">Payable Amount</p>
+                      <h3 className="text-3xl font-extrabold text-white">Rs.{packages.find(p => p.id === renewTarget.packageId)?.price || '0'}</h3>
+                    </div>
+                    <Badge className="bg-white/10 text-white border-none py-1 px-3 text-[10px] font-bold uppercase tracking-widest mb-1">Inclusive Tax</Badge>
+                  </div>
+                </div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
+              </div>
+              
+              <div className="p-6 sm:p-8 space-y-6">
+                <div className="space-y-4">
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">Payment Method</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['easypaisa', 'jazzcash', 'cash'].map((method) => (
+                      <button
+                        key={method}
+                        onClick={() => setPaymentMethod(method)}
+                        className={cn(
+                          "p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2",
+                          paymentMethod === method ? "border-primary bg-primary/5 shadow-inner" : "border-slate-50 bg-slate-50/30 hover:bg-white hover:border-slate-200"
+                        )}
+                      >
+                        {method === 'easypaisa' || method === 'jazzcash' ? (
+                          <Smartphone className={cn("w-5 h-5", paymentMethod === method ? "text-primary" : "text-slate-300")} />
+                        ) : (
+                          <Wallet className={cn("w-5 h-5", paymentMethod === method ? "text-primary" : "text-slate-300")} />
+                        )}
+                        <span className="text-[9px] font-bold uppercase tracking-tight capitalize text-center leading-none">{method}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 p-6 rounded-2xl space-y-4 border border-slate-100">
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      {paymentMethod === 'cash' ? 'Branch Details' : 'Payment QR'}
+                    </p>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-full border border-slate-100">
+                      <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                      <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Online</span>
                     </div>
                   </div>
-
-                  <div className="space-y-4">
-                    <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em] ml-1">Select Payment Method</p>
-                    <div className="grid grid-cols-2 xs:grid-cols-3 gap-3">
-                      {['easypaisa', 'jazzcash', 'cash'].map((method) => (
-                        <button
-                          key={method}
-                          onClick={() => setPaymentMethod(method)}
-                          className={cn(
-                            "p-3 sm:p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 sm:gap-3",
-                            paymentMethod === method ? "border-primary bg-primary/5 shadow-inner" : "border-slate-50 bg-white hover:border-slate-200"
-                          )}
-                        >
-                          {method === 'easypaisa' || method === 'jazzcash' ? (
-                            <Smartphone className={cn("w-5 h-5 sm:w-6 sm:h-6", paymentMethod === method ? "text-primary" : "text-slate-300")} />
-                          ) : (
-                            <Wallet className={cn("w-5 h-5 sm:w-6 sm:h-6", paymentMethod === method ? "text-primary" : "text-slate-300")} />
-                          )}
-                          <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-tight capitalize truncate w-full text-center">{method}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-50 p-6 rounded-3xl space-y-4 border border-slate-100">
-                    <div className="flex justify-between items-center">
-                      <p className="text-[10px] font-black text-text-muted uppercase tracking-[0.2em]">
-                        {paymentMethod === 'cash' ? 'Visit Office:' : 'Scan to Pay:'}
-                      </p>
-                      <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black px-3 py-1 uppercase tracking-wider">
-                        {paymentMethod === 'cash' ? 'In-Person' : 'Instant Approval'}
-                      </Badge>
-                    </div>
-                    
-                    {paymentMethod !== 'cash' ? (
-                      <div className="flex justify-center p-4 bg-white rounded-2xl border border-dashed border-slate-200 shadow-sm">
-                        <div className="relative group">
-                          <img 
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${paymentMethod === 'easypaisa' ? (settings?.easypaisaNumber || '03001234567') : (settings?.jazzcashNumber || '03451234567')}`}
-                            alt="Payment QR"
-                            className="w-36 h-36"
-                          />
-                          <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-lg">
-                            <QrCode className="w-10 h-10 text-primary" />
-                          </div>
+                  
+                  {paymentMethod !== 'cash' ? (
+                    <div className="flex justify-center flex-col items-center gap-4">
+                      <div className="p-3 bg-white rounded-xl border-2 border-slate-100 shadow-sm">
+                        <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${paymentMethod === 'easypaisa' ? (settings?.easypaisaNumber || '03001234567') : (settings?.jazzcashNumber || '03451234567')}`}
+                          alt="Payment QR"
+                          className="w-32 h-32"
+                        />
+                      </div>
+                      <div className="w-full space-y-2">
+                        <div className="flex justify-between items-center p-3 bg-white rounded-xl border border-slate-100">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mobile Account</span>
+                          <span className="text-sm font-bold text-primary tracking-tight">
+                            {paymentMethod === 'easypaisa' ? (settings?.easypaisaNumber || '03001234567') : (settings?.jazzcashNumber || '03451234567')}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-white rounded-xl border border-slate-100">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Account Name</span>
+                          <span className="text-[11px] font-bold text-slate-700">
+                            {paymentMethod === 'easypaisa' ? (settings?.easypaisaName || 'Muhammad Ramzan') : (settings?.jazzcashName || 'Muhammad Ramzan')}
+                          </span>
                         </div>
                       </div>
-                    ) : (
-                      <div className="py-6 px-4 bg-white rounded-2xl border border-dashed border-slate-200 shadow-sm text-center space-y-2">
-                        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
-                          <MapPin className="w-6 h-6 text-primary" />
-                        </div>
-                        <p className="text-sm font-black text-text-main">ISP Main Office</p>
-                        <p className="text-[11px] font-medium text-text-muted leading-relaxed">Visit our collection branch to pay by cash</p>
-                      </div>
-                    )}
-
-                    <div className="space-y-3 pt-2">
-                      {paymentMethod !== 'cash' ? (
-                        <>
-                          <div className="flex justify-between items-center p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
-                            <span className="text-xs font-bold text-slate-500">Account:</span>
-                            <span className="text-sm font-black text-primary tracking-wider">
-                              {paymentMethod === 'easypaisa' ? (settings?.easypaisaNumber || '03001234567') : (settings?.jazzcashNumber || '03451234567')}
-                            </span>
-                          </div>
-                          <div className="flex justify-between items-center p-3 bg-white rounded-xl border border-slate-100 shadow-sm">
-                            <span className="text-xs font-bold text-slate-500">Name:</span>
-                            <span className="text-xs font-black text-slate-700">
-                              {paymentMethod === 'easypaisa' ? (settings?.easypaisaName || 'Muhammad Ramzan') : (settings?.jazzcashName || 'Muhammad Ramzan')}
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="flex justify-between items-center bg-primary/10 p-3 rounded-xl">
-                          <span className="text-[10px] font-black text-primary uppercase tracking-widest">Timings:</span>
-                          <span className="text-[10px] font-bold text-text-main">09:00 AM - 09:00 PM</span>
-                        </div>
-                      )}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="py-6 px-4 bg-white rounded-2xl border border-dashed border-slate-200 text-center space-y-3">
+                      <div className="w-12 h-12 bg-primary/5 rounded-full flex items-center justify-center mx-auto">
+                        <MapPin className="w-6 h-6 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-800">Visit Main Collection Center</p>
+                        <p className="text-[11px] font-medium text-slate-500 leading-relaxed max-w-[200px] mx-auto mt-1">Available 09:00 AM to 09:00 PM for manual payments</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
 
-                  <div className="grid gap-2">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Transaction ID / TrxID</Label>
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Confirmation TrxID</Label>
                     <div className="relative">
-                      <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300" />
+                      <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
                       <Input 
-                        placeholder="Enter 11-digit ID"
-                        className="rounded-2xl bg-bg-gray border-none h-14 pl-12 font-black text-lg tracking-widest focus-visible:ring-primary/20"
+                        placeholder="11-digit Transaction ID"
+                        className="rounded-xl bg-slate-50 border-slate-200 h-12 pl-11 font-bold text-base tracking-widest focus:bg-white transition-all"
                         value={transactionId}
                         onChange={(e) => setTransactionId(e.target.value)}
                       />
                     </div>
                   </div>
 
-                  <div className="grid gap-2">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Proof Attachment</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Proof Upload (Optional)</Label>
                     <div className="relative group">
                       <Input 
                         type="file"
@@ -509,26 +596,24 @@ export default function Users() {
                           const file = e.target.files?.[0];
                           if (file) setScreenshot(file.name);
                         }}
-                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 py-4 font-bold text-xs cursor-pointer group-hover:bg-slate-100 transition-colors"
+                        className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 py-3 font-semibold text-xs cursor-pointer group-hover:bg-slate-100"
                       />
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300">
-                        <Download className="w-5 h-5" />
-                      </div>
+                      <Download className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
                     </div>
-                    {screenshot && <p className="text-[10px] font-bold text-emerald-600 ml-1 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {screenshot}</p>}
+                    {screenshot && <p className="text-[10px] font-bold text-emerald-600 ml-1 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> {screenshot} added</p>}
                   </div>
 
                   <Button 
                     onClick={handleRenew}
                     disabled={!transactionId}
-                    className="w-full bg-primary hover:bg-primary-dark rounded-2xl h-16 font-black text-lg shadow-xl shadow-primary-dark/20 gap-3 mt-4"
+                    className="w-full bg-primary hover:bg-primary/95 text-white rounded-xl h-14 font-bold text-base shadow-lg shadow-primary/20 transition-all active:scale-[0.98] mt-2"
                   >
-                    Submit Renewal
+                    Confirm & Submit
                   </Button>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

@@ -53,26 +53,28 @@ export default function Reports() {
   ];
 
   return (
-    <div className="p-4 space-y-6 pb-20">
-      <div className="flex justify-between items-center">
+    <div className="p-3 sm:p-4 space-y-6 pb-24 md:pb-8 max-w-5xl mx-auto w-full overflow-x-hidden">
+      <div className="flex justify-between items-center px-1">
         <div>
-          <h2 className="text-2xl font-black text-text-main leading-tight">Reports</h2>
-          <p className="text-xs font-bold text-text-muted uppercase tracking-wider">Financial Overview</p>
+          <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Analytics</h2>
+          <p className="text-slate-500 text-xs font-medium">Business performance and dividends</p>
         </div>
-        <Button variant="ghost" className="w-10 h-10 p-0 rounded-xl bg-white shadow-sm border border-slate-100">
-          <Download className="w-4 h-4 text-slate-600" />
+        <Button variant="outline" size="icon" className="w-10 h-10 rounded-xl bg-white shadow-sm border-slate-200 text-slate-600 hover:bg-slate-50">
+          <Download className="w-4 h-4" />
         </Button>
       </div>
 
       {/* Filter Tabs */}
-      <div className="bg-white p-1 rounded-2xl flex shadow-sm border border-slate-100">
+      <div className="bg-slate-100/50 p-1 rounded-xl flex shadow-inner border border-slate-200/50">
         {(['daily', 'weekly', 'monthly'] as const).map((t) => (
           <button
             key={t}
             onClick={() => setFilter(t)}
             className={cn(
-              "flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
-              filter === t ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-text-muted hover:bg-slate-50"
+              "flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
+              filter === t 
+                ? "bg-white text-primary shadow-sm ring-1 ring-slate-200/50" 
+                : "text-slate-400 hover:text-primary hover:bg-white/50"
             )}
           >
             {t}
@@ -81,63 +83,66 @@ export default function Reports() {
       </div>
 
       {/* Main Stats */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 px-1">
         {stats.map((stat, i) => (
           <motion.div
             key={stat.label}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="bg-white p-5 rounded-[28px] border border-slate-100 shadow-sm"
+            className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm group hover:shadow-md transition-all"
           >
-            <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center mb-4 truncate", stat.bg)}>
+            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110", stat.bg)}>
               <stat.icon className={cn("w-5 h-5", stat.color)} />
             </div>
-            <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-1">{stat.label}</p>
-            <p className={cn("text-lg font-black leading-none", stat.color)}>Rs. {stat.value.toLocaleString()}</p>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">{stat.label}</p>
+            <p className={cn("text-lg font-bold tracking-tight", stat.color)}>Rs. {stat.value.toLocaleString()}</p>
           </motion.div>
         ))}
       </div>
 
       {/* Profit Chart (Mock Visual) */}
-      <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
-        <h3 className="text-sm font-black text-text-main mb-6 flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-emerald-500" />
-          Growth Trajectory
-        </h3>
+      <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden">
+        <div className="flex items-center justify-between mb-8">
+          <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-emerald-500" />
+            Revenue Velocity
+          </h3>
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Cycle</span>
+        </div>
         <div className="h-32 flex items-end gap-2 px-1">
           {[40, 65, 45, 90, 75, 55, 100].map((h, i) => (
             <div key={i} className="flex-1 flex flex-col items-center gap-2">
               <div 
                 className={cn(
-                  "w-full rounded-t-xl transition-all duration-500",
-                  i === 6 ? "bg-primary shadow-lg shadow-primary/30" : "bg-primary/20"
+                  "w-full rounded-t-lg transition-all duration-700 ease-out",
+                  i === 6 ? "bg-primary shadow-lg shadow-primary/20" : "bg-slate-100"
                 )} 
                 style={{ height: `${h}%` }} 
               />
-              <span className="text-[8px] font-black text-text-muted">D{i+1}</span>
+              <span className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter">Day {i+1}</span>
             </div>
           ))}
         </div>
       </div>
 
       {/* Breakdown */}
-      <div className="space-y-4">
-        <h3 className="text-xs font-black text-text-muted uppercase tracking-[0.2em] px-1">Share Breakdown</h3>
-        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
-          <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">Company Equity</span>
+      <div className="space-y-4 px-1 pb-10">
+        <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">Dividend Distribution</h3>
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden divide-y divide-slate-50">
+          <div className="p-5 flex justify-between items-center bg-slate-50/30">
+            <div className="flex items-center gap-3">
+              <div className="w-2.5 h-2.5 rounded-full bg-primary shadow-sm" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Corporate Stake</span>
             </div>
-            <span className="text-sm font-black text-primary">Rs. {netProfit.toLocaleString()}</span>
+            <span className="text-sm font-bold text-primary">Rs. {netProfit.toLocaleString()}</span>
           </div>
-          <div className="p-4 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-500" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">Dealers Commission</span>
+          <div className="p-5 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-sm" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Affiliate Payouts</span>
             </div>
-            <span className="text-sm font-black text-blue-600">Rs. {commissionsPaid.toLocaleString()}</span>
+            <span className="text-sm font-bold text-slate-700">Rs. {commissionsPaid.toLocaleString()}</span>
           </div>
         </div>
       </div>

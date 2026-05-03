@@ -79,126 +79,140 @@ export default function Requests() {
   );
 
   return (
-    <div className="p-2 space-y-2">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-1">
-        <h2 className="text-xl font-black text-text-main">Requests</h2>
+    <div className="p-3 sm:p-4 space-y-6 pb-24 md:pb-8 max-w-5xl mx-auto w-full overflow-x-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
+        <div className="flex flex-col">
+          <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Requests</h2>
+          <p className="text-slate-500 text-xs font-medium">Manage support tickets and inquiries</p>
+        </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger
             render={
-              <Button className="w-full sm:w-auto bg-primary hover:bg-primary-dark rounded-[14px] gap-2 h-10 text-xs font-bold px-4 shadow-lg shadow-primary/20">
+              <Button className="w-full sm:w-auto bg-[#1E293B] hover:bg-slate-800 text-white rounded-xl gap-2 h-11 text-sm font-bold px-6 shadow-lg shadow-slate-200 transition-all active:scale-95">
                 <Plus className="w-4 h-4" /> New Request
               </Button>
             }
           />
-          <DialogContent className="sm:max-w-[450px] rounded-[32px] border-none shadow-2xl p-0 overflow-hidden">
-            <div className="max-h-[90vh] overflow-y-auto custom-scrollbar p-8">
-              <DialogHeader className="mb-6">
-                <DialogTitle className="text-2xl font-black text-text-main tracking-tight">Create Support Ticket</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-6 py-2">
-                <div className="grid gap-2">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Select Customer</Label>
-                  <Select onValueChange={(val: string) => setNewReq({ ...newReq, user: val })}>
-                    <SelectTrigger className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base">
-                      <SelectValue placeholder="Search customer..." />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
-                      <SelectItem value="1" className="rounded-xl font-bold py-3 cursor-pointer">Muhammad Ramzan</SelectItem>
-                      <SelectItem value="2" className="rounded-xl font-bold py-3 cursor-pointer">Ali Khan</SelectItem>
-                    </SelectContent>
-                  </Select>
+          <DialogContent className="sm:max-w-[480px] rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
+            <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
+              <div className="bg-[#1E293B] p-8 text-white relative overflow-hidden">
+                <DialogHeader className="relative z-10">
+                  <DialogTitle className="text-2xl font-bold tracking-tight">Create Support Ticket</DialogTitle>
+                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Ticket Information</p>
+                </DialogHeader>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
+              </div>
+              <div className="p-8">
+                <div className="grid gap-6">
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Select Customer</Label>
+                    <Select onValueChange={(val: string) => setNewReq({ ...newReq, user: val })}>
+                      <SelectTrigger className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-semibold text-slate-700 shadow-sm focus:ring-primary/20">
+                        <SelectValue placeholder="Search customer..." />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-slate-100 shadow-2xl">
+                        <SelectItem value="1" className="font-bold cursor-pointer">Muhammad Ramzan</SelectItem>
+                        <SelectItem value="2" className="font-bold cursor-pointer">Ali Khan</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Request Type</Label>
+                    <Select onValueChange={(val: string) => setNewReq({ ...newReq, type: val })}>
+                      <SelectTrigger className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-semibold text-slate-700 shadow-sm focus:ring-primary/20">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-slate-100 shadow-2xl">
+                        <SelectItem value="new_connection" className="font-bold cursor-pointer">New Connection</SelectItem>
+                        <SelectItem value="complaint" className="font-bold cursor-pointer">General Complaint</SelectItem>
+                        <SelectItem value="speed_issue" className="font-bold cursor-pointer">Speed Issue</SelectItem>
+                        <SelectItem value="router_issue" className="font-bold cursor-pointer">Router Issue</SelectItem>
+                        <SelectItem value="package_change" className="font-bold cursor-pointer">Package Change</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Description</Label>
+                    <Textarea 
+                      placeholder="Describe the issue in detail..." 
+                      className="rounded-xl bg-slate-50 border-slate-200 min-h-[120px] p-4 font-medium text-sm focus-visible:ring-primary/20 shadow-sm transition-all focus:bg-white"
+                      value={newReq.description}
+                      onChange={(e) => setNewReq({ ...newReq, description: e.target.value })}
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleAddRequest}
+                    className="bg-primary hover:bg-primary/95 text-white rounded-xl mt-4 h-14 font-bold text-base shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
+                  >
+                    Create Ticket
+                  </Button>
                 </div>
-                <div className="grid gap-2">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Request Type</Label>
-                  <Select onValueChange={(val: string) => setNewReq({ ...newReq, type: val })}>
-                    <SelectTrigger className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
-                      <SelectItem value="new_connection" className="rounded-xl font-bold py-3 cursor-pointer">New Connection</SelectItem>
-                      <SelectItem value="complaint" className="rounded-xl font-bold py-3 cursor-pointer">General Complaint</SelectItem>
-                      <SelectItem value="speed_issue" className="rounded-xl font-bold py-3 cursor-pointer">Speed Issue</SelectItem>
-                      <SelectItem value="router_issue" className="rounded-xl font-bold py-3 cursor-pointer">Router Issue</SelectItem>
-                      <SelectItem value="package_change" className="rounded-xl font-bold py-3 cursor-pointer">Package Change</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Description</Label>
-                  <Textarea 
-                    placeholder="Describe the issue in detail..." 
-                    className="rounded-2xl bg-bg-gray border-none min-h-[120px] p-5 font-medium text-sm focus-visible:ring-primary/20"
-                    value={newReq.description}
-                    onChange={(e) => setNewReq({ ...newReq, description: e.target.value })}
-                  />
-                </div>
-                <Button 
-                  onClick={handleAddRequest}
-                  className="bg-primary hover:bg-primary-dark rounded-2xl mt-4 h-16 font-black text-lg shadow-xl shadow-primary/30 transition-all hover:scale-[1.01] active:scale-95"
-                >
-                  Create Ticket
-                </Button>
               </div>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+      <div className="relative px-1">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <Input
-          placeholder="Search tickets..."
-          className="pl-11 rounded-xl border border-[#F3F4F6] bg-white h-11 text-sm shadow-sm"
+          placeholder="Search by customer or description..."
+          className="pl-11 rounded-xl border-slate-100 bg-white h-12 text-sm shadow-sm transition-all focus:shadow-md"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-1">
         {filteredRequests.map((req, i) => (
           <motion.div
             key={req.id}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="bg-white p-4 rounded-2xl border border-[#F3F4F6] shadow-sm"
+            className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group"
           >
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex gap-3">
-                <div className="w-10 h-10 rounded-xl bg-bg-gray flex items-center justify-center text-text-muted">
-                  <MessageSquare className="w-5 h-5" />
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex gap-4 items-center">
+                <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 transition-colors group-hover:text-primary group-hover:bg-primary/5">
+                  <MessageSquare className="w-6 h-6" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-text-main text-sm">{req.user}</h4>
-                  <p className="text-primary text-[9px] font-bold uppercase tracking-wider">
-                    {getRequestTypeLabel(req.type)}
-                  </p>
+                  <h4 className="font-bold text-slate-800 text-base">{req.user}</h4>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <p className="text-primary text-[10px] font-bold uppercase tracking-widest leading-none">
+                      {getRequestTypeLabel(req.type)}
+                    </p>
+                  </div>
                 </div>
               </div>
               {getStatusBadge(req.status)}
             </div>
 
-            <p className="text-text-muted text-[11px] font-medium line-clamp-2 mb-4 bg-bg-gray p-3 rounded-xl italic">
-              "{req.description}"
-            </p>
+            <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/50 mb-6 relative overflow-hidden group/text">
+              <p className="text-slate-600 text-sm font-medium leading-relaxed relative z-10 italic">
+                "{req.description}"
+              </p>
+              <div className="absolute top-0 right-0 w-2 h-full bg-primary/10 opacity-0 group-hover/text:opacity-100 transition-opacity" />
+            </div>
 
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2 text-text-muted text-[10px] font-medium">
-                <Clock className="w-3 h-3" />
+            <div className="flex justify-between items-center sm:flex-row flex-col gap-4">
+              <div className="flex items-center gap-2 text-slate-400 text-[10px] font-bold uppercase tracking-wider bg-slate-50 px-3 py-1.5 rounded-lg">
+                <Clock className="w-3.5 h-3.5" />
                 <span>{req.date}</span>
               </div>
-              <div className="flex gap-1">
+              <div className="flex gap-2 w-full sm:w-auto">
                 {req.status === 'pending' && (
                   <>
                     <Button 
                       onClick={() => handleStatusChange(req.id, 'assigned')}
-                      variant="ghost" size="sm" className="h-7 text-blue-600 text-[10px] font-bold gap-1 px-2 hover:bg-blue-50 rounded-lg"
+                      variant="ghost" size="sm" className="h-9 flex-1 sm:flex-none text-emerald-600 text-[10px] font-bold px-4 hover:bg-emerald-50 rounded-lg tracking-widest uppercase"
                     >
                       Approve
                     </Button>
                     <Button 
                       onClick={() => handleStatusChange(req.id, 'rejected')}
-                      variant="ghost" size="sm" className="h-7 text-rose-600 text-[10px] font-bold gap-1 px-2 hover:bg-rose-50 rounded-lg"
+                      variant="ghost" size="sm" className="h-9 flex-1 sm:flex-none text-rose-500 text-[10px] font-bold px-4 hover:bg-rose-50 rounded-lg tracking-widest uppercase"
                     >
                       Reject
                     </Button>
@@ -207,12 +221,12 @@ export default function Requests() {
                 {req.status === 'assigned' && (
                   <Button 
                     onClick={() => handleStatusChange(req.id, 'resolved')}
-                    variant="ghost" size="sm" className="h-7 text-emerald-600 text-[10px] font-bold gap-1 px-2 hover:bg-emerald-50 rounded-lg"
+                    className="h-9 w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold px-6 rounded-lg tracking-widest uppercase shadow-md shadow-emerald-100 transition-all active:scale-95"
                   >
-                    Resolve
+                    Mark Resolved
                   </Button>
                 )}
-                <Button variant="ghost" size="sm" className="h-7 text-primary text-[10px] font-bold gap-1 px-2 hover:bg-bg-gray rounded-lg">
+                <Button variant="ghost" size="sm" className="h-9 text-slate-400 text-[10px] font-bold px-4 hover:bg-slate-50 rounded-lg tracking-widest uppercase gap-2">
                   Details <ChevronRight className="w-3 h-3" />
                 </Button>
               </div>

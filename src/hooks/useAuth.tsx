@@ -11,6 +11,8 @@ interface UserProfile {
   phone: string;
   role: 'admin' | 'customer';
   status: string;
+  package?: string;
+  id?: string;
 }
 
 interface AuthContextType {
@@ -72,37 +74,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         );
 
         unsubscribeProfile = onSnapshot(q, async (snapshot) => {
-          console.log(`Query "user" result count for ${currentUserUid}: ${snapshot.size}`);
-          
           if (!snapshot.empty) {
             const userData = snapshot.docs[0].data() as UserProfile;
-            console.log("Profile found:", snapshot.docs[0].id);
-            // Inject doc ID as 'id' for easier reference in SystemContext
             setProfile({ ...userData, id: snapshot.docs[0].id } as any);
             setError(null);
           } else {
-            console.warn("User profile not found in Firestore for UID:", currentUserUid);
-            
-            // Auto-create profile if missing
-            try {
-              console.log("Auto-creating profile for:", firebaseUser.email);
-              const docRef = await addDoc(collection(db, 'user'), {
-                uid: currentUserUid,
-                email: firebaseUser.email || "",
-                name: firebaseUser.displayName || "Muhammad Ramzan",
-                phone: "",
-                role: "admin",
-                status: "active",
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
-              });
-              console.log("Created profile with ID:", docRef.id);
-              // onSnapshot will fire again when document is created
-            } catch (createErr: any) {
-              console.error("Error auto-creating profile:", createErr);
-              setProfile(null);
-              setError(`Profile creation failed: ${createErr.message}`);
-            }
+            setProfile(null);
+            // Don't auto-create anymore, let the app handle new users
+            console.warn("No profile found for UID:", currentUserUid);
           }
           setLoading(false);
         }, (err) => {

@@ -81,38 +81,38 @@ export default function BillingSettings() {
   ];
 
   return (
-    <div className="p-4 space-y-6 pb-20">
-      <div>
-        <h2 className="text-2xl font-black text-text-main leading-tight">Billing Settings</h2>
-        <p className="text-xs font-bold text-text-muted uppercase tracking-wider">System Configuration</p>
+    <div className="p-3 sm:p-4 space-y-6 pb-24 md:pb-8 max-w-2xl mx-auto w-full overflow-x-hidden">
+      <div className="px-1">
+        <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">System Config</h2>
+        <p className="text-slate-500 text-xs font-medium">Billing rules and payment orchestration</p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         {sections.map((section, idx) => (
           <motion.div 
             key={section.title}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
             className="space-y-4"
           >
-            <h3 className="text-xs font-black text-text-muted uppercase tracking-[0.2em] px-1 flex items-center gap-2">
-              <section.icon className="w-4 h-4" />
+            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1 flex items-center gap-2">
+              <section.icon className="w-5 h-5 text-primary/40" />
               {section.title}
             </h3>
             
-            <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm space-y-4">
+            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-sm space-y-6">
               {section.fields.map((field) => (
-                <div key={field.key} className="grid gap-2">
-                  <Label className="text-[10px] font-black uppercase tracking-wider text-text-muted ml-1">{field.label}</Label>
+                <div key={field.key} className="space-y-1.5">
+                  <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">{field.label}</Label>
                   <div className="relative">
-                    {field.icon && <field.icon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />}
+                    {field.icon && <field.icon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />}
                     <Input 
                       value={(formData as any)[field.key]}
                       onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
                       placeholder={field.placeholder}
                       className={cn(
-                        "rounded-2xl bg-bg-gray border-none h-12 px-4 font-bold text-sm",
+                        "rounded-xl bg-slate-50 border-slate-100 h-12 px-4 font-bold text-sm text-slate-700 shadow-sm focus:bg-white transition-all",
                         field.icon && "pl-11"
                       )}
                     />
@@ -121,14 +121,15 @@ export default function BillingSettings() {
               ))}
 
               {section.switches?.map((s) => (
-                <div key={s.key} className="flex items-center justify-between py-2">
+                <div key={s.key} className="flex items-center justify-between py-2 group">
                   <div className="space-y-0.5">
-                    <p className="text-sm font-black text-text-main">{s.label}</p>
-                    <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">{s.desc}</p>
+                    <p className="text-sm font-bold text-slate-700 group-hover:text-primary transition-colors">{s.label}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{s.desc}</p>
                   </div>
                   <Switch 
                     checked={(formData as any)[s.key]}
                     onCheckedChange={(checked) => setFormData({ ...formData, [s.key]: checked })}
+                    className="data-[state=checked]:bg-primary"
                   />
                 </div>
               ))}
@@ -139,12 +140,14 @@ export default function BillingSettings() {
         ))}
       </div>
 
-      <Button 
-        onClick={handleSave}
-        className="w-full bg-primary hover:bg-primary-dark rounded-2xl h-14 font-black text-base shadow-xl shadow-primary/30 gap-2"
-      >
-        <Save className="w-5 h-5" /> Save Configuration
-      </Button>
+      <div className="px-1 pt-4">
+        <Button 
+          onClick={handleSave}
+          className="w-full bg-[#1E293B] hover:bg-slate-800 text-white rounded-xl h-14 font-bold text-base shadow-lg shadow-slate-200 gap-2 transition-all active:scale-[0.98]"
+        >
+          <Save className="w-5 h-5" /> Commit Changes
+        </Button>
+      </div>
     </div>
   );
 }

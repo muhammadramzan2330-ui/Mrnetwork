@@ -11,6 +11,9 @@ import AuditLogs from './components/AuditLogs';
 import BillingSettings from './components/BillingSettings';
 import Reports from './components/Reports';
 import Login from './components/Login';
+import Signup from './components/Signup';
+import ForgotPassword from './components/ForgotPassword';
+import CustomerDashboard from './components/CustomerDashboard';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SystemProvider } from './contexts/SystemContext';
 import { Toaster } from '@/components/ui/sonner';
@@ -24,17 +27,26 @@ function AppRoutes() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
+  // Allow Signup page even if not logged in
+  const isSignupPath = window.location.pathname === '/signup';
+
   if (!user) {
-    return <Login />;
+    return (
+      <Routes>
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="*" element={<Login />} />
+      </Routes>
+    );
   }
 
   const isProfileError = error?.startsWith("User profile not found");
-
+  
   if (error && !isProfileError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-6 text-center">
@@ -58,9 +70,15 @@ function AppRoutes() {
   if (user && !profile) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-6 text-center">
-        <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-4" />
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
         <h2 className="text-xl font-bold text-slate-900 mb-2">Setting up your profile...</h2>
         <p className="text-sm text-slate-500">This will only take a moment.</p>
+        <button 
+          onClick={() => signOut(auth)}
+          className="mt-4 text-xs text-slate-400 hover:underline"
+        >
+          Cancel and Logout
+        </button>
       </div>
     );
   }
@@ -84,8 +102,7 @@ function AppRoutes() {
             </>
           ) : isCustomer ? (
             <>
-              <Route path="/" element={<Dashboard />} />
-              {/* Add customer specific routes here if needed */}
+              <Route path="/" element={<CustomerDashboard />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           ) : (

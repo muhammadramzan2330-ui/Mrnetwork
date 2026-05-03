@@ -7,6 +7,9 @@ import {
   getRedirectResult,
   signOut, 
   onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   type User as FirebaseUser 
 } from 'firebase/auth';
 import { 
@@ -15,23 +18,30 @@ import {
   doc, 
   onSnapshot, 
   addDoc, 
+  setDoc,
   updateDoc, 
   deleteDoc, 
   query, 
   Timestamp,
+  serverTimestamp,
   type QueryConstraint
 } from 'firebase/firestore';
 
-// Hardcoded config for Firebase project isp-billing-app-eda7c
+// Firebase configuration using environment variables for sensitive data
+// and hardcoded values for project identifiers as requested.
 const firebaseConfig = {
-  apiKey: "AIzaSyDlMAnRnRVx_UXpfWS1LFu8jAwDbc130iQ",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: "isp-billing-app-eda7c.firebaseapp.com",
   projectId: "isp-billing-app-eda7c",
   storageBucket: "isp-billing-app-eda7c.firebasestorage.app",
-  messagingSenderId: "11751714792",
-  appId: "1:11751714792:web:1d65fa8eb13333bfd8fe5d",
-  measurementId: "G-X2BQGLBCC4"
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
+
+// Simple validation to help debug missing keys
+if (!firebaseConfig.apiKey) {
+  console.warn("Firebase API Key is missing. Please set VITE_FIREBASE_API_KEY in environment variables.");
+}
 
 // Initialize Firebase
 export const app = initializeApp(firebaseConfig);
@@ -40,6 +50,10 @@ export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// Secondary instance for admin-led user creation to avoid session swap
+const secondaryApp = initializeApp(firebaseConfig, 'Secondary');
+export const secondaryAuth = getAuth(secondaryApp);
 
 // Essential Helpers used by the app
 export const signInWithGoogle = async () => {
@@ -75,6 +89,16 @@ export const signInWithGoogle = async () => {
     throw error;
   }
 };
+
+export const loginWithEmail = (email: string, pass: string) => 
+  signInWithEmailAndPassword(auth, email, pass);
+
+export const registerWithEmail = (email: string, pass: string) => 
+  createUserWithEmailAndPassword(auth, email, pass);
+
+export const resetPassword = (email: string) =>
+  sendPasswordResetEmail(auth, email);
+
 export const logout = () => signOut(auth);
 
 export const subscribeToCollection = <T extends { id: string }>(
@@ -94,6 +118,15 @@ export const addDocument = async (collectionPath: string, data: any) => {
     ...data,
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now()
+  });
+};
+
+export const createUserProfile = async (uid: string, data: any) => {
+  return await setDoc(doc(db, 'user', uid), {
+    uid,
+    ...data,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
   });
 };
 

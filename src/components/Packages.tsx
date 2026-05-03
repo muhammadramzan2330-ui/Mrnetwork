@@ -14,6 +14,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { motion } from 'motion/react';
 import { useSystem } from '../contexts/SystemContext';
+import { cn } from '@/lib/utils';
 import { addDocument, updateDocument, deleteDocument } from '../services/firebase';
 import { toast } from 'sonner';
 
@@ -85,91 +86,98 @@ export default function Packages() {
   );
 
   return (
-    <div className="p-2 space-y-4 pb-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-1">
-        <h2 className="text-xl font-black text-text-main">Internet Plans</h2>
+    <div className="p-3 sm:p-4 space-y-6 pb-24 md:pb-8 max-w-7xl mx-auto w-full overflow-x-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
+        <div className="flex flex-col">
+          <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Internet Plans</h2>
+          <p className="text-slate-500 text-xs font-medium">Configure service tiers and subscription models</p>
+        </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger
             render={
-              <Button className="w-full sm:w-auto bg-primary hover:bg-primary-dark rounded-[14px] gap-2 h-10 text-xs font-bold px-4 shadow-lg shadow-primary/20">
-                <Plus className="w-4 h-4" /> Add Plan
+              <Button className="w-full sm:w-auto bg-[#1E293B] hover:bg-slate-800 text-white rounded-xl gap-2 h-11 text-sm font-bold px-6 shadow-lg shadow-slate-200 transition-all active:scale-95">
+                <Plus className="w-4 h-4" /> Create New Plan
               </Button>
             }
           />
-          <DialogContent className="sm:max-w-[500px] rounded-[32px] border-none shadow-2xl p-0 overflow-hidden">
+          <DialogContent className="sm:max-w-[540px] rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
             <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
-              <div className="p-8">
-                <DialogHeader className="mb-6">
-                  <DialogTitle className="text-2xl font-black text-text-main tracking-tight">New Internet Plan</DialogTitle>
+              <div className="bg-[#1E293B] p-8 text-white relative overflow-hidden">
+                <DialogHeader className="relative z-10">
+                  <DialogTitle className="text-2xl font-bold tracking-tight">New Service Plan</DialogTitle>
+                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Package Configuration</p>
                 </DialogHeader>
-                <div className="grid gap-6 py-2">
-                  <div className="grid gap-2">
-                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Plan Name</Label>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
+              </div>
+              <div className="p-8">
+                <div className="grid gap-6">
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Plan Name</Label>
                     <Input 
-                      placeholder="Pro Gamer Pack" 
-                      className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base focus-visible:ring-primary/20"
+                      placeholder="e.g. Pro Gamer Fiber" 
+                      className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-bold text-base shadow-sm transition-all focus:bg-white"
                       value={newPkg.name}
                       onChange={(e) => setNewPkg({ ...newPkg, name: e.target.value })}
                     />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Speed Label</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Speed Label</Label>
                       <Input 
                         placeholder="50 Mbps" 
-                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base focus-visible:ring-primary/20"
+                        className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-bold text-base shadow-sm transition-all focus:bg-white"
                         value={newPkg.speed}
                         onChange={(e) => setNewPkg({ ...newPkg, speed: e.target.value })}
                       />
                     </div>
-                    <div className="grid gap-2">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Base Price</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Base Price (Rs.)</Label>
                       <Input 
                         type="number" 
                         placeholder="3000" 
-                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-lg focus-visible:ring-emerald-500/20 text-emerald-600"
+                        className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-bold text-lg text-emerald-600 shadow-sm transition-all focus:bg-white"
                         value={newPkg.price}
                         onChange={(e) => setNewPkg({ ...newPkg, price: e.target.value })}
                       />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Subdealer Share</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Subdealer Share</Label>
                       <Input 
                         type="number"
                         placeholder="590"
-                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-emerald-600 focus-visible:ring-emerald-500/20"
+                        className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-bold text-slate-700 shadow-sm transition-all focus:bg-white"
                         value={newPkg.subdealerShare}
                         onChange={(e) => setNewPkg({ ...newPkg, subdealerShare: e.target.value })}
                       />
                     </div>
-                    <div className="grid gap-2">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Admin Share</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Admin Share</Label>
                       <Input 
                         type="number"
                         placeholder="910"
-                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-primary focus-visible:ring-primary/20"
+                        className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-bold text-slate-700 shadow-sm transition-all focus:bg-white"
                         value={newPkg.adminShare}
                         onChange={(e) => setNewPkg({ ...newPkg, adminShare: e.target.value })}
                       />
                     </div>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Upload Speed</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Upload Speed</Label>
                       <Input 
                         placeholder="25 Mbps" 
-                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base focus-visible:ring-primary/20"
+                        className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-semibold text-slate-700 shadow-sm transition-all focus:bg-white"
                         value={newPkg.upload}
                         onChange={(e) => setNewPkg({ ...newPkg, upload: e.target.value })}
                       />
                     </div>
-                    <div className="grid gap-2">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Download Speed</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Download Speed</Label>
                       <Input 
                         placeholder="50 Mbps" 
-                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base focus-visible:ring-primary/20"
+                        className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-semibold text-slate-700 shadow-sm transition-all focus:bg-white"
                         value={newPkg.download}
                         onChange={(e) => setNewPkg({ ...newPkg, download: e.target.value })}
                       />
@@ -177,9 +185,9 @@ export default function Packages() {
                   </div>
                   <Button 
                     onClick={handleAddPackage}
-                    className="bg-primary hover:bg-primary-dark rounded-2xl mt-4 h-16 font-black text-lg shadow-xl shadow-primary/30 transition-all active:scale-95"
+                    className="bg-primary hover:bg-primary/95 text-white rounded-xl mt-4 h-14 font-bold text-base shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
                   >
-                    Launch Plan
+                    Deploy New Plan
                   </Button>
                 </div>
               </div>
@@ -189,77 +197,87 @@ export default function Packages() {
       </div>
 
       <div className="relative px-1">
-        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <Input
-          placeholder="Search internet plans..."
-          className="pl-12 rounded-[18px] border border-[#F3F4F6] bg-white h-12 text-sm font-medium shadow-sm"
+          placeholder="Filter by plan name or speed..."
+          className="pl-12 rounded-xl border-slate-100 bg-white h-12 text-sm font-medium shadow-sm transition-all focus:shadow-md"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 px-1">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 px-1">
         {filteredPackages.map((pkg, i) => (
           <motion.div
             key={pkg.id}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05 }}
-            className={`bg-white rounded-[32px] border border-[#F3F4F6] shadow-sm overflow-hidden flex flex-col h-full group hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 ${!pkg.enabled ? 'opacity-60 saturate-50' : ''}`}
+            className={cn(
+              "bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col h-full group hover:shadow-md transition-all duration-300",
+              !pkg.enabled && "opacity-60 saturate-0"
+            )}
           >
             <div className="p-6 flex flex-col h-full">
               <div className="flex justify-between items-start mb-6">
                 <div className="flex gap-4 min-w-0">
-                  <div className={`w-14 h-14 rounded-[22px] flex items-center justify-center shrink-0 transition-colors duration-300 ${pkg.enabled ? 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white' : 'bg-bg-gray text-text-muted'}`}>
-                    <Globe className="w-8 h-8" />
+                  <div className={cn(
+                    "w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300",
+                    pkg.enabled ? "bg-slate-50 text-slate-400 group-hover:bg-primary group-hover:text-white" : "bg-slate-100 text-slate-400"
+                  )}>
+                    <Globe className="w-7 h-7" />
                   </div>
                   <div className="min-w-0">
-                    <h4 className="font-black text-text-main text-base truncate">{pkg.name}</h4>
-                    <p className="text-indigo-600 text-[11px] font-black uppercase tracking-widest mt-1">{pkg.speed}</p>
+                    <h4 className="font-bold text-slate-800 text-base truncate pr-2">{pkg.name}</h4>
+                    <p className="text-primary text-[10px] font-bold uppercase tracking-widest mt-1.5">{pkg.speed}</p>
                   </div>
                 </div>
-                <div className="flex gap-1 shrink-0 ml-2">
+                <div className="flex gap-1 shrink-0">
                   <Button 
                     onClick={() => togglePackage(pkg.id, pkg.enabled)}
-                    variant="ghost" size="icon" className={`h-10 w-10 rounded-xl transition-all ${pkg.enabled ? 'text-emerald-500 bg-emerald-50' : 'text-slate-400 bg-slate-50' }`}
+                    variant="ghost" size="icon" className={cn(
+                      "h-9 w-9 rounded-lg transition-all",
+                      pkg.enabled ? "text-emerald-500 hover:bg-emerald-50" : "text-slate-300 hover:bg-slate-50"
+                    )}
                   >
-                    <Power className="w-5 h-5" />
+                    <Power className="w-4 h-4" />
                   </Button>
                   <Button 
                     onClick={() => handleDelete(pkg.id)}
-                    variant="ghost" size="icon" className="h-10 w-10 rounded-xl text-rose-500 hover:bg-rose-50 transition-all"
+                    variant="ghost" size="icon" className="h-9 w-9 rounded-lg text-rose-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="bg-bg-gray/40 p-4 rounded-2xl border border-white">
-                  <p className="text-text-muted text-[9px] font-black uppercase tracking-widest mb-1">RETAIL COST</p>
-                  <p className="text-lg font-black text-text-main">Rs. {(pkg.price + (pkg.tax || 0)).toLocaleString()}</p>
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/50">
+                  <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1.5 line-clamp-1">Retail Price</p>
+                  <p className="text-lg font-bold text-slate-800">Rs. {(pkg.price + (pkg.tax || 0)).toLocaleString()}</p>
                 </div>
-                <div className="bg-bg-gray/40 p-4 rounded-2xl border border-white">
-                  <p className="text-text-muted text-[9px] font-black uppercase tracking-widest mb-1">VALIDITY</p>
-                  <p className="text-lg font-black text-text-main">{pkg.validity} Days</p>
+                <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/50">
+                  <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1.5">Cycle</p>
+                  <p className="text-lg font-bold text-slate-800">{pkg.validity} Days</p>
                 </div>
               </div>
 
               <div className="flex items-center justify-between border-t border-slate-50 pt-5 mt-auto">
-                <div className="flex gap-6">
+                <div className="flex gap-4 sm:gap-6">
                   <div className="flex flex-col">
-                    <span className="text-[9px] font-black text-text-muted uppercase tracking-widest mb-0.5">UPLOAD</span>
-                    <span className="text-xs font-bold text-text-main flex items-center gap-1.5"><ArrowUp className="w-3.5 h-3.5 text-emerald-500" /> {pkg.upload}</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Upload</span>
+                    <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5"><ArrowUp className="w-3 h-3 text-emerald-500" /> {pkg.upload}</span>
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[9px] font-black text-text-muted uppercase tracking-widest mb-0.5">DOWNLOAD</span>
-                    <span className="text-xs font-bold text-text-main flex items-center gap-1.5"><ArrowDown className="w-3.5 h-3.5 text-indigo-500" /> {pkg.download}</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Download</span>
+                    <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5"><ArrowDown className="w-3 h-3 text-primary" /> {pkg.download}</span>
                   </div>
                 </div>
                 {pkg.enabled && (
-                  <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-[9px] tracking-widest uppercase py-1.5 px-3.5 rounded-lg shadow-sm">
-                    ACTIVE
-                  </Badge>
+                  <div className="bg-emerald-50 text-emerald-600 font-bold text-[9px] tracking-widest uppercase py-1.5 px-3 rounded-lg flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Live
+                  </div>
                 )}
               </div>
             </div>

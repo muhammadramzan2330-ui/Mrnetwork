@@ -81,65 +81,73 @@ export default function Subdealers() {
   const withdrawalRequests = requests.filter(r => r.type === 'withdrawal');
 
   return (
-    <div className="p-2 space-y-4 pb-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-1">
-        <h2 className="text-xl font-black text-text-main">Subdealers</h2>
+    <div className="p-3 sm:p-4 space-y-6 pb-24 md:pb-8 max-w-7xl mx-auto w-full overflow-x-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
+        <div className="flex flex-col">
+          <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Subdealers</h2>
+          <p className="text-slate-500 text-xs font-medium">Partner management and commission tracking</p>
+        </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <Button onClick={() => setViewHistory(!viewHistory)} variant="outline" className="flex-1 sm:flex-none rounded-[14px] gap-2 h-10 text-[10px] font-black border-none bg-white shadow-sm px-4">
-            <History className="w-4 h-4" /> {viewHistory ? 'DEALERS' : 'REQUESTS'}
+          <Button onClick={() => setViewHistory(!viewHistory)} variant="outline" className="flex-1 sm:flex-none rounded-xl gap-2 h-11 text-xs font-bold border-slate-200 bg-white shadow-sm px-5 hover:bg-slate-50 transition-colors">
+            {viewHistory ? <Store className="w-4 h-4" /> : <History className="w-4 h-4" />}
+            {viewHistory ? 'View Dealers' : 'Withdrawal Requests'}
           </Button>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger
               render={
-                <Button className="flex-1 sm:flex-none bg-primary hover:bg-primary-dark rounded-[14px] gap-2 h-10 text-xs font-bold px-4 shadow-lg shadow-primary/20">
-                  <Plus className="w-4 h-4" /> New
+                <Button className="flex-1 sm:flex-none bg-primary hover:bg-primary/95 text-white rounded-xl gap-2 h-11 text-xs font-bold px-6 shadow-lg shadow-primary/10 transition-all active:scale-95">
+                  <Plus className="w-4 h-4" /> Add Partner
                 </Button>
               }
             />
-            <DialogContent className="sm:max-w-[500px] rounded-[32px] border-none shadow-2xl p-0 overflow-hidden">
+            <DialogContent className="sm:max-w-[480px] rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
               <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <div className="p-8">
-                  <DialogHeader className="mb-6">
-                    <DialogTitle className="text-2xl font-black tracking-tight">Configure Subdealer</DialogTitle>
+                <div className="bg-[#1E293B] p-8 text-white relative overflow-hidden">
+                  <DialogHeader className="relative z-10">
+                    <DialogTitle className="text-2xl font-bold tracking-tight">Configure Subdealer</DialogTitle>
+                    <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Partnership Settings</p>
                   </DialogHeader>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
+                </div>
+                <div className="p-8">
                   <div className="grid gap-6">
-                    <div className="grid gap-2">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Full Name</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Full Name</Label>
                       <Input 
-                        placeholder="Zain Ali" 
-                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base focus-visible:ring-primary/20"
+                        placeholder="e.g. Zain Ali" 
+                        className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-bold text-base shadow-sm focus:bg-white"
                         value={newDealer.name}
                         onChange={(e) => setNewDealer({ ...newDealer, name: e.target.value })}
                       />
                     </div>
-                    <div className="grid gap-2">
-                      <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Area / Base</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Area / Base</Label>
                       <Input 
-                        placeholder="Model Town, Lahore" 
-                        className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base focus-visible:ring-primary/20"
+                        placeholder="e.g. Model Town, Lahore" 
+                        className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-bold text-base shadow-sm focus:bg-white"
                         value={newDealer.area}
                         onChange={(e) => setNewDealer({ ...newDealer, area: e.target.value })}
                       />
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                      <div className="space-y-3">
-                        <Label className="block text-[11px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Comm. Type</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Comm. Type</Label>
                         <Select onValueChange={(val: any) => setNewDealer({ ...newDealer, commissionType: val })}>
-                          <SelectTrigger className="w-full rounded-2xl bg-border/20 border-none h-16 px-6 font-bold text-base focus:ring-2 focus:ring-primary/20 transition-all">
-                            <SelectValue placeholder="Select Type" className="h-full flex items-center" />
+                          <SelectTrigger className="w-full rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-bold text-slate-700 shadow-sm focus:bg-white transition-all">
+                            <SelectValue placeholder="Select Type" />
                           </SelectTrigger>
-                          <SelectContent className="rounded-2xl border-none shadow-2xl p-2">
-                            <SelectItem value="percentage" className="rounded-xl font-bold py-3 cursor-pointer">Percentage (%)</SelectItem>
-                            <SelectItem value="fixed" className="rounded-xl font-bold py-3 cursor-pointer">Fixed (Rs.)</SelectItem>
+                          <SelectContent className="rounded-xl border-slate-100 shadow-2xl">
+                            <SelectItem value="percentage" className="font-bold cursor-pointer">Percentage (%)</SelectItem>
+                            <SelectItem value="fixed" className="font-bold cursor-pointer">Fixed (Rs.)</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="space-y-3">
-                        <Label className="block text-[11px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Commission Value</Label>
+                      <div className="space-y-1.5">
+                        <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Commission Value</Label>
                         <Input 
                           type="number" 
                           placeholder="20" 
-                          className="rounded-2xl bg-bg-gray border-none h-16 px-6 font-bold text-lg focus-visible:ring-primary/20"
+                          className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-bold text-lg focus:bg-white"
                           value={newDealer.commissionValue}
                           onChange={(e) => setNewDealer({ ...newDealer, commissionValue: e.target.value })}
                         />
@@ -147,9 +155,9 @@ export default function Subdealers() {
                     </div>
                     <Button 
                       onClick={handleAddDealer}
-                      className="bg-primary hover:bg-primary-dark rounded-2xl mt-4 h-16 font-black text-lg shadow-xl shadow-primary/30 transition-all hover:scale-[1.01]"
+                      className="bg-primary hover:bg-primary/95 text-white rounded-xl mt-4 h-14 font-bold text-base shadow-lg shadow-primary/20 transition-all active:scale-[0.98]"
                     >
-                      Create Partner
+                      Onboard Partner
                     </Button>
                   </div>
                 </div>
@@ -162,109 +170,113 @@ export default function Subdealers() {
       {!viewHistory ? (
         <>
           <div className="relative px-1">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
-              placeholder="Search by name or area..."
-              className="pl-12 rounded-[18px] border border-[#F3F4F6] bg-white h-12 text-sm font-medium shadow-sm"
+              placeholder="Search partners by name or region..."
+              className="pl-12 rounded-xl border-slate-100 bg-white h-12 text-sm font-medium shadow-sm transition-all focus:shadow-md"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 px-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 px-1">
             {filteredDealers.map((dealer, i) => {
               const dealerUsers = users.filter(u => u.subdealerId === dealer.id);
               return (
                 <motion.div
                   key={dealer.id}
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
-                  className="bg-white p-6 rounded-[32px] border border-[#F3F4F6] shadow-sm flex flex-col h-full group hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 overflow-hidden"
+                  className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col h-full group hover:shadow-md transition-all duration-300 overflow-hidden"
                 >
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex gap-4">
-                      <div className="w-14 h-14 rounded-[22px] bg-primary/5 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary group-hover:text-white transition-colors duration-300">
-                        <Store className="w-8 h-8" />
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 shrink-0 group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                        <Store className="w-7 h-7" />
                       </div>
                       <div className="min-w-0">
-                        <h4 className="font-black text-text-main text-base truncate">{dealer.name}</h4>
-                        <p className="text-text-muted text-[10px] font-black flex items-center gap-1 uppercase tracking-widest mt-1">
+                        <h4 className="font-bold text-slate-800 text-base truncate pr-2">{dealer.name}</h4>
+                        <p className="text-slate-400 text-[10px] font-bold flex items-center gap-1.5 uppercase tracking-widest mt-1.5">
                           <MapPin className="w-3 h-3 text-primary/40" /> {dealer.area}
                         </p>
                       </div>
                     </div>
-                    <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-[9px] px-3 py-1 uppercase tracking-widest shrink-0">
+                    <Badge className="bg-emerald-50 text-emerald-600 border-none font-bold text-[9px] px-3 py-1 uppercase tracking-widest shrink-0">
                       {dealer.status}
                     </Badge>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-bg-gray/50 p-4 rounded-2xl border border-white">
-                      <p className="text-text-muted text-[9px] font-black uppercase tracking-widest mb-1">BALANCE</p>
-                      <p className="text-lg font-black text-emerald-600">Rs. {dealer.walletBalance?.toLocaleString() || '0'}</p>
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/50">
+                      <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1.5 line-clamp-1">Current Wallet</p>
+                      <p className="text-lg font-bold text-emerald-600">Rs. {dealer.walletBalance?.toLocaleString() || '0'}</p>
                     </div>
-                    <div className="bg-bg-gray/50 p-4 rounded-2xl border border-white">
-                      <p className="text-text-muted text-[9px] font-black uppercase tracking-widest mb-1">TOTAL IN</p>
-                      <p className="text-lg font-black text-primary">Rs. {dealer.totalEarnings?.toLocaleString() || '0'}</p>
+                    <div className="bg-slate-50/50 p-4 rounded-xl border border-slate-100/50">
+                      <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mb-1.5 line-clamp-1">Life Gains</p>
+                      <p className="text-lg font-bold text-primary">Rs. {dealer.totalEarnings?.toLocaleString() || '0'}</p>
                     </div>
                   </div>
 
                   <div className="flex-1 flex flex-col justify-end">
                     <div className="flex justify-between items-center border-t border-slate-50 pt-5 mt-auto">
-                      <div className="flex gap-4">
+                      <div className="flex gap-4 lg:gap-6">
                         <div className="flex flex-col">
-                          <span className="text-[9px] font-black text-text-muted uppercase tracking-widest mb-0.5">COMMISSION</span>
-                          <span className="text-xs font-bold text-text-main">{dealer.commissionValue}{dealer.commissionType === 'percentage' ? '%' : ' Rs'}</span>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Commission</span>
+                          <span className="text-xs font-bold text-slate-700">{dealer.commissionValue}{dealer.commissionType === 'percentage' ? '%' : ' Rs'}</span>
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-[9px] font-black text-text-muted uppercase tracking-widest mb-0.5">CUSTOMERS</span>
-                          <span className="text-xs font-bold text-text-main">{dealerUsers.length} Users</span>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Accounts</span>
+                          <span className="text-xs font-bold text-slate-700">{dealerUsers.length} Users</span>
                         </div>
                       </div>
                       <div className="flex gap-2">
                         <Dialog>
                           <DialogTrigger
                             render={
-                              <Button onClick={() => setActionDealer(dealer)} variant="ghost" className="h-10 rounded-xl font-black text-[10px] text-primary hover:bg-primary/5 px-3">
-                                <Wallet className="w-4 h-4 mr-2" /> WITHDRAW
+                              <Button onClick={() => setActionDealer(dealer)} variant="ghost" className="h-9 rounded-lg font-bold text-[10px] text-primary hover:bg-primary/5 px-4 tracking-widest uppercase">
+                                <Wallet className="w-4 h-4 mr-2" /> Payout
                               </Button>
                             }
                           />
-                          <DialogContent className="sm:max-w-[450px] rounded-[32px] border-none shadow-2xl p-0 overflow-hidden">
+                          <DialogContent className="sm:max-w-[480px] rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
                             <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
-                              <div className="p-8">
-                                <DialogHeader className="mb-6">
-                                  <DialogTitle className="text-2xl font-black tracking-tight">Request Withdrawal</DialogTitle>
+                              <div className="bg-primary p-8 text-white relative overflow-hidden">
+                                <DialogHeader className="relative z-10">
+                                  <DialogTitle className="text-2xl font-bold tracking-tight">Request Payout</DialogTitle>
+                                  <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Dealer Wallet Transfer</p>
                                 </DialogHeader>
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+                              </div>
+                              <div className="p-8">
                                 <div className="grid gap-6">
-                                  <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                  <div className="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                                     <div>
-                                      <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Current Balance</p>
-                                      <p className="text-xl font-black text-emerald-700">Rs. {dealer.walletBalance?.toLocaleString() || '0'}</p>
+                                      <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Available Funds</p>
+                                      <p className="text-2xl font-bold text-emerald-700">Rs. {dealer.walletBalance?.toLocaleString() || '0'}</p>
                                     </div>
                                     <div className="text-left sm:text-right w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-emerald-100/50">
-                                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Subdealer</p>
-                                      <p className="text-xs font-bold text-slate-600 truncate max-w-[200px]">{dealer.name}</p>
+                                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Target Account</p>
+                                      <p className="text-xs font-bold text-slate-600 truncate max-w-[180px]">{dealer.name}</p>
                                     </div>
                                   </div>
                                   
-                                  <div className="grid gap-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Amount to Withdraw</Label>
+                                  <div className="space-y-1.5">
+                                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Transfer Amount (Rs.)</Label>
                                     <Input 
                                       type="number"
-                                      placeholder="Max: Rs. 10,000"
-                                      className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-lg"
+                                      placeholder="0.00"
+                                      className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-bold text-lg shadow-sm"
                                       value={withdrawAmount}
                                       onChange={(e) => setWithdrawAmount(e.target.value)}
                                     />
                                   </div>
 
-                                  <div className="grid gap-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-muted ml-1">Payment Method Info</Label>
+                                  <div className="space-y-1.5">
+                                    <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Payment Method & Info</Label>
                                     <Input 
-                                      placeholder="Easypaisa: 0300-XXXXXXX"
-                                      className="rounded-2xl bg-bg-gray border-none h-14 px-5 font-bold text-base"
+                                      placeholder="e.g. Easypaisa: 0300-1234567"
+                                      className="rounded-xl bg-slate-50 border-slate-200 h-12 px-4 font-semibold text-slate-700 shadow-sm"
                                       value={withdrawDetails}
                                       onChange={(e) => setWithdrawDetails(e.target.value)}
                                     />
@@ -274,11 +286,11 @@ export default function Subdealers() {
                                     onClick={() => handleWithdrawRequest(dealer.id, dealer.name)}
                                     disabled={!withdrawAmount || Number(withdrawAmount) > dealer.walletBalance}
                                     className={cn(
-                                      "rounded-2xl h-16 font-black text-lg shadow-xl transition-all",
-                                      isConfirming ? "bg-amber-600 text-white animate-pulse" : "bg-primary text-white"
+                                      "rounded-xl h-14 font-bold text-base shadow-lg transition-all active:scale-[0.98]",
+                                      isConfirming ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-200 animate-pulse" : "bg-[#1E293B] hover:bg-slate-800 text-white shadow-slate-200"
                                     )}
                                   >
-                                    {isConfirming ? "CONFIRM REQUEST?" : "SUBMIT REQUEST"}
+                                    {isConfirming ? "Confirm Withdrawal?" : "Initiate Withdrawal"}
                                   </Button>
                                 </div>
                               </div>
@@ -294,59 +306,65 @@ export default function Subdealers() {
           </div>
         </>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6 px-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 px-1 pb-10">
           {withdrawalRequests.map((req, i) => (
             <motion.div
               key={req.id}
               initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 10 }}
-              className="bg-white p-6 rounded-[32px] border border-[#F3F4F6] shadow-sm flex flex-col h-full group hover:shadow-lg transition-all"
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col h-full group hover:shadow-md transition-all"
             >
               <div className="flex justify-between items-center mb-6">
                 <div className="flex gap-4 items-center">
-                  <div className="w-12 h-12 rounded-[18px] bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
                     <DollarSign className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="font-black text-text-main text-sm">{req.userName}</h4>
-                    <p className="text-text-muted text-[10px] font-bold uppercase tracking-widest mt-0.5">{formatDate(req.createdAt)}</p>
+                    <h4 className="font-bold text-slate-800 text-sm">{req.userName}</h4>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1 line-clamp-1">{formatDate(req.createdAt)}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-black text-xl text-text-main tracking-tight">Rs. {req.amount}</p>
+                  <p className="font-bold text-lg text-slate-800 tracking-tight">Rs. {req.amount}</p>
                 </div>
               </div>
 
-              <div className="mb-6 flex-1">
-                <p className="text-[10px] font-black text-text-muted uppercase tracking-widest mb-1.5 opacity-60">Payout Details</p>
-                <div className="bg-bg-gray/40 p-4 rounded-2xl border border-white text-xs font-bold text-slate-600 leading-relaxed italic">
-                  "{req.description || 'No details provided'}"
+              <div className="mb-8 flex-1">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 opacity-60">Withdrawal Notes</p>
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs font-semibold text-slate-600 leading-relaxed italic line-clamp-3 group-hover:line-clamp-none transition-all">
+                  "{req.description || 'No transfer notes provided'}"
                 </div>
               </div>
               
               <div className="flex justify-between items-center mt-auto pt-4 border-t border-slate-50">
-                <Badge className={cn(
-                  "border-none font-black text-[9px] px-3 py-1 tracking-widest shadow-none",
-                  req.status === 'pending' ? "bg-amber-100 text-amber-600" : 
-                  req.status === 'resolved' ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"
+                <div className={cn(
+                  "font-bold text-[9px] px-3 py-1.5 tracking-widest rounded-lg flex items-center gap-1.5",
+                  req.status === 'pending' ? "bg-amber-50 text-amber-600" : 
+                  req.status === 'resolved' ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-500"
                 )}>
+                  <div className={cn(
+                    "w-1.5 h-1.5 rounded-full",
+                    req.status === 'pending' ? "bg-amber-400 animate-pulse" : 
+                    req.status === 'resolved' ? "bg-emerald-500" : "bg-rose-400"
+                  )} />
                   {req.status.toUpperCase()}
-                </Badge>
+                </div>
                 
                 {req.status === 'pending' && (
                   <div className="flex gap-2">
                     <Button 
                       onClick={() => processWithdrawal(req.id, false)}
                       variant="ghost" 
-                      className="h-10 rounded-xl font-black text-[10px] text-rose-600 hover:bg-rose-50 px-3 tracking-widest"
+                      className="h-9 rounded-lg font-bold text-[10px] text-rose-500 hover:bg-rose-50 px-3 tracking-widest uppercase"
                     >
-                      REJECT
+                      Reject
                     </Button>
                     <Button 
                       onClick={() => processWithdrawal(req.id, true)}
-                      className="h-10 rounded-xl font-black text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-700/20 px-4 lg:px-5 tracking-widest"
+                      className="h-9 rounded-lg font-bold text-[10px] bg-emerald-500 hover:bg-emerald-600 text-white shadow-md shadow-emerald-100 px-4 tracking-widest transition-all active:scale-95 uppercase"
                     >
-                      APPROVE
+                      Approve
                     </Button>
                   </div>
                 )}
@@ -354,9 +372,9 @@ export default function Subdealers() {
             </motion.div>
           ))}
           {withdrawalRequests.length === 0 && (
-            <div className="col-span-full bg-bg-gray/50 rounded-[40px] py-20 text-center border-2 border-dashed border-slate-200">
-              <History className="w-16 h-16 text-slate-200 mx-auto mb-4" />
-              <p className="text-text-muted font-black text-xs uppercase tracking-widest">No pending withdrawals in queue</p>
+            <div className="col-span-full bg-slate-50/50 rounded-2xl py-20 text-center border-2 border-dashed border-slate-100 mt-4">
+              <History className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+              <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">No pending withdrawals in queue</p>
             </div>
           )}
         </div>
