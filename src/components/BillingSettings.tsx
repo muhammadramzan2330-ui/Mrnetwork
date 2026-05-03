@@ -49,8 +49,9 @@ export default function BillingSettings() {
 
   const sections = [
     {
-      title: 'Payment Methods',
+      title: 'Payment Information',
       icon: CreditCard,
+      description: 'Setup your primary collection methods',
       fields: [
         { label: 'Easypaisa Number', key: 'easypaisaNumber', placeholder: '03001234567', icon: Smartphone },
         { label: 'Easypaisa Name', key: 'easypaisaName', placeholder: 'Muhammad Ramzan' },
@@ -59,61 +60,57 @@ export default function BillingSettings() {
       ]
     },
     {
-      title: 'Automation',
+      title: 'Automation & Logic',
       icon: Settings,
-      fields: [],
+      description: 'Manage automated billing behavior',
       switches: [
         { label: 'Auto Expiry Deduction', key: 'autoDeduct', desc: 'Deduct from wallet balance on expiry' },
         { label: 'SMS Reminders', key: 'smsReminder', desc: 'Send notifications before/after expiry' },
       ],
-      custom: (
-        <div className="grid gap-2 mt-4 ml-1">
-          <Label className="text-[10px] font-black uppercase tracking-wider text-text-muted">Reminder Threshold (Days)</Label>
-          <Input 
-            type="number" 
-            value={formData.reminderDays}
-            onChange={(e) => setFormData({ ...formData, reminderDays: parseInt(e.target.value) })}
-            className="rounded-xl bg-bg-gray border-none h-11 px-4 font-bold text-sm w-32"
-          />
-        </div>
-      )
+      custom: true
     }
   ];
 
   return (
-    <div className="p-3 sm:p-4 space-y-6 pb-24 md:pb-8 max-w-2xl mx-auto w-full overflow-x-hidden">
-      <div className="px-1">
-        <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">System Config</h2>
-        <p className="text-slate-500 text-xs font-medium">Billing rules and payment orchestration</p>
+    <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-24 md:pb-8">
+      {/* Header */}
+      <div className="px-4 sm:px-8 py-6 flex flex-col items-start bg-white border-b border-slate-100">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-none text-center sm:text-left">Billing Protocol</h2>
+        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none">Orchestrate billing rules & logic</p>
       </div>
 
-      <div className="space-y-8">
+      <div className="px-4 sm:px-8 py-6 space-y-8 max-w-2xl mx-auto w-full">
         {sections.map((section, idx) => (
           <motion.div 
             key={section.title}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
             className="space-y-4"
           >
-            <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1 flex items-center gap-2">
-              <section.icon className="w-5 h-5 text-primary/40" />
-              {section.title}
-            </h3>
+            <div className="flex items-center gap-3 px-2">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+                <section.icon className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider leading-none">{section.title}</h3>
+                <p className="text-[10px] text-slate-400 font-medium mt-1 leading-none">{section.description}</p>
+              </div>
+            </div>
             
-            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-sm space-y-6">
-              {section.fields.map((field) => (
-                <div key={field.key} className="space-y-1.5">
-                  <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">{field.label}</Label>
-                  <div className="relative">
-                    {field.icon && <field.icon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />}
+            <Card className="bg-white border-slate-100 shadow-sm p-6 sm:p-8 rounded-2xl space-y-6">
+              {section.fields?.map((field) => (
+                <div key={field.key} className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">{field.label}</Label>
+                  <div className="relative group">
+                    {field.icon && <field.icon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />}
                     <Input 
                       value={(formData as any)[field.key]}
                       onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
                       placeholder={field.placeholder}
                       className={cn(
-                        "rounded-xl bg-slate-50 border-slate-100 h-12 px-4 font-bold text-sm text-slate-700 shadow-sm focus:bg-white transition-all",
-                        field.icon && "pl-11"
+                        "input-modern uppercase font-bold tracking-wider text-[11px]",
+                        field.icon && "pl-12"
                       )}
                     />
                   </div>
@@ -121,10 +118,10 @@ export default function BillingSettings() {
               ))}
 
               {section.switches?.map((s) => (
-                <div key={s.key} className="flex items-center justify-between py-2 group">
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-bold text-slate-700 group-hover:text-primary transition-colors">{s.label}</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{s.desc}</p>
+                <div key={s.key} className="flex items-center justify-between py-4 border-t border-slate-50 first:border-none first:pt-0">
+                  <div className="space-y-1">
+                    <p className="text-sm font-extrabold text-slate-900 tracking-tight uppercase leading-none">{s.label}</p>
+                    <p className="text-[10px] text-slate-400 font-medium tracking-tight">{s.desc}</p>
                   </div>
                   <Switch 
                     checked={(formData as any)[s.key]}
@@ -134,19 +131,34 @@ export default function BillingSettings() {
                 </div>
               ))}
 
-              {section.custom}
-            </div>
+              {section.custom && (
+                <div className="border-t border-slate-50 pt-6">
+                   <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Reminder Threshold (Days)</Label>
+                    <div className="flex items-center gap-4">
+                      <Input 
+                        type="number" 
+                        value={formData.reminderDays}
+                        onChange={(e) => setFormData({ ...formData, reminderDays: parseInt(e.target.value) })}
+                        className="input-modern w-32 text-center font-extrabold text-xl"
+                      />
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Days Window</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </Card>
           </motion.div>
         ))}
-      </div>
 
-      <div className="px-1 pt-4">
-        <Button 
-          onClick={handleSave}
-          className="w-full bg-[#1E293B] hover:bg-slate-800 text-white rounded-xl h-14 font-bold text-base shadow-lg shadow-slate-200 gap-2 transition-all active:scale-[0.98]"
-        >
-          <Save className="w-5 h-5" /> Commit Changes
-        </Button>
+        <div className="pt-4 pb-20">
+          <Button 
+            onClick={handleSave}
+            className="w-full btn-gradient h-14 rounded-xl font-bold text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/20 gap-3"
+          >
+            <Save className="w-5 h-5" /> Synchronize Settings
+          </Button>
+        </div>
       </div>
     </div>
   );

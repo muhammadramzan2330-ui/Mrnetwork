@@ -42,3 +42,11 @@ export function formatTime(date: any): string {
   
   return validDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
+
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-PK', {
+    style: 'currency',
+    currency: 'PKR',
+    minimumFractionDigits: 0
+  }).format(amount);
+}

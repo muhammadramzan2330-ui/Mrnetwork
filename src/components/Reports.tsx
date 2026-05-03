@@ -53,97 +53,120 @@ export default function Reports() {
   ];
 
   return (
-    <div className="p-3 sm:p-4 space-y-6 pb-24 md:pb-8 max-w-5xl mx-auto w-full overflow-x-hidden">
-      <div className="flex justify-between items-center px-1">
-        <div>
-          <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">Analytics</h2>
-          <p className="text-slate-500 text-xs font-medium">Business performance and dividends</p>
+    <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-24 md:pb-8">
+      {/* Header and Action */}
+      <div className="px-4 sm:px-8 py-6 space-y-6">
+        <div className="flex justify-between items-center gap-6">
+          <div className="flex flex-col">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Visual Reports</h2>
+            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none">Business performance & dividends</p>
+          </div>
+          <Button variant="outline" size="icon" className="w-12 h-12 rounded-xl border-slate-200 bg-white text-slate-400 hover:text-primary hover:border-primary transition-all shadow-sm">
+            <Download className="w-5 h-5" />
+          </Button>
         </div>
-        <Button variant="outline" size="icon" className="w-10 h-10 rounded-xl bg-white shadow-sm border-slate-200 text-slate-600 hover:bg-slate-50">
-          <Download className="w-4 h-4" />
-        </Button>
-      </div>
 
-      {/* Filter Tabs */}
-      <div className="bg-slate-100/50 p-1 rounded-xl flex shadow-inner border border-slate-200/50">
-        {(['daily', 'weekly', 'monthly'] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setFilter(t)}
-            className={cn(
-              "flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all",
-              filter === t 
-                ? "bg-white text-primary shadow-sm ring-1 ring-slate-200/50" 
-                : "text-slate-400 hover:text-primary hover:bg-white/50"
-            )}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
-
-      {/* Main Stats */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 px-1">
-        {stats.map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm group hover:shadow-md transition-all"
-          >
-            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110", stat.bg)}>
-              <stat.icon className={cn("w-5 h-5", stat.color)} />
-            </div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">{stat.label}</p>
-            <p className={cn("text-lg font-bold tracking-tight", stat.color)}>Rs. {stat.value.toLocaleString()}</p>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Profit Chart (Mock Visual) */}
-      <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden">
-        <div className="flex items-center justify-between mb-8">
-          <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-emerald-500" />
-            Revenue Velocity
-          </h3>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Cycle</span>
-        </div>
-        <div className="h-32 flex items-end gap-2 px-1">
-          {[40, 65, 45, 90, 75, 55, 100].map((h, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-2">
-              <div 
-                className={cn(
-                  "w-full rounded-t-lg transition-all duration-700 ease-out",
-                  i === 6 ? "bg-primary shadow-lg shadow-primary/20" : "bg-slate-100"
-                )} 
-                style={{ height: `${h}%` }} 
-              />
-              <span className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter">Day {i+1}</span>
-            </div>
+        {/* Filter Tabs */}
+        <div className="bg-white p-1 rounded-xl flex shadow-sm border border-slate-100 max-w-md mx-auto sm:mx-0">
+          {(['daily', 'weekly', 'monthly'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setFilter(t)}
+              className={cn(
+                "flex-1 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-300",
+                filter === t 
+                  ? "bg-primary text-white shadow-md shadow-primary/20" 
+                  : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+              )}
+            >
+              {t}
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Breakdown */}
-      <div className="space-y-4 px-1 pb-10">
-        <h3 className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] px-1">Dividend Distribution</h3>
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden divide-y divide-slate-50">
-          <div className="p-5 flex justify-between items-center bg-slate-50/30">
-            <div className="flex items-center gap-3">
-              <div className="w-2.5 h-2.5 rounded-full bg-primary shadow-sm" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Corporate Stake</span>
+      <div className="px-4 sm:px-8 space-y-6 pb-20">
+        {/* Main Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          {stats.map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+            >
+              <Card className="bg-white border-slate-100 shadow-sm p-6 rounded-2xl hover:shadow-md transition-all group overflow-hidden relative">
+                <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 border", stat.bg, stat.color.replace('text-', 'border-').replace('600', '100'))}>
+                  <stat.icon className={cn("w-6 h-6", stat.color)} />
+                </div>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">{stat.label}</p>
+                <p className={cn("text-xl sm:text-2xl font-extrabold tracking-tight", stat.color)}>Rs. {stat.value.toLocaleString()}</p>
+                <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full -mr-12 -mt-12 group-hover:bg-primary/5 transition-colors duration-500" />
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Revenue Velocity Chart (Mock) */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="bg-white border-slate-100 shadow-sm p-8 sm:p-10 rounded-2xl relative overflow-hidden group">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-10 gap-4">
+              <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-3 tracking-tight">
+                <TrendingUp className="w-5 h-5 text-emerald-500" />
+                Revenue Velocity
+              </h3>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Signal Log</span>
+              </div>
             </div>
-            <span className="text-sm font-bold text-primary">Rs. {netProfit.toLocaleString()}</span>
-          </div>
-          <div className="p-5 flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-sm" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Affiliate Payouts</span>
+            <div className="h-48 sm:h-56 flex items-end gap-2 sm:gap-6 px-1">
+              {[40, 65, 45, 90, 75, 55, 100].map((h, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-4 group/bar">
+                  <div 
+                    className={cn(
+                      "w-full rounded-xl transition-all duration-700 ease-out relative group-hover/bar:bg-primary/20",
+                      i === 6 ? "bg-primary shadow-lg shadow-primary/30" : "bg-slate-100"
+                    )} 
+                    style={{ height: `${h}%` }} 
+                  >
+                    {i === 6 && <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />}
+                  </div>
+                  <span className="text-[8px] font-bold text-slate-300 uppercase tracking-tight">Day {i+1}</span>
+                </div>
+              ))}
             </div>
-            <span className="text-sm font-bold text-slate-700">Rs. {commissionsPaid.toLocaleString()}</span>
+          </Card>
+        </motion.div>
+
+        {/* Breakdown */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-4 px-2">
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Dividend Distribution Network</h3>
+            <div className="h-px w-full bg-slate-100" />
           </div>
+          <Card className="bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden">
+            <div className="divide-y divide-slate-50">
+              <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-slate-50 transition-colors group">
+                <div className="flex items-center gap-4">
+                  <div className="w-3 h-3 rounded-full bg-primary shadow-lg shadow-primary/40 group-hover:scale-125 transition-transform" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Corporate Strategic Stake</span>
+                </div>
+                <span className="text-xl font-extrabold text-primary tracking-tight">Rs. {netProfit.toLocaleString()}</span>
+              </div>
+              <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-slate-50 transition-colors group">
+                <div className="flex items-center gap-4">
+                  <div className="w-3 h-3 rounded-full bg-blue-400 shadow-lg shadow-blue-400/40 group-hover:scale-125 transition-transform" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Affiliate Operational Payouts</span>
+                </div>
+                <span className="text-xl font-extrabold text-slate-900 tracking-tight">Rs. {commissionsPaid.toLocaleString()}</span>
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     </div>

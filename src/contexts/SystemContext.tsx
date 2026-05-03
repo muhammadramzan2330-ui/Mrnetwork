@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 interface SystemState {
   users: any[];
   payments: any[];
+  bills: any[];
   subdealers: any[];
   packages: any[];
   requests: any[];
@@ -35,6 +36,8 @@ interface SystemActions {
   requestWithdrawal: (amount: number, details: string) => Promise<void>;
   adminWithdrawal: (amount: number, details: string) => Promise<void>;
   processWithdrawal: (requestId: string, approved: boolean) => Promise<void>;
+  markBillAsPaid: (billId: string) => Promise<void>;
+  generateMonthlyBills: () => Promise<void>;
   addLog: (action: string, target: string, type: string, details?: string) => Promise<void>;
   sendSMS: (userId: string, phone: string, message: string, type: 'reminder' | 'expiry_alert' | 'payment_confirmation') => Promise<void>;
   checkExpiries: () => Promise<void>;
@@ -47,6 +50,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<SystemState>({
     users: [],
     payments: [],
+    bills: [],
     subdealers: [],
     packages: [],
     requests: [],
@@ -60,17 +64,33 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubUsers = subscribeToCollection('user', (data) => setState(prev => ({ ...prev, users: data })));
     const unsubPayments = subscribeToCollection('payments', (data) => setState(prev => ({ ...prev, payments: data })), [orderBy('date', 'desc')]);
+    const unsubBills = subscribeToCollection('bills', (data) => setState(prev => ({ ...prev, bills: data })), [orderBy('dueDate', 'desc')]);
     const unsubSubdealers = subscribeToCollection('subdealers', (data) => setState(prev => ({ ...prev, subdealers: data })));
     const unsubPackages = subscribeToCollection('packages', (data) => setState(prev => ({ ...prev, packages: data })));
     const unsubRequests = subscribeToCollection('requests', (data) => setState(prev => ({ ...prev, requests: data })), [orderBy('createdAt', 'desc')]);
     const unsubLogs = subscribeToCollection('logs', (data) => setState(prev => ({ ...prev, logs: data })), [orderBy('date', 'desc')]);
     const unsubNotifs = subscribeToCollection('notifications', (data) => setState(prev => ({ ...prev, notifications: data })), [orderBy('date', 'desc')]);
     const unsubSettings = subscribeToCollection('settings', (data) => setState(prev => ({ ...prev, settings: data[0] })));
-    const unsubTreasury = subscribeToCollection('treasury', (data) => setState(prev => ({ ...prev, treasury: data[0], loading: false })));
+    const unsubTreasury = subscribeToCollection('treasury', (data) => {
+      setState(prev => ({ ...prev, treasury: data[0] || null, loading: false }));
+    });
+
+    // Fallback: If treasury isn't loading after 5 seconds, stop blocking
+    const loadingTimeout = setTimeout(() => {
+      setState(prev => {
+        if (prev.loading) {
+          console.warn("System loading timed out - forcing start");
+          return { ...prev, loading: false };
+        }
+        return prev;
+      });
+    }, 5000);
 
     return () => {
+      clearTimeout(loadingTimeout);
       unsubUsers();
       unsubPayments();
+      unsubBills();
       unsubSubdealers();
       unsubPackages();
       unsubRequests();
@@ -80,6 +100,13 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       unsubTreasury();
     };
   }, []);
+
+  // Trigger monthly bill generation on mount once loading is complete
+  useEffect(() => {
+    if (!state.loading && state.users.length > 0) {
+      generateMonthlyBills();
+    }
+  }, [state.loading, state.users.length]);
 
   const addLog = async (action: string, target: string, type: string, details?: string) => {
     try {
@@ -397,6 +424,67 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const markBillAsPaid = async (billId: string) => {
+    try {
+      await updateDocument('bills', billId, { status: 'paid' });
+      const bill = state.bills.find(b => b.id === billId);
+      if (bill) {
+        await updateDocument('user', bill.userId, { billingStatus: 'paid' });
+        await addLog('Bill Paid', bill.userName, 'payment', `Amount: Rs. ${bill.amount} | Month: ${bill.month}`);
+      }
+      toast.success('Bill marked as paid');
+    } catch (e) {
+      toast.error('Failed to update bill');
+    }
+  };
+
+  const generateMonthlyBills = async () => {
+    const today = new Date();
+    const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    
+    // Only target active customers
+    const activeCustomers = state.users.filter(u => u.status === 'active' || u.status === 'expired');
+    
+    for (const user of activeCustomers) {
+      // Check if bill for this month already exists
+      const existingBill = state.bills.find(b => b.userId === user.id && b.month === currentMonth);
+      
+      if (!existingBill) {
+        const pkg = state.packages.find(p => p.id === user.packageId);
+        const amount = user.planPrice || pkg?.price || 0;
+        
+        if (amount > 0) {
+          // Calculate due date (e.g., 5th of current month or 30 days from now)
+          // For simplicity, let's say 10th of current month
+          const dueDate = new Date(today.getFullYear(), today.getMonth(), 10);
+          
+          try {
+            await addDocument('bills', {
+              userId: user.id,
+              userName: user.name,
+              amount: amount,
+              month: currentMonth,
+              dueDate: dueDate.toISOString(),
+              status: 'unpaid',
+              createdAt: new Date().toISOString()
+            });
+            
+            // Also update user's billing status
+            await updateDocument('user', user.id, { 
+              billingStatus: 'unpaid',
+              planPrice: amount,
+              dueDate: dueDate.toISOString()
+            });
+            
+            console.log(`Generated bill for ${user.name} - ${currentMonth}`);
+          } catch (e) {
+            console.error('Failed to generate bill', e);
+          }
+        }
+      }
+    }
+  };
+
   const updateSettings = async (newSettings: any) => {
     try {
       if (state.settings?.id) {
@@ -422,6 +510,8 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       addLog, 
       sendSMS, 
       checkExpiries,
+      markBillAsPaid,
+      generateMonthlyBills,
       updateSettings
     }}>
       {children}

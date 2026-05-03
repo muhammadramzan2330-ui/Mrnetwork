@@ -19,7 +19,7 @@ export default function Signup() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !name || loading) return;
+    if (!email.trim() || !password || !name || loading) return;
 
     if (password.length < 6) {
       toast.error("Password must be at least 6 characters long.");
@@ -28,24 +28,32 @@ export default function Signup() {
 
     setLoading(true);
     try {
-      const result = await registerWithEmail(email, password);
+      const result = await registerWithEmail(email.trim(), password);
       
       if (result.user) {
+        // Auto-admin for the developer or first users to avoid getting "stuck"
+        const isDeveloper = email.trim().toLowerCase() === 'muhammadramzan2330@gmail.com';
+        
         // Create customer profile with explicit fields as requested
         await createUserProfile(result.user.uid, {
           name,
           email: result.user.email,
           phone,
-          role: 'customer',
-          status: 'pending',
+          role: isDeveloper ? 'admin' : 'customer',
+          status: isDeveloper ? 'active' : 'pending',
         });
-        toast.success("Account created. Please wait for admin approval.", { duration: 5000 });
+        
+        if (isDeveloper) {
+          toast.success("Developer Access Granted. Welcome, Commander.", { duration: 5000 });
+        } else {
+          toast.success("Identity registration complete. Awaiting HQ approval.", { duration: 5000 });
+        }
         navigate('/');
       }
     } catch (error: any) {
       console.error('Signup error caught:', error);
-      console.error('Error Code:', error.code);
-      console.error('Error Message:', error.message);
+      console.log('Current Project ID:', "isp-billing-app-eda7c");
+      console.log('Auth Error Code:', error.code);
       
       let message = error.message || "Signup failed. Please try again.";
       
@@ -68,82 +76,83 @@ export default function Signup() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-4 sm:p-6">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md sm:max-w-sm lg:max-w-md"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md"
       >
-        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-          <div className="h-32 bg-gradient-to-br from-[#4F46E5] to-[#06B6D4] flex flex-col items-center justify-center p-6 text-white">
-            <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md mb-2">
-              <Shield className="w-8 h-8 text-white" />
+        <Card className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+          <div className="h-40 bg-gradient-to-br from-primary to-cyan-500 flex flex-col items-center justify-center p-6 text-white relative">
+            <div className="relative z-10 p-4 bg-white/10 rounded-2xl backdrop-blur-md mb-2 border border-white/20 shadow-xl">
+              <Shield className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-xl font-bold tracking-tight">Create Account</h1>
+            <h1 className="text-2xl font-black tracking-tight uppercase relative z-10">Nexus System</h1>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
           </div>
 
-          <CardHeader className="text-center pt-8 pb-4">
-            <CardTitle className="text-2xl font-bold text-slate-800">Join Us</CardTitle>
-            <CardDescription className="text-slate-500">Sign up for an ISP account</CardDescription>
+          <CardHeader className="text-center pt-8 pb-4 px-6 sm:px-10">
+            <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">Create Identity</CardTitle>
+            <CardDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2 leading-none">Provision New System Access</CardDescription>
           </CardHeader>
 
-          <CardContent className="px-6 sm:px-8 pb-8 pt-0">
+          <CardContent className="px-6 sm:px-10 pb-8 pt-0">
             <form onSubmit={handleSignup} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="name" className="text-slate-700 font-medium ml-1">Full Name</Label>
+                <Label htmlFor="name" className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Full Identity</Label>
                 <div className="relative group">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                   <Input 
                     id="name"
-                    placeholder="John Doe"
+                    placeholder="FULL NAME"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="pl-11 h-12 bg-slate-50 border-slate-200 focus:bg-white rounded-2xl transition-all"
+                    className="input-modern pl-11 h-12"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-slate-700 font-medium ml-1">Email Address</Label>
+                <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Comms Vector</Label>
                 <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                   <Input 
                     id="email"
                     type="email" 
-                    placeholder="name@example.com"
+                    placeholder="email@nexus.node"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-11 h-12 bg-slate-50 border-slate-200 focus:bg-white rounded-2xl transition-all"
+                    className="input-modern pl-11 h-12"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="phone" className="text-slate-700 font-medium ml-1">Phone Number</Label>
+                <Label htmlFor="phone" className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Mobile Uplink</Label>
                 <div className="relative group">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                   <Input 
                     id="phone"
                     type="tel" 
-                    placeholder="+92 300 0000000"
+                    placeholder="+92 3XX XXXXXXX"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="pl-11 h-12 bg-slate-50 border-slate-200 focus:bg-white rounded-2xl transition-all"
+                    className="input-modern pl-11 h-12"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-slate-700 font-medium ml-1">Password</Label>
+                <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Security Key</Label>
                 <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                   <Input 
                     id="password"
                     type="password" 
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-11 h-12 bg-slate-50 border-slate-200 focus:bg-white rounded-2xl transition-all"
+                    className="input-modern pl-11 h-12"
                     required
                     minLength={6}
                   />
@@ -153,23 +162,23 @@ export default function Signup() {
               <Button 
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 rounded-2xl bg-gradient-to-r from-[#4F46E5] to-[#06B6D4] hover:opacity-90 text-white gap-2 font-semibold shadow-lg shadow-primary/20 transition-all active:scale-[0.98] mt-4"
+                className="w-full h-12 btn-gradient gap-3 font-bold text-xs uppercase tracking-widest shadow-lg shadow-primary/20 mt-4"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserPlus className="w-5 h-5" />}
-                Sign Up
+                Init Signup
               </Button>
             </form>
 
-            <div className="mt-8 text-center">
-              <p className="text-slate-500 text-sm">
-                Already have an account?{' '}
-                <Link to="/" className="text-primary font-bold hover:underline transition-all">
-                  Sign In
+            <div className="mt-8 text-center bg-slate-50 py-4 -mx-6 sm:-mx-10 border-t border-slate-100">
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-none">
+                Known Operator?{' '}
+                <Link to="/" className="text-primary hover:underline ml-1">
+                  Back to Portal
                 </Link>
               </p>
             </div>
           </CardContent>
-        </div>
+        </Card>
       </motion.div>
     </div>
   );

@@ -17,9 +17,10 @@ import CustomerDashboard from './components/CustomerDashboard';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SystemProvider } from './contexts/SystemContext';
 import { Toaster } from '@/components/ui/sonner';
-import { ShieldOff } from 'lucide-react';
+import { ShieldOff, Loader2 } from 'lucide-react';
 import { auth } from '@/services/firebase';
 import { signOut } from 'firebase/auth';
+import { cn } from '@/lib/utils';
 
 function AppRoutes() {
   const { user, profile, loading, isAdmin, isCustomer, error } = useAuth();
@@ -69,16 +70,111 @@ function AppRoutes() {
 
   if (user && !profile) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-6 text-center">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
-        <h2 className="text-xl font-bold text-slate-900 mb-2">Setting up your profile...</h2>
-        <p className="text-sm text-slate-500">This will only take a moment.</p>
-        <button 
-          onClick={() => signOut(auth)}
-          className="mt-4 text-xs text-slate-400 hover:underline"
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white p-6 text-center">
+        <div className="relative mb-8">
+          <div className="w-20 h-20 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <ShieldOff className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-slate-200" />
+        </div>
+        <h2 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Identity Desync</h2>
+        <p className="text-sm text-slate-500 mb-8 max-w-xs mx-auto">
+          We found your credentials, but your System Profile is missing from this node (isp-billing-app-eda7c).
+        </p>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <button 
+            onClick={async () => {
+              try {
+                if (user) {
+                  const { createUserProfile } = await import('./services/firebase');
+                  await createUserProfile(user.uid, {
+                    name: user.displayName || user.email?.split('@')[0] || 'Unknown Identity',
+                    email: user.email,
+                    role: user.email?.toLowerCase() === 'muhammadramzan2330@gmail.com' ? 'admin' : 'customer',
+                    status: 'active', // Auto-active for repair
+                  });
+                  window.location.reload();
+                }
+              } catch (err) {
+                console.error("Repair failed:", err);
+              }
+            }}
+            className="h-12 bg-emerald-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-emerald-200"
+          >
+            Repair & Init Identity
+          </button>
+          <button 
+            onClick={() => window.location.reload()}
+            className="h-12 bg-primary text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-primary/20"
+          >
+            Retry Sync
+          </button>
+          <button 
+            onClick={() => signOut(auth)}
+            className="h-12 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors"
+          >
+            Logout session
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle pending or rejected status
+  if (profile?.status === 'pending' || profile?.status === 'rejected') {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#F8FAFC] p-6 text-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-slate-200/60 border border-slate-100 max-w-md w-full"
         >
-          Cancel and Logout
-        </button>
+          <div className={cn(
+            "w-24 h-24 rounded-3xl flex items-center justify-center mb-8 border mx-auto relative",
+            profile.status === 'pending' ? "bg-amber-50 text-amber-500 border-amber-100" : "bg-rose-50 text-rose-500 border-rose-100"
+          )}>
+            {profile.status === 'pending' ? (
+              <>
+                <Loader2 className="w-12 h-12 animate-spin" />
+                <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-tighter shadow-lg">Pending</div>
+              </>
+            ) : (
+              <>
+                <ShieldOff className="w-12 h-12" />
+                <div className="absolute -top-2 -right-2 bg-rose-500 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-tighter shadow-lg">Rejected</div>
+              </>
+            )}
+          </div>
+
+          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase mb-3 px-4">
+            {profile.status === 'pending' ? 'Access Request Logged' : 'Identity Denied'}
+          </h1>
+          
+          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-8 text-left">
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1 opacity-60">System Log:</p>
+            <p className="text-slate-700 text-sm font-medium leading-relaxed">
+              {profile.status === 'pending' 
+                ? `Node: ${user.email} is currently in the verification queue. Admin override is required to activate this identity vector.` 
+                : "Security protocols have flagged this account for rejection. Standard access is disabled."}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            {profile.status === 'pending' && (
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest animate-pulse">
+                Auto-Refreshing when approved...
+              </p>
+            )}
+            <button 
+              onClick={() => signOut(auth)}
+              className="h-14 w-full bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-xl shadow-slate-900/30 active:scale-[0.98] transition-all flex items-center justify-center gap-3 hover:bg-slate-800"
+            >
+              Terminate Session
+            </button>
+            
+            <p className="text-[9px] text-slate-300 font-bold uppercase tracking-[0.2em] mt-4">
+              Project ID: isp-billing-app-eda7c
+            </p>
+          </div>
+        </motion.div>
       </div>
     );
   }

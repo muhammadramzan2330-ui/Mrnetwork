@@ -15,12 +15,30 @@
         "packageId": { "type": "string" },
         "subdealerId": { "type": "string" },
         "expiryDate": { "type": "string", "format": "date-time" },
-        "status": { "type": "string", "enum": ["active", "expired", "suspended"] },
+        "status": { "type": "string", "enum": ["active", "expired", "suspended", "pending", "rejected"] },
         "createdAt": { "type": "string", "format": "date-time" },
         "balance": { "type": "number" },
-        "walletBalance": { "type": "number" }
+        "walletBalance": { "type": "number" },
+        "planPrice": { "type": "number" },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "billingStatus": { "type": "string", "enum": ["paid", "unpaid"] }
       },
       "required": ["name", "pppoeUsername", "packageId", "status", "expiryDate"]
+    },
+    "Bill": {
+      "title": "Bill",
+      "description": "Monthly subscription bills for customers",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "amount": { "type": "number" },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "month": { "type": "string" },
+        "status": { "type": "string", "enum": ["paid", "unpaid"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "dueDate", "month", "status"]
     },
     "Subdealer": {
       "title": "Subdealer",
@@ -167,6 +185,10 @@
     "/user/{userId}": {
       "schema": "User",
       "description": "Collection of ISP users"
+    },
+    "/bills/{billId}": {
+      "schema": "Bill",
+      "description": "Customer billing history"
     },
     "/subdealers/{subdealerId}": {
       "schema": "Subdealer",

@@ -1,8 +1,146 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Helper: Global primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      // Bootstrapped Admin check + Role-based check
+      return isSignedIn() && (
+        request.auth.token.email == "muhammadramzan2330@gmail.com" ||
+        (exists(/databases/$(database)/documents/user/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/user/$(request.auth.uid)).data.role == "admin")
+      );
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Entity Validators
+    function isValidPayment(data) {
+      return data.userId is string && data.userId.size() <= 64 &&
+             data.amount is number && data.amount > 0 &&
+             data.method in ['easypaisa', 'jazzcash', 'bank', 'cash', 'wallet'] &&
+             data.type in ['in', 'out'] &&
+             data.status in ['pending', 'approved', 'rejected'];
+    }
+
+    function isValidUser(data) {
+      return data.name is string && data.name.size() <= 100 &&
+             data.uid is string && data.uid == request.auth.uid;
+    }
+
+    // Default Deny
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
+    }
+
+    // --- COLLECTIONS ---
+
+    // 1. Users Profile
+    match /user/{userId} {
+      allow get: if isSignedIn() && (isAdmin() || isOwner(userId));
+      allow list: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow create: if (isAdmin() || (isSignedIn() && isOwner(userId))) && isValidUser(incoming());
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 2. Bills
+    match /bills/{billId} {
+      allow read: if isAdmin() || (isSignedIn() && isOwner(existing().userId));
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // 3. Payments
+    match /payments/{paymentId} {
+      allow get: if isAdmin() || (isSignedIn() && isOwner(existing().userId));
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && (
+        isAdmin() || (
+          isOwner(incoming().userId) && 
+          isValidPayment(incoming()) &&
+          incoming().status == 'pending' &&
+          incoming().type == 'in'
+        )
+      );
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // 4. Subdealers
+    match /subdealers/{subdealerId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // 5. Packages
+    match /packages/{packageId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // 6. Logs
+    match /logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn(); // Allow system logging from any authenticated user activity
+      allow update, delete: if isAdmin();
+    }
+
+    // 7. Requests (Support Tickets / Withdrawals)
+    match /requests/{requestId} {
+      allow get: if isAdmin() || (isSignedIn() && isOwner(existing().userId));
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && (isAdmin() || isOwner(incoming().userId));
+      allow update: if isAdmin() || (isSignedIn() && isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'description']));
+      allow delete: if isAdmin();
+    }
+
+    // 8. Commissions
+    match /commissions/{commissionId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // 9. Notifications
+    match /notifications/{notifId} {
+      allow get: if isAdmin() || (isSignedIn() && isOwner(existing().userId));
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin() || isSignedIn(); // System notifications
+      allow update, delete: if isAdmin();
+    }
+
+    // 10. Treasury
+    match /treasury/current {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // 11. Settings
+    match /settings/config {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
   }
 }

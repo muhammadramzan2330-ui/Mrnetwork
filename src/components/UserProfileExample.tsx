@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../services/firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
 
 interface UserProfile {
   name: string;
@@ -60,15 +61,38 @@ export default function UserProfile() {
   if (!profile) return <div className="p-4 text-amber-500">Please sign in to view your profile.</div>;
 
   return (
-    <div className="p-6 bg-white rounded-2xl shadow-sm border border-slate-100 max-w-md mx-auto mt-10">
-      <h2 className="text-xl font-bold text-slate-900 mb-4">User Profile</h2>
-      <div className="space-y-3">
-        <p><strong className="text-slate-500">Name:</strong> {profile.name}</p>
-        <p><strong className="text-slate-500">Email:</strong> {profile.email}</p>
-        <p><strong className="text-slate-500">Phone:</strong> {profile.phone}</p>
-        <p><strong className="text-slate-500">Role:</strong> <span className="capitalize px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-sm">{profile.role}</span></p>
-        <p><strong className="text-slate-500">Status:</strong> <span className="capitalize px-2 py-1 bg-green-50 text-green-600 rounded-md text-sm">{profile.status}</span></p>
-        <p className="text-xs text-slate-400 pt-4 font-mono tracking-tight">UID: {profile.uid}</p>
+    <div className="p-6 bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 max-w-sm mx-auto mt-10">
+      <div className="flex items-center gap-4 mb-6">
+        <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
+          <span className="text-xl font-black">{profile.name[0]}</span>
+        </div>
+        <div>
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight leading-none">{profile.name}</h2>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 leading-none">{profile.role} account</p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="bg-slate-50 p-4 rounded-2xl space-y-3 border border-slate-100">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Email</span>
+            <span className="text-xs font-bold text-slate-600 truncate ml-4">{profile.email}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phone</span>
+            <span className="text-xs font-bold text-slate-600">{profile.phone || 'N/A'}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</span>
+            <span className={cn(
+              "text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-tight",
+              profile.status === 'active' ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"
+            )}>
+              {profile.status}
+            </span>
+          </div>
+        </div>
+        <p className="text-[9px] text-slate-300 font-mono text-center tracking-tighter">NODE_ID: {profile.uid}</p>
       </div>
     </div>
   );

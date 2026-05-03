@@ -26,29 +26,36 @@ import {
   serverTimestamp,
   type QueryConstraint
 } from 'firebase/firestore';
-
-// Firebase configuration using environment variables for sensitive data
-// and hardcoded values for project identifiers as requested.
+// Firebase configuration using environment variables for high security
+// and hardcoded values for project identifiers as requested by the user.
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: "isp-billing-app-eda7c.firebaseapp.com",
-  projectId: "isp-billing-app-eda7c",
-  storageBucket: "isp-billing-app-eda7c.firebasestorage.app",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "isp-billing-app-eda7c.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "isp-billing-app-eda7c",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Simple validation to help debug missing keys
-if (!firebaseConfig.apiKey) {
-  console.warn("Firebase API Key is missing. Please set VITE_FIREBASE_API_KEY in environment variables.");
-}
-
 // Initialize Firebase
+const configStatus = {
+  apiKey: !!firebaseConfig.apiKey,
+  appId: !!firebaseConfig.appId,
+  projectId: firebaseConfig.projectId
+};
+
+console.group('--- NEXUS SECURITY INITIALIZATION ---');
+console.log('Active Node:', configStatus.projectId);
+console.log('Identity API:', configStatus.apiKey ? 'CONNECTED' : 'KEY MISSING');
+console.log('Uplink Status:', configStatus.appId ? 'STABLE' : 'APP ID MISSING');
+console.groupEnd();
+
 export const app = initializeApp(firebaseConfig);
 
 // Initialize Services
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const db = getFirestore(app); // Default database
 export const googleProvider = new GoogleAuthProvider();
 
 // Secondary instance for admin-led user creation to avoid session swap
@@ -110,38 +117,104 @@ export const subscribeToCollection = <T extends { id: string }>(
   return onSnapshot(q, (snapshot) => {
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
     callback(data);
+  }, (error) => {
+    handleFirestoreError(error, OperationType.LIST, collectionPath);
   });
 };
 
 export const addDocument = async (collectionPath: string, data: any) => {
-  return await addDoc(collection(db, collectionPath), {
-    ...data,
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now()
-  });
+  try {
+    return await addDoc(collection(db, collectionPath), {
+      ...data,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, collectionPath);
+  }
 };
 
 export const createUserProfile = async (uid: string, data: any) => {
-  return await setDoc(doc(db, 'user', uid), {
-    uid,
-    ...data,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  });
+  try {
+    return await setDoc(doc(db, 'user', uid), {
+      uid,
+      ...data,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, `user/${uid}`);
+  }
 };
 
 export const updateDocument = async (collectionPath: string, id: string, data: any) => {
   const docRef = doc(db, collectionPath, id);
-  return await updateDoc(docRef, {
-    ...data,
-    updatedAt: Timestamp.now()
-  });
+  try {
+    return await updateDoc(docRef, {
+      ...data,
+      updatedAt: Timestamp.now()
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `${collectionPath}/${id}`);
+  }
 };
 
 export const deleteDocument = async (collectionPath: string, id: string) => {
   const docRef = doc(db, collectionPath, id);
-  return await deleteDoc(docRef);
+  try {
+    return await deleteDoc(docRef);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `${collectionPath}/${id}`);
+  }
 };
+
+// --- MANDATORY ERROR HANDLING ---
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+export interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  }
+}
+
+export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
 
 export { onAuthStateChanged, type FirebaseUser };
 export default app;

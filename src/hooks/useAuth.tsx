@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
-import { auth, db } from '@/services/firebase';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db, handleFirestoreError, OperationType } from '@/services/firebase';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, doc } from 'firebase/firestore';
 import { toast } from 'sonner';
 
 interface UserProfile {
@@ -68,24 +68,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const currentUserUid = firebaseUser.uid.trim();
         console.log("Current Auth UID:", currentUserUid);
         
-        const q = query(
-          collection(db, 'user'), 
-          where('uid', '==', currentUserUid)
-        );
+        const userRef = doc(db, 'user', currentUserUid);
 
-        unsubscribeProfile = onSnapshot(q, async (snapshot) => {
-          if (!snapshot.empty) {
-            const userData = snapshot.docs[0].data() as UserProfile;
-            setProfile({ ...userData, id: snapshot.docs[0].id } as any);
+        unsubscribeProfile = onSnapshot(userRef, async (snapshot) => {
+          if (snapshot.exists()) {
+            const userData = snapshot.data() as UserProfile;
+            setProfile({ ...userData, id: snapshot.id } as any);
             setError(null);
           } else {
-            setProfile(null);
-            // Don't auto-create anymore, let the app handle new users
             console.warn("No profile found for UID:", currentUserUid);
+            // AUTO-ADAPT: If this is the developer email, auto-create their admin profile
+            if (firebaseUser.email?.toLowerCase() === 'muhammadramzan2330@gmail.com') {
+              try {
+                const { setDoc, doc, serverTimestamp } = await import('firebase/firestore');
+                await setDoc(doc(db, 'user', currentUserUid), {
+                  uid: currentUserUid,
+                  name: firebaseUser.displayName || 'Muhammad Ramzan',
+                  email: firebaseUser.email,
+                  role: 'admin',
+                  status: 'active',
+                  createdAt: serverTimestamp(),
+                  updatedAt: serverTimestamp()
+                });
+                console.log("Developer Profile Auto-Provisioned.");
+              } catch (err) {
+                console.error("Auto-provisioning failed:", err);
+                setProfile(null);
+              }
+            } else {
+              setProfile(null);
+            }
           }
           setLoading(false);
         }, (err) => {
-          console.error("Firestore Profile Error:", err);
+          handleFirestoreError(err, OperationType.GET, `user/${currentUserUid}`);
           setError("Failed to load user profile");
           setLoading(false);
         });
