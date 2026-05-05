@@ -5,8 +5,8 @@
 
 @theme inline {
     --font-sans: 'Inter', sans-serif;
-    --color-primary: #1E3A8A;
-    --color-primary-dark: #1E3A8A;
+    --color-primary: #4F46E5;
+    --color-primary-dark: #4338CA;
     --color-bg-gray: #F8FAFC;
     --color-text-main: #0F172A;
     --color-text-muted: #64748B;
@@ -23,7 +23,7 @@
     --card-foreground: #0F172A;
     --popover: #FFFFFF;
     --popover-foreground: #0F172A;
-    --primary: #1E3A8A;
+    --primary: #4F46E5;
     --primary-foreground: #FFFFFF;
     --secondary: #06B6D4;
     --secondary-foreground: #FFFFFF;
@@ -54,11 +54,11 @@
 }
 
 .header-gradient {
-  background: linear-gradient(135deg, #1E3A8A 0%, #06B6D4 100%);
+  background: linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%);
 }
 
 .btn-gradient {
-  @apply bg-gradient-to-r from-[#1E3A8A] to-[#1E40AF] hover:opacity-90 transition-all duration-300 text-white shadow-sm hover:shadow-md active:scale-[0.98];
+  @apply bg-gradient-to-r from-[#4F46E5] to-[#4338CA] hover:opacity-90 transition-all duration-300 text-white shadow-sm hover:shadow-md active:scale-[0.98];
 }
 
 .input-modern {

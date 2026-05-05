@@ -1,6 +1,6 @@
 {
-  "name": "ISP Billing Admin",
-  "description": "Premium mobile-first ISP billing and management dashboard with treasury, user management, and automated billing.",
+  "name": "M & Network",
+  "description": "M & Network ISP Billing Management system. A professional mobile-first dashboard for treasury, user management, and automated ISP billing.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }

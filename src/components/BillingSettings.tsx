@@ -75,8 +75,8 @@ export default function BillingSettings() {
     <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-24 md:pb-8">
       {/* Header */}
       <div className="px-4 sm:px-8 py-6 flex flex-col items-start bg-white border-b border-slate-100">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-none text-center sm:text-left">Billing Protocol</h2>
-        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none">Orchestrate billing rules & logic</p>
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-none text-center sm:text-left">Billing Settings</h2>
+        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none">Configure payment methods & automation</p>
       </div>
 
       <div className="px-4 sm:px-8 py-6 space-y-8 max-w-2xl mx-auto w-full">
@@ -89,7 +89,7 @@ export default function BillingSettings() {
             className="space-y-4"
           >
             <div className="flex items-center gap-3 px-2">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
                 <section.icon className="w-4 h-4" />
               </div>
               <div>
@@ -103,13 +103,13 @@ export default function BillingSettings() {
                 <div key={field.key} className="space-y-2">
                   <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">{field.label}</Label>
                   <div className="relative group">
-                    {field.icon && <field.icon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />}
+                    {field.icon && <field.icon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-600 transition-colors" />}
                     <Input 
                       value={(formData as any)[field.key]}
                       onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
                       placeholder={field.placeholder}
                       className={cn(
-                        "input-modern uppercase font-bold tracking-wider text-[11px]",
+                        "input-modern uppercase font-bold tracking-wider text-[11px] px-4 h-12",
                         field.icon && "pl-12"
                       )}
                     />
@@ -126,7 +126,7 @@ export default function BillingSettings() {
                   <Switch 
                     checked={(formData as any)[s.key]}
                     onCheckedChange={(checked) => setFormData({ ...formData, [s.key]: checked })}
-                    className="data-[state=checked]:bg-primary"
+                    className="data-[state=checked]:bg-indigo-600"
                   />
                 </div>
               ))}
@@ -154,9 +154,9 @@ export default function BillingSettings() {
         <div className="pt-4 pb-20">
           <Button 
             onClick={handleSave}
-            className="w-full btn-gradient h-14 rounded-xl font-bold text-xs uppercase tracking-[0.2em] shadow-lg shadow-primary/20 gap-3"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-14 rounded-xl font-bold text-xs uppercase tracking-[0.2em] shadow-lg shadow-indigo-100 gap-3"
           >
-            <Save className="w-5 h-5" /> Synchronize Settings
+            <Save className="w-5 h-5" /> Save Changes
           </Button>
         </div>
       </div>

@@ -46,33 +46,34 @@ export default function ForgotPassword() {
         className="w-full max-w-sm"
       >
         <Card className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-          <div className="h-44 bg-gradient-to-br from-primary to-cyan-500 flex flex-col items-center justify-center p-6 text-white relative">
+          <div className="h-44 bg-gradient-to-br from-indigo-600 to-cyan-500 flex flex-col items-center justify-center p-6 text-white relative">
             <div className="relative z-10 p-4 bg-white/10 rounded-2xl backdrop-blur-md mb-3 border border-white/20 shadow-xl">
               <Shield className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-2xl font-black tracking-tight uppercase relative z-10">Nexus Restore</h1>
+            <h1 className="text-2xl font-black tracking-tight uppercase relative z-10">M & Network</h1>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80 relative z-10">ISP Billing Management</p>
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
           </div>
           
           {!submitted ? (
             <>
               <CardHeader className="text-center pt-8 pb-4 px-6 sm:px-10">
-                <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">Reset Portal</CardTitle>
-                <CardDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2 leading-none">Recover Access Token</CardDescription>
+                <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">Forgot Password</CardTitle>
+                <CardDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2 leading-none">Recover your account access</CardDescription>
               </CardHeader>
               <CardContent className="px-6 sm:px-10 pb-8 pt-0">
                 <form onSubmit={handleResetPassword} className="space-y-6 mb-8">
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Identity Vector</Label>
+                    <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Email Address</Label>
                     <div className="relative group">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-600 transition-colors" />
                       <Input 
                         id="email"
                         type="email" 
-                        placeholder="operator@nexus.node"
+                        placeholder="your@email.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="input-modern pl-11 h-12"
+                        className="input-modern pl-11 h-12 border-slate-200 focus:border-indigo-600"
                         required
                       />
                     </div>
@@ -80,16 +81,16 @@ export default function ForgotPassword() {
                   <Button 
                     type="submit"
                     disabled={loading}
-                    className="w-full h-12 btn-gradient font-bold text-xs uppercase tracking-widest shadow-lg shadow-primary/20"
+                    className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-200"
                   >
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Send Reset Link"}
                   </Button>
                 </form>
 
                 <div className="text-center">
-                  <Link to="/" className="inline-flex items-center gap-2 text-primary font-bold text-[10px] uppercase tracking-widest hover:underline transition-all group">
+                  <Link to="/" className="inline-flex items-center gap-2 text-indigo-600 font-bold text-[10px] uppercase tracking-widest hover:underline transition-all group">
                     <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
-                    Recall Entrance
+                    Back to Login
                   </Link>
                 </div>
               </CardContent>
@@ -99,15 +100,15 @@ export default function ForgotPassword() {
               <div className="w-20 h-20 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-emerald-500 border border-emerald-100">
                 <CheckCircle2 className="w-10 h-10" />
               </div>
-              <h3 className="text-xl font-extrabold text-slate-900 mb-2 tracking-tight uppercase">Signal Sent</h3>
+              <h3 className="text-xl font-extrabold text-slate-900 mb-2 tracking-tight uppercase">Email Sent</h3>
               <p className="text-slate-400 mb-8 text-[10px] font-bold uppercase tracking-widest leading-relaxed px-4">
-                Recovery instructions broadcasted to your node.
+                We've sent a password reset link to your email address.
               </p>
               <Button 
                 onClick={() => navigate('/')} 
-                className="w-full h-12 btn-gradient font-bold text-xs uppercase tracking-widest shadow-lg shadow-primary/20"
+                className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-200"
               >
-                Back to Entrance
+                Back to Login
               </Button>
             </CardContent>
           )}

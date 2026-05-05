@@ -217,7 +217,7 @@ export default function Users() {
             <div className="flex flex-col">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Subscribers</h2>
               <div className="flex items-center gap-2 mt-1">
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest leading-none">Registry Control & Node Management</p>
+                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest leading-none">Manage and monitor your ISP subscribers</p>
                 {users.filter(u => u.billingStatus === 'unpaid').length > 0 && (
                   <Badge className="bg-rose-100 text-rose-600 border-none text-[8px] font-black h-4 px-1.5 rounded uppercase tracking-tighter">
                     {users.filter(u => u.billingStatus === 'unpaid').length} UNPAID
@@ -227,73 +227,73 @@ export default function Users() {
             </div>
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto bg-primary hover:bg-primary/95 text-white rounded-xl gap-2 h-12 text-xs font-bold uppercase tracking-wider px-8 shadow-lg shadow-primary/20 transition-all active:scale-95">
-                <Plus className="w-4 h-4" /> New Registration
+              <Button className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2 h-12 text-xs font-bold uppercase tracking-wider px-8 shadow-lg shadow-indigo-100 transition-all active:scale-95">
+                <Plus className="w-4 h-4" /> New Subscriber
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px] rounded-2xl border-slate-100 bg-white shadow-2xl p-0 overflow-hidden text-slate-900">
               <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <div className="header-gradient p-8 text-white relative">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl font-extrabold tracking-tight">Access Protocol</DialogTitle>
+                    <DialogTitle className="text-2xl font-extrabold tracking-tight">Subscriber Registration</DialogTitle>
                   </DialogHeader>
-                  <p className="text-white/60 text-[10px] font-bold mt-2 uppercase tracking-widest">Initialize Client Security Node</p>
+                  <p className="text-white/60 text-[10px] font-bold mt-2 uppercase tracking-widest">Create a new customer account</p>
                 </div>
                 <div className="p-6 sm:p-8 space-y-6">
                   <div className="grid gap-6">
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Identity Name</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Full Name</Label>
                       <Input 
                         placeholder="e.g. MUHAMMAD RAMZAN" 
-                        className="input-modern"
+                        className="input-modern px-4"
                         value={newUser.name}
                         onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
                       />
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Comms Email</Label>
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Email Address</Label>
                         <Input 
                           type="email"
-                          placeholder="customer@isp.node" 
-                          className="input-modern"
+                          placeholder="customer@email.com" 
+                          className="input-modern px-4"
                           value={newUser.email}
                           onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Secure Pass</Label>
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Password</Label>
                         <Input 
                           type="password" 
                           placeholder="••••••••"
-                          className="input-modern"
+                          className="input-modern px-4"
                           value={newUser.password}
                           onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                         />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Uplink Mobile</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Mobile Number</Label>
                       <Input 
                         placeholder="+92 3XX XXXXXXX" 
-                        className="input-modern"
+                        className="input-modern px-4"
                         value={newUser.phone}
                         onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">PPPoE Authorization</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">PPPoE Credentials</Label>
                       <div className="grid grid-cols-2 gap-4">
                         <Input 
                           placeholder="Username"
-                          className="input-modern h-12 text-xs"
+                          className="input-modern h-12 text-xs px-4"
                           value={newUser.pppoeUsername}
                           onChange={(e) => setNewUser({ ...newUser, pppoeUsername: e.target.value })}
                         />
                         <Input 
                           placeholder="Password"
                           type="password"
-                          className="input-modern h-12 text-xs"
+                          className="input-modern h-12 text-xs px-4"
                           value={newUser.pppoePassword}
                           onChange={(e) => setNewUser({ ...newUser, pppoePassword: e.target.value })}
                         />
@@ -301,10 +301,10 @@ export default function Users() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Active Ops Plan</Label>
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Assigned Plan</Label>
                         <Select onValueChange={(val: string) => setNewUser({ ...newUser, packageId: val })}>
-                          <SelectTrigger className="input-modern w-full">
-                            <SelectValue placeholder="PLAN" />
+                          <SelectTrigger className="input-modern w-full px-4 h-12">
+                            <SelectValue placeholder="Select Plan" />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
                             {packages.map(p => (
@@ -314,13 +314,13 @@ export default function Users() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Sector Node</Label>
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Sub Dealer</Label>
                         <Select onValueChange={(val: string) => setNewUser({ ...newUser, subdealerId: val })}>
-                          <SelectTrigger className="input-modern w-full">
-                            <SelectValue placeholder="NODE" />
+                          <SelectTrigger className="input-modern w-full px-4 h-12">
+                            <SelectValue placeholder="Select Dealer" />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
-                            <SelectItem value="admin" className="font-bold text-slate-900 rounded-lg py-3 cursor-pointer hover:bg-slate-50 uppercase text-[10px] tracking-widest">Central Command</SelectItem>
+                            <SelectItem value="admin" className="font-bold text-slate-900 rounded-lg py-3 cursor-pointer hover:bg-slate-50 uppercase text-[10px] tracking-widest">Main Admin</SelectItem>
                             {subdealers.map(s => (
                               <SelectItem key={s.id} value={s.id} className="font-bold text-slate-900 rounded-lg py-3 cursor-pointer hover:bg-slate-50 uppercase text-[10px] tracking-widest">{s.name}</SelectItem>
                             ))}
@@ -331,9 +331,9 @@ export default function Users() {
                     <Button 
                       onClick={handleAddUser}
                       disabled={creating}
-                      className="btn-gradient w-full mt-4 h-14 font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-primary/20"
+                      className="w-full mt-4 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-indigo-100"
                     >
-                      {creating ? <Loader2 className="w-5 h-5 animate-spin" /> : 'INITIATE SESSION'}
+                      {creating ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Account'}
                     </Button>
                   </div>
                 </div>
@@ -571,14 +571,14 @@ export default function Users() {
             <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
               <div className="bg-slate-50 p-8 border-b border-slate-100">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-extrabold tracking-tight">Morph Logic</DialogTitle>
-                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Adjusting Subscriber Parameters</p>
+                  <DialogTitle className="text-2xl font-extrabold tracking-tight">Edit Subscriber</DialogTitle>
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Update customer information</p>
                 </DialogHeader>
               </div>
               <div className="p-8 space-y-6">
                 <div className="grid gap-6">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Identity Override</Label>
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Full Name</Label>
                     <Input 
                       className="input-modern"
                       value={editingUser.name}
@@ -586,16 +586,32 @@ export default function Users() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Comms Uplink</Label>
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Mobile Number</Label>
                     <Input 
                       className="input-modern"
                       value={editingUser.phone}
                       onChange={(e) => setEditingUser({ ...editingUser, phone: e.target.value })}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Assigned Plan</Label>
+                    <Select 
+                      value={editingUser.packageId}
+                      onValueChange={(val: string) => setEditingUser({ ...editingUser, packageId: val })}
+                    >
+                      <SelectTrigger className="input-modern w-full px-4 h-12">
+                        <SelectValue placeholder="Select Plan" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
+                        {packages.map(p => (
+                          <SelectItem key={p.id} value={p.id} className="font-bold text-slate-900 rounded-lg py-3 cursor-pointer hover:bg-slate-50 uppercase text-[10px] tracking-widest">{p.name} • RS.{p.price}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 ml-1">Reserve Flux</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-emerald-500 ml-1">Wallet Balance</Label>
                       <Input 
                         type="number"
                         className="input-modern border-emerald-100 focus:border-emerald-500 text-emerald-600 font-bold"
@@ -604,7 +620,7 @@ export default function Users() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-rose-500 ml-1">Liability Leak</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-rose-500 ml-1">Remaining Balance</Label>
                       <Input 
                         type="number"
                         className="input-modern border-rose-100 focus:border-rose-500 text-rose-600 font-bold"
@@ -615,9 +631,9 @@ export default function Users() {
                   </div>
                   <Button 
                     onClick={handleUpdateUser}
-                    className="btn-gradient w-full mt-4 h-14 font-extrabold text-sm uppercase tracking-widest shadow-xl"
+                    className="w-full mt-4 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm uppercase tracking-widest shadow-xl"
                   >
-                    SYNC CHANGES
+                    Save Changes
                   </Button>
                 </div>
               </div>
@@ -634,11 +650,11 @@ export default function Users() {
               <div className="header-gradient p-10 text-white relative">
                 <div className="relative z-10">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl font-extrabold tracking-tight">Cycle Renewal</DialogTitle>
-                    <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest mt-1">Energy-Token Exchange Portal</p>
+                    <DialogTitle className="text-2xl font-extrabold tracking-tight">Account Renewal</DialogTitle>
+                    <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest mt-1">Process payment and renew account</p>
                   </DialogHeader>
                   <div className="mt-8">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-1">Required Reserves</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-1">Total Amount</p>
                     <h3 className="text-4xl font-extrabold tracking-tight">RS.{packages.find(p => p.id === renewTarget.packageId)?.price || '0'}</h3>
                   </div>
                 </div>
@@ -710,7 +726,7 @@ export default function Users() {
                       </div>
                       <div className="space-y-1">
                         <p className="text-sm font-bold text-slate-900">Physical Payment</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Visit central Command Hub</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Visit central office for cash payment</p>
                       </div>
                     </div>
                   )}
@@ -747,9 +763,9 @@ export default function Users() {
                   <Button 
                     onClick={handleRenew}
                     disabled={!transactionId}
-                    className="btn-gradient w-full h-14 font-extrabold text-base shadow-xl shadow-primary/20 mt-4 uppercase tracking-widest"
+                    className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-base shadow-xl shadow-indigo-100 mt-4 uppercase tracking-widest"
                   >
-                    EMIT TRANSFER SIGNAL
+                    Process Renewal
                   </Button>
                 </div>
               </div>
@@ -782,14 +798,14 @@ export default function Users() {
                   <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
                     <div className="flex items-center gap-2 mb-1">
                       <Wallet className="w-3 h-3 text-emerald-500" />
-                      <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Flux Reserve</span>
+                      <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest">Wallet Balance</span>
                     </div>
                     <p className="text-xl font-black text-emerald-600 tracking-tight">RS.{ledgerUser.walletBalance?.toLocaleString() || '0'}</p>
                   </div>
                   <div className="bg-rose-50 p-4 rounded-2xl border border-rose-100">
                     <div className="flex items-center gap-2 mb-1">
                       <CreditCard className="w-3 h-3 text-rose-500" />
-                       <span className="text-[9px] font-bold text-rose-600 uppercase tracking-widest">Liability Leak</span>
+                       <span className="text-[9px] font-bold text-rose-600 uppercase tracking-widest">Remaining Balance</span>
                     </div>
                     <p className="text-xl font-black text-rose-600 tracking-tight">RS.{ledgerUser.balance?.toLocaleString() || '0'}</p>
                   </div>
@@ -797,7 +813,7 @@ export default function Users() {
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between px-1">
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Operational History</h4>
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Transaction History</h4>
                     <Badge variant="outline" className="text-[8px] font-bold text-slate-400 uppercase">Synced</Badge>
                   </div>
                   

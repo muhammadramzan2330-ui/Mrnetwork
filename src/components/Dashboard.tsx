@@ -63,14 +63,14 @@ export default function Dashboard() {
   const unpaidBillsCount = bills.filter(b => b.status === 'unpaid').length;
 
   const stats = isAdmin ? [
-    { label: 'Total Clients', value: users.length.toString(), icon: Users, color: 'bg-indigo-100 text-indigo-600' },
-    { label: 'Active Lines', value: activeUsers.length.toString(), icon: UserCheck, color: 'bg-emerald-100 text-emerald-600' },
+    { label: 'Subscribers', value: users.length.toString(), icon: Users, color: 'bg-indigo-100 text-indigo-600' },
+    { label: 'Online Lines', value: activeUsers.length.toString(), icon: UserCheck, color: 'bg-emerald-100 text-emerald-600' },
     { label: 'Pending Approvals', value: pendingPaymentsCount.toString(), icon: Activity, color: 'bg-rose-100 text-rose-600' },
-    { label: 'Total Revenue', value: `Rs. ${totalIncome.toLocaleString()}`, icon: Wallet, color: 'bg-amber-100 text-amber-600' },
+    { label: 'Net Revenue', value: `Rs. ${totalIncome.toLocaleString()}`, icon: Wallet, color: 'bg-amber-100 text-amber-600' },
   ] : [
     { label: 'Active', value: activeUsers.length.toString(), icon: UserCheck, color: 'bg-emerald-100 text-emerald-600' },
-    { label: 'Dealers', value: subdealers.length.toString(), icon: Store, color: 'bg-blue-100 text-blue-600' },
-    { label: 'Plans', value: packages.length.toString(), icon: Package, color: 'bg-blue-100 text-blue-600' },
+    { label: 'Dealers', value: subdealers.length.toString(), icon: Store, color: 'bg-indigo-100 text-indigo-600' },
+    { label: 'Plans', value: packages.length.toString(), icon: Package, color: 'bg-indigo-100 text-indigo-600' },
     { label: 'Pending', value: pendingRequests.length.toString(), icon: Activity, color: 'bg-amber-100 text-amber-600' },
   ];
 
@@ -89,15 +89,15 @@ export default function Dashboard() {
 
   const headerActions = [
     { icon: TrendingUp, label: 'Reports', path: '/reports' },
-    { icon: History, label: 'Audit Logs', path: '/audit-logs' },
-    { icon: SlidersHorizontal, label: 'Settings', path: '/billing-settings' },
+    { icon: History, label: 'System Logs', path: '/audit-logs' },
+    { icon: SlidersHorizontal, label: 'Billing Settings', path: '/billing-settings' },
     { icon: LogOut, label: 'Logout', action: () => setShowLogoutConfirm(true) },
   ];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -108,7 +108,8 @@ export default function Dashboard() {
       <div className="header-gradient pt-8 pb-20 px-4 sm:px-8 text-white relative overflow-hidden md:rounded-t-3xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center max-w-7xl mx-auto relative z-10 gap-6">
           <div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">{isAdmin ? 'Admin Dashboard' : 'User Console'}</h1>
+            <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.3em] mb-1">M & Network // Admin</p>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">{isAdmin ? 'Overview Dashboard' : 'Customer Console'}</h1>
             <p className="text-white/80 text-sm mt-2 font-medium flex items-center gap-2">
               <Calendar className="w-4 h-4 opacity-70" />
               {formatDate(new Date())}
@@ -169,11 +170,11 @@ export default function Dashboard() {
             <div className="flex flex-col md:flex-row justify-between gap-8 relative z-10">
               <div className="space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center text-primary">
+                  <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600">
                     <Wallet className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">Treasury Balance</h3>
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">Ledger Balance</h3>
                     <p className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight mt-1">Rs. {treasury?.balance?.toLocaleString() || '0'}</p>
                   </div>
                 </div>
@@ -183,7 +184,7 @@ export default function Dashboard() {
                       <ArrowUpRight className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Inflow</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cash Inflow</p>
                       <p className="text-base font-bold text-emerald-600">Rs. {treasury?.todayIn?.toLocaleString() || '0'}</p>
                     </div>
                   </div>
@@ -192,15 +193,15 @@ export default function Dashboard() {
                       <ArrowDownRight className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Outflow</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Admin Payouts</p>
                       <p className="text-base font-bold text-rose-600">Rs. {treasury?.todayOut?.toLocaleString() || '0'}</p>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="hidden md:flex items-center justify-center h-full self-center">
-                <div className="bg-slate-50 p-4 rounded-full group-hover:bg-primary/5 transition-colors">
-                  <ChevronRight className="w-8 h-8 text-slate-300 group-hover:text-primary transition-all group-hover:translate-x-1" />
+                <div className="bg-slate-50 p-4 rounded-full group-hover:bg-indigo-50 transition-colors">
+                  <ChevronRight className="w-8 h-8 text-slate-300 group-hover:text-indigo-600 transition-all group-hover:translate-x-1" />
                 </div>
               </div>
             </div>
@@ -217,11 +218,11 @@ export default function Dashboard() {
             className="bg-white rounded-2xl p-6 sm:p-8 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6"
           >
             <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-primary/5 rounded-2xl flex items-center justify-center text-primary shrink-0">
+              <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 shrink-0">
                 <Users className="w-8 h-8" />
               </div>
               <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none mb-2">Operator</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-none mb-2">Network Operator</p>
                 <h2 className="text-2xl font-bold text-slate-900 tracking-tight">{profile.name}</h2>
                 <p className="text-xs font-medium text-slate-500 mt-1">{profile.email}</p>
               </div>
@@ -241,12 +242,12 @@ export default function Dashboard() {
           <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100 space-y-6">
             <div className="flex justify-between items-center px-1">
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                <CreditCard className="w-4 h-4 text-primary" />
+                <CreditCard className="w-4 h-4 text-indigo-600" />
                 Recent Payments
               </h3>
               <button 
                 onClick={() => navigate('/payments')} 
-                className="text-[10px] font-bold text-primary hover:underline uppercase tracking-wider"
+                className="text-[10px] font-bold text-indigo-600 hover:underline uppercase tracking-wider"
               >
                 View All
               </button>
@@ -291,12 +292,12 @@ export default function Dashboard() {
           <div className="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-slate-100 space-y-6">
             <div className="flex justify-between items-center px-1">
               <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                <MessageSquare className="w-4 h-4 text-primary" />
+                <MessageSquare className="w-4 h-4 text-indigo-600" />
                 Active Requests
               </h3>
               <button 
                 onClick={() => navigate('/requests')} 
-                className="text-[10px] font-bold text-primary hover:underline uppercase tracking-wider"
+                className="text-[10px] font-bold text-indigo-600 hover:underline uppercase tracking-wider"
               >
                  {isAdmin ? 'Manage' : 'Request'}
               </button>
@@ -309,7 +310,7 @@ export default function Dashboard() {
                     className="p-4 rounded-xl border border-slate-50 bg-slate-50/30 flex items-center justify-between hover:bg-slate-50 transition-all group"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-primary/5 text-primary rounded-lg flex items-center justify-center">
+                      <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-lg flex items-center justify-center">
                         <MessageSquare className="w-5 h-5" />
                       </div>
                       <div>
@@ -322,7 +323,7 @@ export default function Dashboard() {
                         "text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border",
                         req.status === 'pending' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
                       )}>{req.status}</span>
-                      <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-primary transition-colors" />
+                      <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-600 transition-colors" />
                     </div>
                   </div>
                 ))

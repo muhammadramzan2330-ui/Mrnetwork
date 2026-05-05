@@ -48,8 +48,8 @@ export default function Treasury() {
       <div className="px-4 sm:px-8 py-6 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
           <div className="flex flex-col">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Main Treasury</h2>
-            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none">Manage company funds & overheads</p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Financial Ledger</h2>
+            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none">Manage company accounts & transactions</p>
           </div>
           <div className="flex gap-4 w-full sm:w-auto">
             <Dialog open={isWithdrawOpen} onOpenChange={(val) => {
@@ -67,16 +67,16 @@ export default function Treasury() {
                     <DialogHeader>
                       <DialogTitle className="text-2xl font-extrabold tracking-tight">Withdraw Funds</DialogTitle>
                     </DialogHeader>
-                    <p className="text-white/60 text-[10px] font-bold mt-2 uppercase tracking-widest">External Transfer Initiative</p>
+                    <p className="text-white/60 text-[10px] font-bold mt-2 uppercase tracking-widest">Withdrawal from ledger reserve</p>
                   </div>
                   <div className="p-6 sm:p-8 space-y-6">
                     <div className="bg-rose-50 p-6 rounded-2xl border border-rose-100">
-                      <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest mb-1.5">Treasury Reserve</p>
+                      <p className="text-[10px] font-bold text-rose-600 uppercase tracking-widest mb-1.5">Ledger Balance</p>
                       <p className="text-3xl font-extrabold text-rose-700 tracking-tight leading-none">Rs. {treasury?.balance?.toLocaleString() || '0'}</p>
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Magnitude (Rs.)</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Amount (Rs.)</Label>
                       <Input 
                         type="number" 
                         placeholder="0.00" 
@@ -87,10 +87,10 @@ export default function Treasury() {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Destination</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Payout Details</Label>
                       <Input 
-                        placeholder="e.g. Bank Account / ID" 
-                        className="input-modern"
+                        placeholder="e.g. Bank Account / EASYPEAISA" 
+                        className="input-modern px-4 h-12"
                         value={withdrawDetails}
                         onChange={(e) => setWithdrawDetails(e.target.value)}
                       />
@@ -104,7 +104,7 @@ export default function Treasury() {
                         isConfirming ? "bg-orange-500 hover:bg-orange-600 text-white shadow-orange-500/20" : "bg-slate-900 hover:bg-slate-800 text-white shadow-slate-900/20"
                       )}
                     >
-                      {isConfirming ? "Confirm Transfer?" : "Execute Liquidation"}
+                      {isConfirming ? "Confirm Withdrawal?" : "Process Withdrawal"}
                     </Button>
                   </div>
                 </div>
@@ -129,14 +129,14 @@ export default function Treasury() {
             </div>
             <div className="relative z-10">
               <div className="flex items-center gap-2.5 mb-6">
-                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Consolidated Vault Reserve</p>
+                <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Main Account Balance</p>
               </div>
               <h3 className="text-4xl sm:text-6xl font-extrabold text-slate-900 mb-10 tracking-tight">Rs. {treasury?.balance?.toLocaleString() || '0'}</h3>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-slate-50 rounded-xl p-6 border border-slate-100 group-hover:bg-slate-100/50 transition-colors">
-                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-3">Cycle Inflow</p>
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-3">Monthly Revenue</p>
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500 border border-emerald-100">
                       <TrendingUp className="w-5 h-5" />
@@ -145,7 +145,7 @@ export default function Treasury() {
                   </div>
                 </div>
                 <div className="bg-slate-50 rounded-xl p-6 border border-slate-100 group-hover:bg-slate-100/50 transition-colors">
-                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-3">Cycle Burn</p>
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-3">Monthly Payouts</p>
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-lg bg-rose-50 flex items-center justify-center text-rose-500 border border-rose-100">
                       <TrendingDown className="w-5 h-5" />
@@ -161,7 +161,7 @@ export default function Treasury() {
         {/* Daily Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Card className="bg-white border-slate-100 shadow-sm p-6 rounded-2xl group hover:shadow-md transition-all">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">Today's Revenue</p>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">Total Inflow Today</p>
             <div className="flex items-center justify-between">
               <p className="text-2xl font-extrabold text-slate-900 tracking-tight">Rs. {treasury?.todayIn?.toLocaleString() || '0'}</p>
               <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 group-hover:bg-emerald-500 group-hover:text-white transition-all border border-emerald-100">
@@ -170,7 +170,7 @@ export default function Treasury() {
             </div>
           </Card>
           <Card className="bg-white border-slate-100 shadow-sm p-6 rounded-2xl group hover:shadow-md transition-all">
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">Active Burn</p>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">Today's Payouts</p>
             <div className="flex items-center justify-between">
               <p className="text-2xl font-extrabold text-slate-900 tracking-tight">Rs. {treasury?.todayOut?.toLocaleString() || '0'}</p>
               <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-500 group-hover:bg-rose-500 group-hover:text-white transition-all border border-rose-100">
@@ -183,20 +183,20 @@ export default function Treasury() {
         {/* Search and History */}
         <div className="space-y-4">
           <div className="relative group">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-colors group-focus-within:text-primary" />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-colors group-focus-within:text-indigo-600" />
             <Input
               placeholder="Search history by name or category..."
-              className="input-modern pl-12 h-12 shadow-sm"
+              className="input-modern pl-12 h-12 shadow-sm px-4"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
 
           <div className="flex justify-between items-center px-2">
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Transaction Registry</h3>
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Transaction History</h3>
             <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              <span className="text-[10px] font-bold text-primary tracking-widest uppercase">Live Log</span>
+              <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse" />
+              <span className="text-[10px] font-bold text-indigo-600 tracking-widest uppercase">Updated Ledger</span>
             </div>
           </div>
 
@@ -241,10 +241,10 @@ export default function Treasury() {
                       {item.type === 'in' ? '+' : '-'} Rs. {item.amount.toLocaleString()}
                     </p>
                     <div className="flex gap-1.5 shrink-0">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-primary transition-all">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-indigo-600 transition-all">
                         <Receipt className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-primary transition-all">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-indigo-600 transition-all">
                         <FileText className="w-4 h-4" />
                       </Button>
                     </div>

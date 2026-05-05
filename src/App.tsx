@@ -18,6 +18,7 @@ import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SystemProvider } from './contexts/SystemContext';
 import { Toaster } from '@/components/ui/sonner';
 import { ShieldOff, Loader2 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { auth } from '@/services/firebase';
 import { signOut } from 'firebase/auth';
 import { cn } from '@/lib/utils';
@@ -72,48 +73,13 @@ function AppRoutes() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-white p-6 text-center">
         <div className="relative mb-8">
-          <div className="w-20 h-20 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <ShieldOff className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-slate-200" />
+          <div className="w-20 h-20 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          <Loader2 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-indigo-600 animate-pulse" />
         </div>
-        <h2 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Identity Desync</h2>
-        <p className="text-sm text-slate-500 mb-8 max-w-xs mx-auto">
-          We found your credentials, but your System Profile is missing from this node (isp-billing-app-eda7c).
+        <h2 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Initializing Profile</h2>
+        <p className="text-xs text-slate-500 max-w-xs mx-auto font-medium">
+          Securely synchronizing your account credentials with our identity registry...
         </p>
-        <div className="flex flex-col gap-3 w-full max-w-xs">
-          <button 
-            onClick={async () => {
-              try {
-                if (user) {
-                  const { createUserProfile } = await import('./services/firebase');
-                  await createUserProfile(user.uid, {
-                    name: user.displayName || user.email?.split('@')[0] || 'Unknown Identity',
-                    email: user.email,
-                    role: user.email?.toLowerCase() === 'muhammadramzan2330@gmail.com' ? 'admin' : 'customer',
-                    status: 'active', // Auto-active for repair
-                  });
-                  window.location.reload();
-                }
-              } catch (err) {
-                console.error("Repair failed:", err);
-              }
-            }}
-            className="h-12 bg-emerald-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-emerald-200"
-          >
-            Repair & Init Identity
-          </button>
-          <button 
-            onClick={() => window.location.reload()}
-            className="h-12 bg-primary text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-primary/20"
-          >
-            Retry Sync
-          </button>
-          <button 
-            onClick={() => signOut(auth)}
-            className="h-12 bg-slate-100 text-slate-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-200 transition-colors"
-          >
-            Logout session
-          </button>
-        </div>
       </div>
     );
   }
@@ -145,15 +111,15 @@ function AppRoutes() {
           </div>
 
           <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase mb-3 px-4">
-            {profile.status === 'pending' ? 'Access Request Logged' : 'Identity Denied'}
+            {profile.status === 'pending' ? 'Account Pending' : 'Access Denied'}
           </h1>
           
           <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-8 text-left">
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1 opacity-60">System Log:</p>
+            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1 opacity-60">Status Message:</p>
             <p className="text-slate-700 text-sm font-medium leading-relaxed">
               {profile.status === 'pending' 
-                ? `Node: ${user.email} is currently in the verification queue. Admin override is required to activate this identity vector.` 
-                : "Security protocols have flagged this account for rejection. Standard access is disabled."}
+                ? `Account: ${user.email} is currently in the verification queue. An administrator will verify your details shortly.` 
+                : "Your account request has been declined. Please contact support for more details."}
             </p>
           </div>
 
@@ -167,11 +133,11 @@ function AppRoutes() {
               onClick={() => signOut(auth)}
               className="h-14 w-full bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-xl shadow-slate-900/30 active:scale-[0.98] transition-all flex items-center justify-center gap-3 hover:bg-slate-800"
             >
-              Terminate Session
+              Sign Out
             </button>
             
-            <p className="text-[9px] text-slate-300 font-bold uppercase tracking-[0.2em] mt-4">
-              Project ID: isp-billing-app-eda7c
+            <p className="text-[9px] text-slate-300 font-bold uppercase tracking-[0.2em] mt-4 font-sans">
+              M & Network // Billing Portal
             </p>
           </div>
         </motion.div>
@@ -199,6 +165,8 @@ function AppRoutes() {
           ) : isCustomer ? (
             <>
               <Route path="/" element={<CustomerDashboard />} />
+              <Route path="/payments" element={<Payments />} />
+              <Route path="/packages" element={<Packages />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </>
           ) : (

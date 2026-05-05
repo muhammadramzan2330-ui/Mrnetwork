@@ -58,10 +58,10 @@ export default function Reports() {
       <div className="px-4 sm:px-8 py-6 space-y-6">
         <div className="flex justify-between items-center gap-6">
           <div className="flex flex-col">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Visual Reports</h2>
-            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none">Business performance & dividends</p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-none">Financial Reports</h2>
+            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none">Business performance & revenue summary</p>
           </div>
-          <Button variant="outline" size="icon" className="w-12 h-12 rounded-xl border-slate-200 bg-white text-slate-400 hover:text-primary hover:border-primary transition-all shadow-sm">
+          <Button variant="outline" size="icon" className="w-12 h-12 rounded-xl border-slate-200 bg-white text-slate-400 hover:text-indigo-600 hover:border-indigo-600 transition-all shadow-sm">
             <Download className="w-5 h-5" />
           </Button>
         </div>
@@ -75,7 +75,7 @@ export default function Reports() {
               className={cn(
                 "flex-1 py-2.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-300",
                 filter === t 
-                  ? "bg-primary text-white shadow-md shadow-primary/20" 
+                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" 
                   : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
               )}
             >
@@ -101,7 +101,7 @@ export default function Reports() {
                 </div>
                 <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-1">{stat.label}</p>
                 <p className={cn("text-xl sm:text-2xl font-extrabold tracking-tight", stat.color)}>Rs. {stat.value.toLocaleString()}</p>
-                <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full -mr-12 -mt-12 group-hover:bg-primary/5 transition-colors duration-500" />
+                <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-full -mr-12 -mt-12 group-hover:bg-indigo-50 transition-colors duration-500" />
               </Card>
             </motion.div>
           ))}
@@ -117,11 +117,11 @@ export default function Reports() {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-10 gap-4">
               <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-3 tracking-tight">
                 <TrendingUp className="w-5 h-5 text-emerald-500" />
-                Revenue Velocity
+                Revenue Analysis
               </h3>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Signal Log</span>
+                <div className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Activity Log</span>
               </div>
             </div>
             <div className="h-48 sm:h-56 flex items-end gap-2 sm:gap-6 px-1">
@@ -129,8 +129,8 @@ export default function Reports() {
                 <div key={i} className="flex-1 flex flex-col items-center gap-4 group/bar">
                   <div 
                     className={cn(
-                      "w-full rounded-xl transition-all duration-700 ease-out relative group-hover/bar:bg-primary/20",
-                      i === 6 ? "bg-primary shadow-lg shadow-primary/30" : "bg-slate-100"
+                      "w-full rounded-xl transition-all duration-700 ease-out relative group-hover/bar:bg-indigo-100",
+                      i === 6 ? "bg-indigo-600 shadow-lg shadow-indigo-100" : "bg-slate-100"
                     )} 
                     style={{ height: `${h}%` }} 
                   >
@@ -146,22 +146,22 @@ export default function Reports() {
         {/* Breakdown */}
         <div className="space-y-4">
           <div className="flex items-center gap-4 px-2">
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Dividend Distribution Network</h3>
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap">Profit Distribution</h3>
             <div className="h-px w-full bg-slate-100" />
           </div>
           <Card className="bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden">
             <div className="divide-y divide-slate-50">
               <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-slate-50 transition-colors group">
                 <div className="flex items-center gap-4">
-                  <div className="w-3 h-3 rounded-full bg-primary shadow-lg shadow-primary/40 group-hover:scale-125 transition-transform" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Corporate Strategic Stake</span>
+                  <div className="w-3 h-3 rounded-full bg-indigo-600 shadow-lg shadow-indigo-100 group-hover:scale-125 transition-transform" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Company Net Earnings</span>
                 </div>
-                <span className="text-xl font-extrabold text-primary tracking-tight">Rs. {netProfit.toLocaleString()}</span>
+                <span className="text-xl font-extrabold text-indigo-600 tracking-tight">Rs. {netProfit.toLocaleString()}</span>
               </div>
               <div className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-slate-50 transition-colors group">
                 <div className="flex items-center gap-4">
                   <div className="w-3 h-3 rounded-full bg-blue-400 shadow-lg shadow-blue-400/40 group-hover:scale-125 transition-transform" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Affiliate Operational Payouts</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Sub Dealer Commissions</span>
                 </div>
                 <span className="text-xl font-extrabold text-slate-900 tracking-tight">Rs. {commissionsPaid.toLocaleString()}</span>
               </div>

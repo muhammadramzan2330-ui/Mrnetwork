@@ -64,31 +64,30 @@ export default function Login() {
       toast.success("Welcome back!");
     } catch (error: any) {
       console.error('Email login error fully caught:', error);
-      console.log('Error Summary:', {
-        code: error.code,
-        message: error.message,
-        emailAttempted: email.trim()
-      });
       
-      const messageHeader = `Project NodeID: isp-billing-app-eda7c`;
-      let message = "Login failed. Please check your credentials.";
+      const messageHeader = `Security Alert`;
+      let message = "The identity credentials provided do not match our records.";
       
+      // auth/invalid-credential is the modern Firebase error for both wrong password and user not found
       if (error.code === 'auth/invalid-credential') {
-        message = "No matching account found for this email/password in project 'isp-billing-app-eda7c'. If you just signed up, verify you used the correct password. If your account was on another node, you must register here.";
-      } else if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-        message = "Incorrect identity vector or security phrase. Please verify and try again.";
+        message = "Invalid email or password. Please verify your credentials. If you are new, you must create an account first.";
+      } else if (error.code === 'auth/user-not-found') {
+        message = "No account found with this email address.";
+      } else if (error.code === 'auth/wrong-password') {
+        message = "Incorrect password. Please try again or reset it.";
       } else if (error.code === 'auth/too-many-requests') {
-        message = "System locked due to excessive fail attempts. Try again in 60 seconds.";
+        message = "Too many failed attempts. Please try again later or reset your password.";
       } else if (error.code === 'auth/operation-not-allowed') {
-        message = "CRITICAL: Email/Password login is DISABLED in the Firebase Console for project 'isp-billing-app-eda7c'. Please enable it under Authentication > Sign-in method.";
+        message = "Email/Password login is currently disabled for this project.";
       } else if (error.code === 'auth/invalid-email') {
-        message = "Invalid identity format (check email structure).";
+        message = "Please enter a valid email address.";
       } else if (error.code === 'auth/network-request-failed') {
-        message = "Network Uplink Error: Check your connection or firewall rules.";
+        message = "Connection error. Please check your internet connectivity.";
       }
       
-      toast.error(`${messageHeader}\n${message}`, { 
-        duration: 8000,
+      toast.error(message, { 
+        description: `Error Code: ${error.code}`,
+        duration: 5000,
       });
       setLoading(false);
     }
@@ -102,11 +101,12 @@ export default function Login() {
         className="w-full max-w-sm"
       >
         <Card className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-          <div className="h-44 bg-gradient-to-br from-primary to-cyan-500 flex flex-col items-center justify-center p-6 text-white relative">
+          <div className="h-44 bg-gradient-to-br from-indigo-600 to-cyan-500 flex flex-col items-center justify-center p-6 text-white relative">
             <div className="relative z-10 p-4 bg-white/10 rounded-2xl backdrop-blur-md mb-3 border border-white/20 shadow-xl">
               <Shield className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-2xl font-black tracking-tight uppercase relative z-10">Nexus ISP</h1>
+            <h1 className="text-2xl font-black tracking-tight uppercase relative z-10">M & Network</h1>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80 relative z-10">ISP Billing Management</p>
             
             {/* Abstract decorations */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl" />
@@ -114,27 +114,23 @@ export default function Login() {
           </div>
           
           <CardHeader className="text-center pt-8 pb-4 px-6 sm:px-10">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-              <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">isp-billing-app-eda7c // Online</span>
-            </div>
-            <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">Login Access</CardTitle>
-            <CardDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2 leading-none">Security Node Authentication</CardDescription>
+            <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">Welcome Back</CardTitle>
+            <CardDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2 leading-none">Enter your credentials to access your account</CardDescription>
           </CardHeader>
           
           <CardContent className="px-6 sm:px-10 pb-8 pt-0">
             <form onSubmit={handleEmailLogin} className="space-y-5 mb-8">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Identity Vector</Label>
+                <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Email Address</Label>
                 <div className="relative group">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-600 transition-colors" />
                   <Input 
                     id="email"
                     type="email" 
-                    placeholder="operator@nexus.node"
+                    placeholder="name@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="input-modern pl-11 h-12"
+                    className="input-modern pl-11 h-12 border-slate-200 focus:border-indigo-600 focus:ring-indigo-600"
                     required
                   />
                 </div>
@@ -142,23 +138,23 @@ export default function Login() {
               
               <div className="space-y-2">
                 <div className="flex justify-between items-center px-1">
-                  <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Security Phrase</Label>
+                  <Label htmlFor="password" className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Password</Label>
                   <Link 
                     to="/forgot-password" 
-                    className="text-[10px] text-primary font-bold hover:underline transition-all"
+                    className="text-[10px] text-indigo-600 font-bold hover:underline transition-all"
                   >
-                    Forgot Key?
+                    Forgot Password?
                   </Link>
                 </div>
                 <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-indigo-600 transition-colors" />
                   <Input 
                     id="password"
                     type="password" 
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="input-modern pl-11 h-12"
+                    className="input-modern pl-11 h-12 border-slate-200 focus:border-indigo-600 focus:ring-indigo-600"
                     required
                   />
                 </div>
@@ -167,10 +163,10 @@ export default function Login() {
               <Button 
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 btn-gradient gap-3 font-bold text-xs uppercase tracking-widest shadow-lg shadow-primary/20"
+                className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-3 font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-200 transition-all active:scale-[0.98]"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogIn className="w-5 h-5" />}
-                Sign In
+                Sign In with Email
               </Button>
             </form>
 
@@ -179,7 +175,7 @@ export default function Login() {
                 <div className="w-full border-t border-slate-100" />
               </div>
               <div className="relative flex justify-center text-[9px] font-bold uppercase tracking-widest leading-none">
-                <span className="bg-white px-4 text-slate-300">Or Connect via</span>
+                <span className="bg-white px-4 text-slate-300">Or continue with</span>
               </div>
             </div>
 
@@ -196,14 +192,14 @@ export default function Login() {
                 <path d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.84z" fill="#FBBC05"/>
                 <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
               </svg>
-              Google Account
+              Sign In with Google
             </Button>
 
             <div className="mt-8 text-center bg-slate-50 py-4 -mx-6 sm:-mx-10 border-t border-slate-100">
               <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-none">
-                Not a member?{' '}
-                <Link to="/signup" className="text-primary hover:underline ml-1">
-                  Register Node
+                Don't have an account?{' '}
+                <Link to="/signup" className="text-indigo-600 hover:underline font-extrabold ml-1 uppercase">
+                  Create Account
                 </Link>
               </p>
             </div>

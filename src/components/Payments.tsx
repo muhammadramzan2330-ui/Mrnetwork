@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Receipt, Printer, Download, ArrowUpRight, ArrowDownRight, Wallet, CreditCard, Banknote, Building2, Filter, CheckCircle2, XCircle, Clock, ChevronDown } from 'lucide-react';
+import { Plus, Search, Receipt, Printer, Download, ArrowUpRight, ArrowDownRight, Wallet, CreditCard, Banknote, Building2, Filter, CheckCircle2, XCircle, Clock, ChevronDown, RefreshCw, MessageSquare, Phone } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,10 +15,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { motion } from 'motion/react';
 import { useSystem } from '../contexts/SystemContext';
+import { useAuth } from '@/hooks/useAuth';
 import { cn, formatDate } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export default function Payments() {
-  const { payments, users, treasury, recordPayment, approvePayment, rejectPayment, bills, markBillAsPaid } = useSystem();
+  const { profile, isAdmin } = useAuth();
+  const { payments, users, treasury, recordPayment, approvePayment, rejectPayment, bills, markBillAsPaid, generateMonthlyBills } = useSystem();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -32,22 +35,24 @@ export default function Payments() {
     method: string;
     reference: string;
   }>({
-    userId: '',
-    userName: '',
+    userId: profile?.id || '',
+    userName: profile?.name || '',
     amount: '',
     method: 'cash',
     reference: ''
   });
 
   const handleAddPayment = async () => {
-    if (!newPayment.userId || !newPayment.amount) return;
+    if ((isAdmin && !newPayment.userId) || !newPayment.amount) return;
 
     await recordPayment({
       ...newPayment,
+      userId: isAdmin ? newPayment.userId : profile?.id,
+      userName: isAdmin ? newPayment.userName : profile?.name,
       amount: Number(newPayment.amount),
     });
 
-    setNewPayment({ userId: '', userName: '', amount: '', method: 'cash', reference: '' });
+    setNewPayment({ userId: profile?.id || '', userName: profile?.name || '', amount: '', method: 'cash', reference: '' });
     setIsOpen(false);
   };
 
@@ -73,6 +78,7 @@ export default function Payments() {
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const handleApprove = async (id: string) => {
+    if (!isAdmin) return;
     if (confirmingId === id) {
       await approvePayment(id);
       setConfirmingId(null);
@@ -81,19 +87,23 @@ export default function Payments() {
     }
   };
 
-  const filteredPayments = payments.filter(p => 
-    ((p.userName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-     (p.method || '').toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (filterDate === '' || p.date.includes(filterDate)) &&
-    (filterStatus === 'all' || p.status === filterStatus)
-  );
+  const filteredPayments = payments
+    .filter(p => isAdmin || p.userId === profile?.id)
+    .filter(p => 
+      ((p.userName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+       (p.method || '').toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (filterDate === '' || p.date.includes(filterDate)) &&
+      (filterStatus === 'all' || p.status === filterStatus)
+    );
 
-  const filteredBills = bills.filter(b => 
-    (b.status === 'unpaid') &&
-    ((b.userName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-     (b.month || '').toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (filterDate === '' || b.dueDate.includes(filterDate))
-  );
+  const filteredBills = bills
+    .filter(b => isAdmin || b.userId === profile?.id)
+    .filter(b => 
+      (b.status === 'unpaid') &&
+      ((b.userName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+       (b.month || '').toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (filterDate === '' || b.dueDate.includes(filterDate))
+    );
 
   const displayData = viewMode === 'payments' ? filteredPayments : filteredBills;
 
@@ -103,88 +113,103 @@ export default function Payments() {
       <div className="px-4 sm:px-8 py-6 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
           <div className="flex flex-col">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Ledger Master</h2>
-            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Financial Transmission Control</p>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Financial Ledger</h2>
+            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Manage payments and billing transactions</p>
           </div>
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto bg-primary hover:bg-primary/95 text-white rounded-xl gap-2 h-12 text-xs font-bold uppercase tracking-wider px-8 shadow-lg shadow-primary/20 transition-all active:scale-95">
-                <Plus className="w-4 h-4" /> Record Payment
+          <div className="flex gap-2 w-full sm:w-auto">
+            {isAdmin && (
+              <Button 
+                onClick={() => {
+                  generateMonthlyBills();
+                  toast.success("Billing generation cycle started");
+                }}
+                variant="outline"
+                className="bg-white border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl gap-2 h-12 text-xs font-bold uppercase tracking-wider px-6 shadow-sm transition-all active:scale-95"
+              >
+                <RefreshCw className="w-4 h-4" /> Generate Bills
               </Button>
-            </DialogTrigger>
+            )}
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2 h-12 text-xs font-bold uppercase tracking-wider px-8 shadow-lg shadow-indigo-100 transition-all active:scale-95">
+                  <Plus className="w-4 h-4" /> {isAdmin ? 'Add Payment' : 'Pay Online'}
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-[480px] rounded-2xl border-slate-100 bg-white shadow-2xl p-0 overflow-hidden text-slate-900">
               <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
                 <div className="header-gradient p-8 text-white relative">
                   <DialogHeader>
-                    <DialogTitle className="text-2xl font-extrabold tracking-tight">Insert Payment</DialogTitle>
+                    <DialogTitle className="text-2xl font-extrabold tracking-tight">{isAdmin ? 'Record Payment' : 'Submit Payment'}</DialogTitle>
                   </DialogHeader>
-                  <p className="text-white/60 text-[10px] font-bold mt-2 uppercase tracking-widest">Manual Energy Allocation</p>
+                  <p className="text-white/60 text-[10px] font-bold mt-2 uppercase tracking-widest">{isAdmin ? 'Manually record customer payment' : 'Submit your payment details'}</p>
                 </div>
                 <div className="p-6 sm:p-8 space-y-6 text-slate-900">
                   <div className="grid gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Identity Node</Label>
-                      <Select 
-                        value={newPayment.userId} 
-                        onValueChange={(val) => {
-                          const user = users.find(u => u.id === val);
-                          setNewPayment({ ...newPayment, userId: val, userName: user?.name || '' });
-                        }}
-                      >
-                        <SelectTrigger className="input-modern w-full">
-                          <SelectValue placeholder="SELECT FREQUENCY..." />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
-                          {users.map(u => (
-                            <SelectItem key={u.id} value={u.id} className="font-bold text-slate-900 rounded-lg py-3 cursor-pointer hover:bg-slate-50 uppercase text-[10px] tracking-widest">
-                              {u.name} — ({u.pppoeUsername})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    {isAdmin && (
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Subscriber</Label>
+                        <Select 
+                          value={newPayment.userId} 
+                          onValueChange={(val) => {
+                            const user = users.find(u => u.id === val);
+                            setNewPayment({ ...newPayment, userId: val, userName: user?.name || '' });
+                          }}
+                        >
+                          <SelectTrigger className="input-modern w-full px-4 h-12">
+                            <SelectValue placeholder="Select Subscriber" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
+                            {users.map(u => (
+                              <SelectItem key={u.id} value={u.id} className="font-bold text-slate-900 rounded-lg py-3 cursor-pointer hover:bg-slate-50 uppercase text-[10px] tracking-widest">
+                                {u.name} — ({u.pppoeUsername})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6">
                       <div className="space-y-2">
                         <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Amount (Rs)</Label>
                         <Input 
                           type="number" 
                           placeholder="0.00" 
-                          className="input-modern font-bold text-lg"
+                          className="input-modern font-bold text-lg px-4 h-12"
                           value={newPayment.amount}
                           onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Method</Label>
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Payment Method</Label>
                         <Select value={newPayment.method} onValueChange={(val) => setNewPayment({ ...newPayment, method: val })}>
-                          <SelectTrigger className="input-modern w-full">
-                            <SelectValue placeholder="METHOD" />
+                          <SelectTrigger className="input-modern w-full px-4 h-12">
+                            <SelectValue placeholder="Method" />
                           </SelectTrigger>
                           <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
-                            <SelectItem value="cash" className="font-bold py-3 text-[10px] tracking-widest">Physical Currency</SelectItem>
-                            <SelectItem value="easypaisa" className="font-bold py-3 text-[10px] tracking-widest">Easypaisa Node</SelectItem>
-                            <SelectItem value="jazzcash" className="font-bold py-3 text-[10px] tracking-widest">JazzCash Node</SelectItem>
-                            <SelectItem value="bank" className="font-bold py-3 text-[10px] tracking-widest">Bank Link</SelectItem>
+                            {isAdmin && <SelectItem value="cash" className="font-bold py-3 text-[10px] tracking-widest">Cash Payment</SelectItem>}
+                            <SelectItem value="easypaisa" className="font-bold py-3 text-[10px] tracking-widest">Easypaisa</SelectItem>
+                            <SelectItem value="jazzcash" className="font-bold py-3 text-[10px] tracking-widest">JazzCash</SelectItem>
+                            <SelectItem value="bank" className="font-bold py-3 text-[10px] tracking-widest">Bank Transfer</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Signal Hash / TrxID</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Transaction Reference</Label>
                       <Input 
                         placeholder="e.g. TXN-10293847" 
-                        className="input-modern"
+                        className="input-modern px-4 h-12"
                         value={newPayment.reference}
                         onChange={(e) => setNewPayment({ ...newPayment, reference: e.target.value })}
                       />
                     </div>
                     <Button 
                       onClick={handleAddPayment}
-                      className="btn-gradient w-full mt-4 h-14 font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-primary/20"
+                      className="w-full mt-4 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-indigo-100"
                     >
-                      EMIT TO LEDGER
+                      {isAdmin ? 'Record Payment' : 'Submit Payment Request'}
                     </Button>
                   </div>
                 </div>
@@ -192,33 +217,36 @@ export default function Payments() {
             </DialogContent>
           </Dialog>
         </div>
+      </div>
 
-        {/* Treasury Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          <Card className="bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden p-6 group hover:shadow-md transition-all">
-            <p className="text-emerald-500 text-[10px] font-bold uppercase tracking-widest mb-2 leading-none">Total Liquidity</p>
-            <div className="flex items-center gap-3">
-              <div className="w-1 h-6 bg-emerald-500 rounded-full" />
-              <span className="text-2xl font-extrabold text-slate-900 tracking-tight">Rs. {treasury?.balance?.toLocaleString() || '0'}</span>
-            </div>
-          </Card>
-          <Card className="bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden p-6 group hover:shadow-md transition-all">
-            <p className="text-primary text-[10px] font-bold uppercase tracking-widest mb-2 leading-none">Daily Inflow</p>
-            <div className="flex items-center gap-3">
-              <div className="w-1 h-6 bg-primary rounded-full" />
-              <span className="text-2xl font-extrabold text-slate-900 tracking-tight">Rs. {treasury?.todayIn?.toLocaleString() || '0'}</span>
-            </div>
-          </Card>
-          <Card className="bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden p-6 group hover:shadow-md transition-all">
-            <p className="text-rose-500 text-[10px] font-bold uppercase tracking-widest mb-2 leading-none">Total Dues</p>
-            <div className="flex items-center gap-3">
-              <div className="w-1 h-6 bg-rose-500 rounded-full" />
-              <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                Rs. {bills.filter(b => b.status === 'unpaid').reduce((sum, b) => sum + (b.amount || 0), 0).toLocaleString()}
-              </span>
-            </div>
-          </Card>
-        </div>
+      {/* Treasury Stats Grid */}
+        {isAdmin && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <Card className="bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden p-6 group hover:shadow-md transition-all">
+              <p className="text-emerald-500 text-[10px] font-bold uppercase tracking-widest mb-2 leading-none">Net Balance</p>
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-6 bg-emerald-500 rounded-full" />
+                <span className="text-2xl font-extrabold text-slate-900 tracking-tight">Rs. {treasury?.balance?.toLocaleString() || '0'}</span>
+              </div>
+            </Card>
+            <Card className="bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden p-6 group hover:shadow-md transition-all">
+              <p className="text-indigo-600 text-[10px] font-bold uppercase tracking-widest mb-2 leading-none">Today's Revenue</p>
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-6 bg-indigo-600 rounded-full" />
+                <span className="text-2xl font-extrabold text-slate-900 tracking-tight">Rs. {treasury?.todayIn?.toLocaleString() || '0'}</span>
+              </div>
+            </Card>
+            <Card className="bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden p-6 group hover:shadow-md transition-all">
+              <p className="text-rose-500 text-[10px] font-bold uppercase tracking-widest mb-2 leading-none">Pending Bills</p>
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-6 bg-rose-500 rounded-full" />
+                <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                  Rs. {bills.filter(b => b.status === 'unpaid').reduce((sum, b) => sum + (b.amount || 0), 0).toLocaleString()}
+                </span>
+              </div>
+            </Card>
+          </div>
+        )}
 
         {/* View Mode Toggle */}
         <div className="flex items-center gap-2 p-1 bg-slate-100/50 w-fit rounded-xl border border-slate-200 shadow-inner">
@@ -226,7 +254,7 @@ export default function Payments() {
             onClick={() => setViewMode('payments')}
             className={cn(
               "px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-              viewMode === 'payments' ? "bg-white text-primary shadow-sm" : "text-slate-400 hover:text-slate-600"
+              viewMode === 'payments' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
             )}
           >
             Payments
@@ -238,17 +266,17 @@ export default function Payments() {
               viewMode === 'dues' ? "bg-white text-rose-500 shadow-sm" : "text-slate-400 hover:text-slate-600"
             )}
           >
-            Outstanding Dues
+            Unpaid Dues
           </button>
         </div>
 
         {/* Search and Filters */}
         <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center pt-4">
           <div className="relative flex-1 group">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-colors group-focus-within:text-primary" />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-colors group-focus-within:text-indigo-600" />
             <Input
-              placeholder="Scan database: Name, ID..."
-              className="input-modern pl-12 h-12 shadow-sm"
+              placeholder="Search by name or method..."
+              className="input-modern pl-12 h-12 shadow-sm px-4"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -256,14 +284,14 @@ export default function Payments() {
           <div className="flex gap-4 overflow-x-auto pb-2 sm:pb-0 custom-scrollbar">
             <div className="min-w-[140px]">
               <Select onValueChange={setFilterStatus} defaultValue="all">
-                <SelectTrigger className="input-modern h-12 text-[10px] font-bold uppercase tracking-widest">
+                <SelectTrigger className="input-modern h-12 text-[10px] font-bold uppercase tracking-widest px-4">
                   <SelectValue placeholder="STATUS" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
-                  <SelectItem value="all" className="font-bold py-3 text-[10px] tracking-widest">Global Status</SelectItem>
-                  <SelectItem value="pending" className="font-bold py-3 text-[10px] tracking-widest text-orange-500">Waitlisted</SelectItem>
-                  <SelectItem value="approved" className="font-bold py-3 text-[10px] tracking-widest text-emerald-500">Validated</SelectItem>
-                  <SelectItem value="rejected" className="font-bold py-3 text-[10px] tracking-widest text-rose-500">Terminated</SelectItem>
+                  <SelectItem value="all" className="font-bold py-3 text-[10px] tracking-widest">All Status</SelectItem>
+                  <SelectItem value="pending" className="font-bold py-3 text-[10px] tracking-widest text-orange-500">Pending</SelectItem>
+                  <SelectItem value="approved" className="font-bold py-3 text-[10px] tracking-widest text-emerald-500">Approved</SelectItem>
+                  <SelectItem value="rejected" className="font-bold py-3 text-[10px] tracking-widest text-rose-500">Rejected</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -342,13 +370,13 @@ export default function Payments() {
                   )}>
                     <div className="min-w-0 overflow-hidden">
                       <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
-                        {viewMode === 'payments' ? 'Reference ID' : 'Target Hub'}
+                        {viewMode === 'payments' ? 'Reference ID' : 'Service Unit'}
                       </p>
                       <p className={cn(
                         "text-[10px] font-bold truncate font-mono",
-                        viewMode === 'dues' ? "text-slate-600" : "text-primary"
+                        viewMode === 'dues' ? "text-slate-600" : "text-indigo-600"
                       )}>
-                        {viewMode === 'payments' ? item.reference : 'Subscriber Registry'}
+                        {viewMode === 'payments' ? item.reference : 'Billing System'}
                       </p>
                     </div>
                   </div>
@@ -379,7 +407,7 @@ export default function Payments() {
                         onClick={() => handleApprove(item.id)}
                         className={cn(
                           "h-9 px-4 rounded-lg text-[10px] font-bold uppercase transition-all shadow-sm",
-                          confirmingId === item.id ? "bg-orange-500 hover:bg-orange-600 text-white" : "bg-primary hover:bg-primary/95 text-white"
+                          confirmingId === item.id ? "bg-orange-500 hover:bg-orange-600 text-white" : "bg-indigo-600 hover:bg-indigo-700 text-white"
                         )}
                       >
                         {confirmingId === item.id ? "Confirm?" : "Approve"}
@@ -387,13 +415,35 @@ export default function Payments() {
                     </div>
                   )}
                   {viewMode === 'dues' && (
-                    <Button 
-                      size="sm"
-                      onClick={() => markBillAsPaid(item.id)}
-                      className="h-9 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-emerald-500/20"
-                    >
-                      Resolve
-                    </Button>
+                    <div className="flex items-center gap-2">
+                       {isAdmin && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => {
+                            const user = users.find(u => u.id === item.userId);
+                            if (!user?.phone) {
+                              toast.error("No phone number found");
+                              return;
+                            }
+                            const cleanPhone = user.phone.replace(/\D/g, '');
+                            const message = encodeURIComponent(`Dear ${user.name}, your bill for ${item.month} is Rs. ${item.amount}. Please pay urgently to avoid disconnection.`);
+                            const whatsappUrl = `https://wa.me/${cleanPhone.startsWith('92') ? cleanPhone : '92' + cleanPhone}?text=${message}`;
+                            window.open(whatsappUrl, '_blank');
+                          }}
+                          className="h-9 px-3 text-emerald-500 font-bold text-[9px] hover:bg-emerald-50 rounded-lg uppercase tracking-wider gap-2"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5" /> WhatsApp
+                        </Button>
+                      )}
+                      <Button 
+                        size="sm"
+                        onClick={() => markBillAsPaid(item.id)}
+                        className="h-9 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-emerald-500/20"
+                      >
+                        Resolve
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>

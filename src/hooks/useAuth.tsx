@@ -12,6 +12,11 @@ interface UserProfile {
   role: 'admin' | 'customer';
   status: string;
   package?: string;
+  packageId?: string;
+  plan?: string;
+  paymentStatus?: string;
+  createdAt?: any;
+  updatedAt?: any;
   id?: string;
 }
 
@@ -75,31 +80,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const userData = snapshot.data() as UserProfile;
             setProfile({ ...userData, id: snapshot.id } as any);
             setError(null);
+            setLoading(false);
           } else {
             console.warn("No profile found for UID:", currentUserUid);
-            // AUTO-ADAPT: If this is the developer email, auto-create their admin profile
-            if (firebaseUser.email?.toLowerCase() === 'muhammadramzan2330@gmail.com') {
-              try {
-                const { setDoc, doc, serverTimestamp } = await import('firebase/firestore');
-                await setDoc(doc(db, 'user', currentUserUid), {
-                  uid: currentUserUid,
-                  name: firebaseUser.displayName || 'Muhammad Ramzan',
-                  email: firebaseUser.email,
-                  role: 'admin',
-                  status: 'active',
-                  createdAt: serverTimestamp(),
-                  updatedAt: serverTimestamp()
-                });
-                console.log("Developer Profile Auto-Provisioned.");
-              } catch (err) {
-                console.error("Auto-provisioning failed:", err);
-                setProfile(null);
-              }
-            } else {
+            // AUTO-ADAPT: Auto-create profile for ALL authenticated users if missing
+            try {
+              const { setDoc, doc, serverTimestamp } = await import('firebase/firestore');
+              const isDeveloper = firebaseUser.email?.toLowerCase() === 'muhammadramzan2330@gmail.com';
+              
+              await setDoc(doc(db, 'user', currentUserUid), {
+                uid: currentUserUid,
+                name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Customer Account',
+                email: firebaseUser.email,
+                phone: '', 
+                role: isDeveloper ? 'admin' : 'customer',
+                status: 'active',
+                plan: "",
+                paymentStatus: "pending",
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+              });
+              console.log("Profile Auto-Provisioned for:", firebaseUser.email);
+              // Profile creation will trigger snapshot again
+            } catch (err) {
+              console.error("Auto-provisioning failed:", err);
               setProfile(null);
+              setLoading(false);
             }
           }
-          setLoading(false);
         }, (err) => {
           handleFirestoreError(err, OperationType.GET, `user/${currentUserUid}`);
           setError("Failed to load user profile");
