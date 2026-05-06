@@ -63,7 +63,14 @@ export default function Login() {
       await loginWithEmail(email.trim(), password);
       toast.success("Welcome back!");
     } catch (error: any) {
-      console.error('Email login error fully caught:', error);
+      // Standard Firebase auth error handling
+      const isCredentialError = error.code === 'auth/invalid-credential' || 
+                               error.code === 'auth/user-not-found' || 
+                               error.code === 'auth/wrong-password';
+      
+      if (!isCredentialError) {
+        console.error('Unexpected email login error:', error);
+      }
       
       const messageHeader = `Security Alert`;
       let message = "The identity credentials provided do not match our records.";

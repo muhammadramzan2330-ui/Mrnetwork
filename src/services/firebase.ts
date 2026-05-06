@@ -28,27 +28,33 @@ import {
 } from 'firebase/firestore';
 // Firebase configuration using environment variables for high security
 // and hardcoded values for project identifiers as requested by the user.
+
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "isp-billing-app-eda7c.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "isp-billing-app-eda7c",
+  projectId: "isp-billing-app-eda7c", // Forced to target project as per requirements
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase
-const configStatus = {
-  apiKey: !!firebaseConfig.apiKey,
-  appId: !!firebaseConfig.appId,
-  projectId: firebaseConfig.projectId
+// --- ENV DIAGNOSTICS ---
+const mask = (val: string | undefined): string => {
+  if (!val) return 'MISSING (undefined)';
+  if (val.length <= 8) return '****';
+  return `${val.substring(0, 4)}...${val.substring(val.length - 4)}`;
 };
 
+if (!import.meta.env.VITE_FIREBASE_API_KEY) {
+  console.error("CRITICAL: VITE_FIREBASE_API_KEY is not defined in environment variables.");
+}
+
 console.group('--- NEXUS SECURITY INITIALIZATION ---');
-console.log('Active Node:', configStatus.projectId);
-console.log('Identity API:', configStatus.apiKey ? 'CONNECTED' : 'KEY MISSING');
-console.log('Uplink Status:', configStatus.appId ? 'STABLE' : 'APP ID MISSING');
+console.log('Active Node:', firebaseConfig.projectId);
+console.log('Identity API:', mask(import.meta.env.VITE_FIREBASE_API_KEY));
+console.log('Uplink Status:', mask(import.meta.env.VITE_FIREBASE_APP_ID));
+console.log('Auth Domain:', firebaseConfig.authDomain);
 console.groupEnd();
 
 export const app = initializeApp(firebaseConfig);
