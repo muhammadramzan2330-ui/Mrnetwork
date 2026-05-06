@@ -32,44 +32,47 @@ import {
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "isp-billing-app-eda7c.firebaseapp.com",
-  projectId: "isp-billing-app-eda7c", // Forced to target project as per requirements
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  projectId: "isp-billing-app-eda7c",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "isp-billing-app-eda7c.appspot.com",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// --- ENV DIAGNOSTICS ---
-const mask = (val: string | undefined): string => {
-  if (!val) return 'MISSING (undefined)';
-  if (val.length <= 8) return '****';
-  return `${val.substring(0, 4)}...${val.substring(val.length - 4)}`;
-};
+// --- SAFE INITIALIZATION ---
+let app;
+let auth: any;
+let db: any;
+let secondaryAuth: any;
+let isFirebaseInitialized = false;
+let firebaseInitError: string | null = null;
 
-if (!import.meta.env.VITE_FIREBASE_API_KEY) {
-  console.error("CRITICAL: VITE_FIREBASE_API_KEY is not defined in environment variables.");
+try {
+  if (!firebaseConfig.apiKey || !firebaseConfig.appId) {
+    throw new Error("Missing required Firebase configuration (API Key or App ID).");
+  }
+  
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  
+  const secondaryApp = initializeApp(firebaseConfig, 'Secondary');
+  secondaryAuth = getAuth(secondaryApp);
+  
+  isFirebaseInitialized = true;
+  console.log("Firebase initialized successfully for node:", firebaseConfig.projectId);
+} catch (error: any) {
+  console.error("CRITICAL: Firebase failed to initialize:", error.message);
+  firebaseInitError = error.message;
 }
 
-console.group('--- NEXUS SECURITY INITIALIZATION ---');
-console.log('Active Node:', firebaseConfig.projectId);
-console.log('Identity API:', mask(import.meta.env.VITE_FIREBASE_API_KEY));
-console.log('Uplink Status:', mask(import.meta.env.VITE_FIREBASE_APP_ID));
-console.log('Auth Domain:', firebaseConfig.authDomain);
-console.groupEnd();
+export { app, auth, db, secondaryAuth, isFirebaseInitialized, firebaseInitError };
 
-export const app = initializeApp(firebaseConfig);
-
-// Initialize Services
-export const auth = getAuth(app);
-export const db = getFirestore(app); // Default database
-export const googleProvider = new GoogleAuthProvider();
-
-// Secondary instance for admin-led user creation to avoid session swap
-const secondaryApp = initializeApp(firebaseConfig, 'Secondary');
-export const secondaryAuth = getAuth(secondaryApp);
+const googleProvider = new GoogleAuthProvider();
 
 // Essential Helpers used by the app
 export const signInWithGoogle = async () => {
+  if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
   try {
     console.log("Attempting signInWithPopup...");
     return await signInWithPopup(auth, googleProvider);
@@ -103,22 +106,32 @@ export const signInWithGoogle = async () => {
   }
 };
 
-export const loginWithEmail = (email: string, pass: string) => 
-  signInWithEmailAndPassword(auth, email, pass);
+export const loginWithEmail = (email: string, pass: string) => {
+  if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
+  return signInWithEmailAndPassword(auth, email, pass);
+};
 
-export const registerWithEmail = (email: string, pass: string) => 
-  createUserWithEmailAndPassword(auth, email, pass);
+export const registerWithEmail = (email: string, pass: string) => {
+  if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
+  return createUserWithEmailAndPassword(auth, email, pass);
+};
 
-export const resetPassword = (email: string) =>
-  sendPasswordResetEmail(auth, email);
+export const resetPassword = (email: string) => {
+  if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
+  return sendPasswordResetEmail(auth, email);
+};
 
-export const logout = () => signOut(auth);
+export const logout = () => {
+  if (!isFirebaseInitialized) return Promise.resolve();
+  return signOut(auth);
+};
 
 export const subscribeToCollection = <T extends { id: string }>(
   collectionPath: string, 
   callback: (data: T[]) => void,
   queryConstraints: QueryConstraint[] = []
 ) => {
+  if (!isFirebaseInitialized) return () => {};
   const q = query(collection(db, collectionPath), ...queryConstraints);
   return onSnapshot(q, (snapshot) => {
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
@@ -129,6 +142,7 @@ export const subscribeToCollection = <T extends { id: string }>(
 };
 
 export const addDocument = async (collectionPath: string, data: any) => {
+  if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
   try {
     return await addDoc(collection(db, collectionPath), {
       ...data,
@@ -141,6 +155,7 @@ export const addDocument = async (collectionPath: string, data: any) => {
 };
 
 export const createUserProfile = async (uid: string, data: any) => {
+  if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
   try {
     return await setDoc(doc(db, 'user', uid), {
       uid,
@@ -154,6 +169,7 @@ export const createUserProfile = async (uid: string, data: any) => {
 };
 
 export const updateDocument = async (collectionPath: string, id: string, data: any) => {
+  if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
   const docRef = doc(db, collectionPath, id);
   try {
     return await updateDoc(docRef, {
@@ -166,6 +182,7 @@ export const updateDocument = async (collectionPath: string, id: string, data: a
 };
 
 export const deleteDocument = async (collectionPath: string, id: string) => {
+  if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
   const docRef = doc(db, collectionPath, id);
   try {
     return await deleteDoc(docRef);

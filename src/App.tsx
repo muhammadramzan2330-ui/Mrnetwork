@@ -17,13 +17,44 @@ import CustomerDashboard from './components/CustomerDashboard';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { SystemProvider } from './contexts/SystemContext';
 import { Toaster } from '@/components/ui/sonner';
-import { ShieldOff, Loader2 } from 'lucide-react';
+import { ShieldOff, Loader2, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
-import { auth } from '@/services/firebase';
+import { auth, isFirebaseInitialized, firebaseInitError } from '@/services/firebase';
 import { signOut } from 'firebase/auth';
 import { cn } from '@/lib/utils';
 
 function AppRoutes() {
+  if (!isFirebaseInitialized) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-6 text-center">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white p-8 rounded-[2.5rem] shadow-2xl shadow-slate-200/60 border border-slate-100 max-w-md w-full"
+        >
+          <div className="w-20 h-20 bg-rose-50 text-rose-500 rounded-3xl flex items-center justify-center mb-6 mx-auto border border-rose-100 shadow-inner">
+            <AlertCircle className="w-10 h-10" />
+          </div>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tighter uppercase mb-2">Firebase configuration error</h1>
+          <p className="text-sm text-slate-500 mb-8 font-medium leading-relaxed">
+            {firebaseInitError || "The application uplink could not be established. Please verify your environment variables."}
+          </p>
+          
+          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 text-left font-mono text-[10px] text-slate-600 mb-8 w-full overflow-x-auto shadow-sm">
+            <p className="font-bold mb-2 uppercase tracking-widest text-indigo-600">Runtime Context Status:</p>
+            <p className="mb-1">API_KEY: {import.meta.env.VITE_FIREBASE_API_KEY ? '✓ LOADED' : '✗ MISSING'}</p>
+            <p className="mb-1">APP_ID: {import.meta.env.VITE_FIREBASE_APP_ID ? '✓ LOADED' : '✗ MISSING'}</p>
+            <p>PROJECT: isp-billing-app-eda7c</p>
+          </div>
+
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+            Check Vercel Environment Variables
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
+
   const { user, profile, loading, isAdmin, isCustomer, error } = useAuth();
 
   if (loading) {

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
-import { auth, db, handleFirestoreError, OperationType } from '@/services/firebase';
+import { auth, db, handleFirestoreError, OperationType, isFirebaseInitialized } from '@/services/firebase';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, doc } from 'firebase/firestore';
 import { toast } from 'sonner';
 
@@ -45,6 +45,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!isFirebaseInitialized) {
+      setLoading(false);
+      return;
+    }
+
     let unsubscribeProfile: (() => void) | undefined;
 
     // Handle redirect result
