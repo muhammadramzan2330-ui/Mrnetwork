@@ -30,13 +30,13 @@ import {
 // and hardcoded values for project identifiers as requested by the user.
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "isp-billing-app-eda7c.firebaseapp.com",
+  apiKey: "AIzaSyDlMAnRnRVx_UXpfWS1LFu8jAwDbc130iQ",
+  authDomain: "isp-billing-app-eda7c.firebaseapp.com",
   projectId: "isp-billing-app-eda7c",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "isp-billing-app-eda7c.appspot.com",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  storageBucket: "isp-billing-app-eda7c.firebasestorage.app",
+  messagingSenderId: "11751714792",
+  appId: "1:11751714792:web:1d65fa8eb13333bfd8fe5d",
+  measurementId: "G-X2BQGLBCC4"
 };
 
 // --- SAFE INITIALIZATION ---
