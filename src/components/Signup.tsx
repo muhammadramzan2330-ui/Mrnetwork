@@ -62,6 +62,10 @@ export default function Signup() {
       if (error.code === 'auth/operation-not-allowed') {
         message = `Email/Password sign-up is not allowed for this project. 
         Important: Please ensure 'Email/Password' is enabled in the Firebase Console and that you are looking at the CORRECT project ID.`;
+      } else if (error.code === 'auth/unauthorized-domain') {
+        message = `This domain (${window.location.hostname}) is not authorized. Go to Firebase Console > Authentication > Settings > Authorized domains and add this URL.`;
+      } else if (error.code === 'auth/api-key-not-valid') {
+        message = "Verification failed: The API Key is restricted. Please go to Google Cloud Console > Credentials and allow your Vercel domain.";
       } else if (error.code === 'auth/email-already-in-use') {
         message = "This email is already registered. Try logging in instead.";
       } else if (error.code === 'auth/weak-password') {
@@ -70,7 +74,10 @@ export default function Signup() {
         message = "The email address is invalid.";
       }
       
-      toast.error(`Registration Error: ${message}`, { duration: 10000 });
+      toast.error(`Registration Error: ${message}`, { 
+        description: `Code: ${error.code} | Host: ${window.location.hostname}`,
+        duration: 10000 
+      });
       setLoading(false);
     }
   };

@@ -63,6 +63,9 @@ try {
   console.log("Firebase initialized successfully for node:", firebaseConfig.projectId);
 } catch (error: any) {
   console.error("CRITICAL: Firebase failed to initialize:", error.message);
+  if (error.code === 'auth/api-key-not-valid' || error.message.includes('api-key-not-valid')) {
+    console.error("DIAGNOSIS: This error usually means the API Key is restricted. Please check Google Cloud Console Credentials and ensure your Vercel domain is allowed for this API Key.");
+  }
   firebaseInitError = error.message;
 }
 
@@ -77,7 +80,11 @@ export const signInWithGoogle = async () => {
     console.log("Attempting signInWithPopup...");
     return await signInWithPopup(auth, googleProvider);
   } catch (error: any) {
-    console.error("signInWithPopup failed:", error.code, error.message);
+    console.error("signInWithGoogle precise error:", JSON.stringify({
+      code: error.code,
+      message: error.message,
+      domain: window.location.hostname
+    }));
     
     // Explicitly handle unauthorized domain by informing or trying redirect
     // Sometimes redirect works better with iframe/popup constraints
@@ -106,14 +113,34 @@ export const signInWithGoogle = async () => {
   }
 };
 
-export const loginWithEmail = (email: string, pass: string) => {
+export const loginWithEmail = async (email: string, pass: string) => {
   if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
-  return signInWithEmailAndPassword(auth, email, pass);
+  try {
+    return await signInWithEmailAndPassword(auth, email, pass);
+  } catch (error: any) {
+    console.error("loginWithEmail precise error:", JSON.stringify({
+      code: error.code,
+      message: error.message,
+      customData: error.customData,
+      stack: error.stack
+    }));
+    throw error;
+  }
 };
 
-export const registerWithEmail = (email: string, pass: string) => {
+export const registerWithEmail = async (email: string, pass: string) => {
   if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
-  return createUserWithEmailAndPassword(auth, email, pass);
+  try {
+    return await createUserWithEmailAndPassword(auth, email, pass);
+  } catch (error: any) {
+    console.error("registerWithEmail precise error:", JSON.stringify({
+      code: error.code,
+      message: error.message,
+      customData: error.customData,
+      stack: error.stack
+    }));
+    throw error;
+  }
 };
 
 export const resetPassword = (email: string) => {

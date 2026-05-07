@@ -88,13 +88,15 @@ export default function Login() {
         message = "Email/Password login is currently disabled for this project.";
       } else if (error.code === 'auth/invalid-email') {
         message = "Please enter a valid email address.";
-      } else if (error.code === 'auth/network-request-failed') {
-        message = "Connection error. Please check your internet connectivity.";
+      } else if (error.code === 'auth/unauthorized-domain') {
+        message = `This domain (${window.location.hostname}) is not authorized in Firebase Console. Please add it to 'Authorized domains' in Authentication settings.`;
+      } else if (error.code === 'auth/api-key-not-valid') {
+        message = "Verification failed: The API Key is restricted. Please go to Google Cloud Console > Credentials and allow your Vercel domain.";
       }
       
       toast.error(message, { 
-        description: `Error Code: ${error.code}`,
-        duration: 5000,
+        description: `Code: ${error.code} | ${error.message}`,
+        duration: 8000,
       });
       setLoading(false);
     }
