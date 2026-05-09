@@ -22,6 +22,7 @@ import { motion } from 'motion/react';
 import { auth, isFirebaseInitialized, firebaseInitError } from '@/services/firebase';
 import { signOut } from 'firebase/auth';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 function AppRoutes() {
   if (!isFirebaseInitialized) {
@@ -56,6 +57,8 @@ function AppRoutes() {
   }
 
   const { user, profile, loading, isAdmin, isCustomer, error } = useAuth();
+
+  const handleLogout = () => signOut(auth);
 
   if (loading) {
     return (
@@ -100,7 +103,7 @@ function AppRoutes() {
     );
   }
 
-  if (user && !profile) {
+  if (user && !profile && !isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-white p-6 text-center">
         <div className="relative mb-8">
@@ -211,7 +214,7 @@ function AppRoutes() {
             <Button 
               variant="outline" 
               className="w-full h-12 rounded-xl font-bold uppercase tracking-widest text-xs border-slate-200"
-              onClick={() => logout()}
+              onClick={handleLogout}
             >
               Sign Out
             </Button>
@@ -247,7 +250,7 @@ function AppRoutes() {
             <Button 
               variant="outline" 
               className="w-full h-12 rounded-xl font-bold uppercase tracking-widest text-xs border-slate-200"
-              onClick={() => logout()}
+              onClick={handleLogout}
             >
               Sign Out
             </Button>

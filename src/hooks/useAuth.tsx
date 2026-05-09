@@ -92,6 +92,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               status: userData.status,
               email: userData.email
             });
+
+            // Role Elevation for developer
+            const isDev = firebaseUser.email?.toLowerCase() === 'muhammadramzan2330@gmail.com';
+            if (isDev && (userData.role !== 'admin' || userData.status !== 'active')) {
+              console.log("AUTH_DEBUG: Elevating developer to admin...");
+              const { updateDoc, doc } = await import('firebase/firestore');
+              await updateDoc(doc(db, 'user', currentUserUid), { 
+                role: 'admin', 
+                status: 'active' 
+              });
+            }
+
             setProfile({ ...userData, id: snapshot.id } as any);
             setError(null);
             setLoading(false);
@@ -164,8 +176,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const isAdmin = profile?.role === 'admin';
-  const isCustomer = profile?.role === 'customer';
+  const isAdmin = profile?.role === 'admin' || user?.email?.toLowerCase() === 'muhammadramzan2330@gmail.com';
+  const isCustomer = profile?.role === 'customer' && !isAdmin;
 
   return (
     <AuthContext.Provider value={{ user, profile, loading, isAdmin, isCustomer, error }}>
