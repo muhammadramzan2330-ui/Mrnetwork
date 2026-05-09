@@ -57,11 +57,12 @@ try {
   auth = getAuth(app);
   db = getFirestore(app);
   
-  const secondaryApp = initializeApp(firebaseConfig, 'Secondary');
+  // Secondary app instance for managing users without logging out the administrator
+  const secondaryApp = initializeApp(firebaseConfig, 'SecondaryManager');
   secondaryAuth = getAuth(secondaryApp);
   
   isFirebaseInitialized = true;
-  console.log("Firebase initialized successfully for node:", firebaseConfig.projectId);
+  console.log("Firebase initialized successfully for project:", firebaseConfig.projectId);
 } catch (error: any) {
   console.error("CRITICAL: Firebase failed to initialize:", error.message);
   if (error.code === 'auth/api-key-not-valid' || error.message.includes('api-key-not-valid')) {

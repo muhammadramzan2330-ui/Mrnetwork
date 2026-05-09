@@ -91,7 +91,17 @@ export default function Login() {
       } else if (error.code === 'auth/unauthorized-domain') {
         const hostname = window.location.hostname;
         const isIframe = window.self !== window.top;
-        message = `Access Denied: The domain '${hostname}' is not authorized. ${isIframe ? 'Since you are in a preview, please click "Open in New Tab" at the top right to login.' : 'Please add it to Firebase Console > Authentication > Settings > Authorized Domains.'}`;
+        message = `Access Denied: The domain '${hostname}' is not authorized.`;
+        toast.error("Unauthorized Domain", {
+          description: `Please add '${hostname}' to your Firebase console > Authentication > Settings > Authorized domains.`,
+          action: {
+            label: "Copy Domain",
+            onClick: () => {
+              navigator.clipboard.writeText(hostname);
+              toast.success("Domain copied to clipboard!");
+            }
+          }
+        });
       } else if (error.code === 'auth/api-key-not-valid') {
         message = "Verification failed: The API Key is restricted. Please go to Google Cloud Console > Credentials and allow your Vercel domain.";
       }

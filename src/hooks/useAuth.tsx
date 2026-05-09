@@ -81,24 +81,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const currentUserUid = firebaseUser.uid.trim();
         console.log("AUTH_DEBUG: Current User UID:", currentUserUid);
         
-        const userRef = doc(db, 'user', currentUserUid);
+        const q = query(collection(db, 'user'), where('uid', '==', currentUserUid));
 
-        unsubscribeProfile = onSnapshot(userRef, async (snapshot) => {
-          if (snapshot.exists()) {
+        unsubscribeProfile = onSnapshot(q, async (querySnapshot) => {
+          if (!querySnapshot.empty) {
+            const snapshot = querySnapshot.docs[0];
             const userData = snapshot.data() as UserProfile;
             console.log("AUTH_DEBUG: Profile Found:", {
-              uid: currentUserUid,
+              id: snapshot.id,
+              uid: userData.uid,
               role: userData.role,
-              status: userData.status,
-              email: userData.email
+              status: userData.status
             });
 
             // Role Elevation for developer
             const isDev = firebaseUser.email?.toLowerCase() === 'muhammadramzan2330@gmail.com';
             if (isDev && (userData.role !== 'admin' || userData.status !== 'active')) {
               console.log("AUTH_DEBUG: Elevating developer to admin...");
-              const { updateDoc, doc } = await import('firebase/firestore');
-              await updateDoc(doc(db, 'user', currentUserUid), { 
+              const { updateDoc } = await import('firebase/firestore');
+              await updateDoc(snapshot.ref, { 
                 role: 'admin', 
                 status: 'active' 
               });
@@ -114,9 +115,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               const { setDoc, doc, serverTimestamp } = await import('firebase/firestore');
               const isDeveloper = firebaseUser.email?.toLowerCase() === 'muhammadramzan2330@gmail.com';
               
+              // We use the UID as the document ID for new profiles by default for cleanliness
               await setDoc(doc(db, 'user', currentUserUid), {
                 uid: currentUserUid,
-                name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Customer Account',
+                name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Account',
                 email: firebaseUser.email,
                 phone: '', 
                 role: isDeveloper ? 'admin' : 'customer',
@@ -127,7 +129,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 updatedAt: serverTimestamp()
               });
               console.log("Profile Auto-Provisioned for:", firebaseUser.email);
-              // Profile creation will trigger snapshot again
             } catch (err) {
               console.error("Auto-provisioning failed:", err);
               setProfile(null);
@@ -135,7 +136,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           }
         }, (err) => {
-          handleFirestoreError(err, OperationType.GET, `user/${currentUserUid}`);
+          handleFirestoreError(err, OperationType.GET, `user collection query: uid=${currentUserUid}`);
           setError("Failed to load user profile");
           setLoading(false);
         });
