@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, MoreVertical, Phone, MapPin, Calendar, Shield, ShieldOff, RefreshCw, Package, Edit2, Ban, Trash2, DollarSign, Wallet, ArrowRightLeft, UserCircle2, Smartphone, CreditCard, Eye, EyeOff, QrCode, Lock, CheckCircle2, Download, Loader2, History as HistoryIcon, MessageSquare } from 'lucide-react';
+import { Plus, Search, XCircle, MoreVertical, Phone, MapPin, Calendar, Shield, ShieldOff, RefreshCw, Package, Edit2, Ban, Trash2, DollarSign, Wallet, ArrowRightLeft, UserCircle2, Smartphone, CreditCard, Eye, EyeOff, QrCode, Lock, CheckCircle2, Download, Loader2, History as HistoryIcon, MessageSquare } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,11 +27,15 @@ import { toast } from 'sonner';
 import { cn, formatDate } from '@/lib/utils';
 
 export default function Users() {
-  const { users, packages, subdealers, settings, recordPayment, bills, markBillAsPaid, payments } = useSystem();
+  const { users, packages, subdealers, settings, recordPayment, bills, markBillAsPaid, payments, generateManualBill } = useSystem();
   const [searchTerm, setSearchTerm] = useState('');
   const [billingFilter, setBillingFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended' | 'expired'>('all');
   const [isOpen, setIsOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isAssignOpen, setIsAssignOpen] = useState(false);
+  const [assignTarget, setAssignTarget] = useState<any>(null);
+  const [selectedPackageId, setSelectedPackageId] = useState('');
   const [isRenewOpen, setIsRenewOpen] = useState(false);
   const [isLedgerOpen, setIsLedgerOpen] = useState(false);
   const [ledgerUser, setLedgerUser] = useState<any>(null);
@@ -70,6 +74,7 @@ export default function Users() {
       );
       
       const uid = userCredential.user.uid;
+      const selectedPkg = packages.find(p => p.id === newUser.packageId);
 
       // 2. Create Firestore Profile with UID as Document ID
       await createUserProfile(uid, {
@@ -79,6 +84,9 @@ export default function Users() {
         pppoeUsername: newUser.pppoeUsername || newUser.email.split('@')[0],
         pppoePassword: newUser.pppoePassword || newUser.password,
         packageId: newUser.packageId,
+        packageName: selectedPkg?.name || '',
+        packageSpeed: selectedPkg?.speed || '',
+        packagePrice: selectedPkg?.price || 0,
         subdealerId: newUser.subdealerId,
         role: 'customer',
         status: 'active',
@@ -107,6 +115,26 @@ export default function Users() {
       toast.error(e.message || 'Failed to create customer');
     } finally {
       setCreating(false);
+    }
+  };
+
+  const handleAssignPackage = async () => {
+    if (!assignTarget || !selectedPackageId) return;
+    const pkg = packages.find(p => p.id === selectedPackageId);
+    if (!pkg) return;
+
+    try {
+      await updateDocument('user', assignTarget.id, {
+        packageId: pkg.id,
+        packageName: pkg.name,
+        packageSpeed: pkg.speed,
+        packagePrice: pkg.price
+      });
+      setIsAssignOpen(false);
+      setSelectedPackageId('');
+      toast.success(`Package ${pkg.name} assigned to ${assignTarget.name}`);
+    } catch (e) {
+      toast.error('Assignment failed');
     }
   };
 
@@ -166,10 +194,18 @@ export default function Users() {
   };
 
   const filteredUsers = users.filter(u => {
-    const matchesSearch = (u.name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         (u.pppoeUsername || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = searchTerm.toLowerCase();
+    const matchesSearch = 
+      (u.name || '').toLowerCase().includes(searchLower) || 
+      (u.pppoeUsername || '').toLowerCase().includes(searchLower) ||
+      (u.phone || '').toLowerCase().includes(searchLower) ||
+      (u.email || '').toLowerCase().includes(searchLower) ||
+      (u.packageName || '').toLowerCase().includes(searchLower) ||
+      (u.status || '').toLowerCase().includes(searchLower);
+
     const matchesBilling = billingFilter === 'all' || u.billingStatus === billingFilter;
-    return u.status !== 'pending' && matchesSearch && matchesBilling;
+    const matchesStatus = statusFilter === 'all' || u.status === statusFilter;
+    return u.status !== 'pending' && matchesSearch && matchesBilling && matchesStatus;
   });
 
   const pendingUsers = users.filter(u => u.status === 'pending');
@@ -211,358 +247,438 @@ export default function Users() {
 
   return (
     <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-24 md:pb-8">
-      {/* Search and Action Header */}
-      <div className="px-4 sm:px-8 py-6 space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+      {/* Sticky Top Header Section */}
+      <div className="sticky top-[60px] md:top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/60 pt-6 pb-4 shadow-sm transition-all duration-300">
+        <div className="px-4 sm:px-8 space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="flex flex-col">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Subscribers</h2>
-              <div className="flex items-center gap-2 mt-1">
-                <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest leading-none">Manage and monitor your ISP subscribers</p>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none uppercase">Customers</h2>
+              <div className="flex items-center gap-2 mt-1.5 font-mono">
+                <p className="text-indigo-600 text-[9px] font-black uppercase tracking-[0.2em] leading-none">Database active</p>
                 {users.filter(u => u.billingStatus === 'unpaid').length > 0 && (
-                  <Badge className="bg-rose-100 text-rose-600 border-none text-[8px] font-black h-4 px-1.5 rounded uppercase tracking-tighter">
+                  <Badge className="bg-rose-500 text-white border-none text-[8px] font-black h-4 px-1.5 rounded-md uppercase tracking-tighter shadow-sm shadow-rose-500/20">
                     {users.filter(u => u.billingStatus === 'unpaid').length} UNPAID
                   </Badge>
                 )}
               </div>
             </div>
-          <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-              <Button className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2 h-12 text-xs font-bold uppercase tracking-wider px-8 shadow-lg shadow-indigo-100 transition-all active:scale-95">
-                <Plus className="w-4 h-4" /> New Subscriber
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] rounded-2xl border-slate-100 bg-white shadow-2xl p-0 overflow-hidden text-slate-900">
-              <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <div className="header-gradient p-8 text-white relative">
-                  <DialogHeader>
-                    <DialogTitle className="text-2xl font-extrabold tracking-tight">Subscriber Registration</DialogTitle>
-                  </DialogHeader>
-                  <p className="text-white/60 text-[10px] font-bold mt-2 uppercase tracking-widest">Create a new customer account</p>
-                </div>
-                <div className="p-6 sm:p-8 space-y-6">
-                  <div className="grid gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Full Name</Label>
-                      <Input 
-                        placeholder="e.g. MUHAMMAD RAMZAN" 
-                        className="input-modern px-4"
-                        value={newUser.name}
-                        onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-                      />
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogTrigger asChild>
+                  <Button className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2 h-11 text-[10px] font-black uppercase tracking-widest px-6 shadow-lg shadow-indigo-200 transition-all active:scale-95">
+                    <Plus className="w-4 h-4" /> New Subscriber
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px] rounded-2xl border-slate-100 bg-white shadow-2xl p-0 overflow-hidden text-slate-900">
+                  <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
+                    <div className="header-gradient p-8 text-white relative">
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl font-extrabold tracking-tight">Subscriber Registration</DialogTitle>
+                      </DialogHeader>
+                      <p className="text-white/60 text-[11px] font-bold mt-2 uppercase tracking-widest">Create a new customer account</p>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Email Address</Label>
-                        <Input 
-                          type="email"
-                          placeholder="customer@email.com" 
-                          className="input-modern px-4"
-                          value={newUser.email}
-                          onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Password</Label>
-                        <Input 
-                          type="password" 
-                          placeholder="••••••••"
-                          className="input-modern px-4"
-                          value={newUser.password}
-                          onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                        />
+                    <div className="p-6 sm:p-8 space-y-6">
+                      <div className="grid gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Full Name</Label>
+                          <Input 
+                            placeholder="e.g. MUHAMMAD RAMZAN" 
+                            className="input-modern px-4"
+                            value={newUser.name}
+                            onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Email Address</Label>
+                            <Input 
+                              type="email"
+                              placeholder="customer@email.com" 
+                              className="input-modern px-4"
+                              value={newUser.email}
+                              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Password</Label>
+                            <Input 
+                              type="password" 
+                              placeholder="••••••••"
+                              className="input-modern px-4"
+                              value={newUser.password}
+                              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Mobile Number</Label>
+                          <Input 
+                            placeholder="+92 3XX XXXXXXX" 
+                            className="input-modern px-4"
+                            value={newUser.phone}
+                            onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">PPPoE Credentials</Label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <Input 
+                              placeholder="Username"
+                              className="input-modern h-12 text-xs px-4"
+                              value={newUser.pppoeUsername}
+                              onChange={(e) => setNewUser({ ...newUser, pppoeUsername: e.target.value })}
+                            />
+                            <Input 
+                              placeholder="Password"
+                              type="password"
+                              className="input-modern h-12 text-xs px-4"
+                              value={newUser.pppoePassword}
+                              onChange={(e) => setNewUser({ ...newUser, pppoePassword: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Assigned Plan</Label>
+                            <Select onValueChange={(val: string) => setNewUser({ ...newUser, packageId: val })}>
+                              <SelectTrigger className="input-modern w-full px-4 h-12">
+                                <SelectValue placeholder="Select Plan" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
+                                {packages.map(p => (
+                                  <SelectItem key={p.id} value={p.id} className="font-bold text-slate-900 rounded-lg py-3 cursor-pointer hover:bg-slate-50 uppercase text-[10px] tracking-widest">{p.name} • RS.{p.price}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Sub Dealer</Label>
+                            <Select onValueChange={(val: string) => setNewUser({ ...newUser, subdealerId: val })}>
+                              <SelectTrigger className="input-modern w-full px-4 h-12">
+                                <SelectValue placeholder="Select Dealer" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
+                                <SelectItem value="admin" className="font-bold text-slate-900 rounded-lg py-3 cursor-pointer hover:bg-slate-50 uppercase text-[10px] tracking-widest">Main Admin</SelectItem>
+                                {subdealers.map(s => (
+                                  <SelectItem key={s.id} value={s.id} className="font-bold text-slate-900 rounded-lg py-3 cursor-pointer hover:bg-slate-50 uppercase text-[10px] tracking-widest">{s.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <Button 
+                          onClick={handleAddUser}
+                          disabled={creating}
+                          className="w-full mt-4 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-indigo-100"
+                        >
+                          {creating ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Account'}
+                        </Button>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Mobile Number</Label>
-                      <Input 
-                        placeholder="+92 3XX XXXXXXX" 
-                        className="input-modern px-4"
-                        value={newUser.phone}
-                        onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">PPPoE Credentials</Label>
-                      <div className="grid grid-cols-2 gap-4">
-                        <Input 
-                          placeholder="Username"
-                          className="input-modern h-12 text-xs px-4"
-                          value={newUser.pppoeUsername}
-                          onChange={(e) => setNewUser({ ...newUser, pppoeUsername: e.target.value })}
-                        />
-                        <Input 
-                          placeholder="Password"
-                          type="password"
-                          className="input-modern h-12 text-xs px-4"
-                          value={newUser.pppoePassword}
-                          onChange={(e) => setNewUser({ ...newUser, pppoePassword: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Assigned Plan</Label>
-                        <Select onValueChange={(val: string) => setNewUser({ ...newUser, packageId: val })}>
-                          <SelectTrigger className="input-modern w-full px-4 h-12">
-                            <SelectValue placeholder="Select Plan" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
-                            {packages.map(p => (
-                              <SelectItem key={p.id} value={p.id} className="font-bold text-slate-900 rounded-lg py-3 cursor-pointer hover:bg-slate-50 uppercase text-[10px] tracking-widest">{p.name} • RS.{p.price}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Sub Dealer</Label>
-                        <Select onValueChange={(val: string) => setNewUser({ ...newUser, subdealerId: val })}>
-                          <SelectTrigger className="input-modern w-full px-4 h-12">
-                            <SelectValue placeholder="Select Dealer" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
-                            <SelectItem value="admin" className="font-bold text-slate-900 rounded-lg py-3 cursor-pointer hover:bg-slate-50 uppercase text-[10px] tracking-widest">Main Admin</SelectItem>
-                            {subdealers.map(s => (
-                              <SelectItem key={s.id} value={s.id} className="font-bold text-slate-900 rounded-lg py-3 cursor-pointer hover:bg-slate-50 uppercase text-[10px] tracking-widest">{s.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <Button 
-                      onClick={handleAddUser}
-                      disabled={creating}
-                      className="w-full mt-4 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-indigo-100"
-                    >
-                      {creating ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Account'}
-                    </Button>
                   </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center pt-2">
+              <div className="relative group w-full md:max-w-xl">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-indigo-600 group-focus-within:bg-indigo-50 group-focus-within:border-indigo-100 transition-all">
+                  <Search className="w-4 h-4" />
+                </div>
+                <Input
+                  placeholder="Search Customers (Name, Phone, Email, Package)..."
+                  className="input-modern pl-14 pr-12 h-14 text-sm font-bold border-slate-200 bg-white shadow-md focus:shadow-lg focus:ring-4 focus:ring-indigo-500/5 transition-all text-slate-900 placeholder:text-slate-400 placeholder:font-medium rounded-2xl"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
+                  <button 
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-rose-50 rounded-xl text-slate-400 hover:text-rose-500 transition-all"
+                  >
+                    <XCircle className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+              
+              <div className="flex flex-wrap items-center gap-4 ml-auto">
+                <div className="flex items-center bg-slate-100/50 p-1 rounded-xl border border-slate-200/40 shadow-inner">
+                  {(['all', 'active', 'suspended', 'expired'] as const).map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => setStatusFilter(filter)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
+                        statusFilter === filter 
+                          ? "bg-white text-indigo-600 shadow-sm"
+                          : "text-slate-400 hover:text-slate-600 hover:bg-white/80"
+                      )}
+                    >
+                      {filter}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center bg-slate-100/50 p-1 rounded-xl border border-slate-200/40 shadow-inner">
+                  {(['all', 'paid', 'unpaid'] as const).map((filter) => (
+                    <button
+                      key={filter}
+                      onClick={() => setBillingFilter(filter)}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
+                        billingFilter === filter 
+                          ? (filter === 'unpaid' ? "bg-rose-500 text-white shadow-md shadow-rose-500/20" : "bg-indigo-600 text-white shadow-md shadow-indigo-500/20")
+                          : "text-slate-400 hover:text-slate-600 hover:bg-white/80"
+                      )}
+                    >
+                      {filter}
+                    </button>
+                  ))}
                 </div>
               </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-
-        {pendingUsers.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 px-2">
-              <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_10px_rgba(249,115,22,0.5)]" />
-              <h3 className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] italic">Pending Approvals ({pendingUsers.length})</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {pendingUsers.map((user) => (
+        </div>
+      </div>
+
+      <div className="px-4 sm:px-8 py-6">
+        {filteredUsers.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            {filteredUsers.map((user, i) => {
+              const pkg = packages.find(p => p.id === user.packageId);
+              return (
                 <motion.div
                   key={user.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.03 }}
                 >
-                  <Card className="bg-white border-orange-100 shadow-sm rounded-2xl overflow-hidden border-l-4 border-l-orange-500">
-                    <div className="p-4 flex justify-between items-center">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600 border border-orange-100">
-                          <UserCircle2 className="w-5 h-5" />
+                  <Card className="bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-all group h-full flex flex-col relative">
+                    <div className="p-6 pb-4 flex justify-between items-start">
+                      <div className="flex gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-primary border border-slate-100 group-hover:scale-105 transition-transform duration-500">
+                          <UserCircle2 className="w-6 h-6" />
                         </div>
                         <div className="min-w-0">
-                          <h4 className="font-bold text-slate-900 truncate tracking-tight text-sm">{user.name}</h4>
-                          <p className="text-slate-400 text-[9px] font-bold uppercase tracking-widest mt-0.5">{user.email}</p>
+                          <h4 className="font-bold text-slate-900 truncate tracking-tight">{user.name}</h4>
+                          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest truncate mt-0.5">@{user.pppoeUsername}</p>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={() => handleReject(user.id)}
-                          className="h-8 px-3 rounded-lg text-rose-500 hover:bg-rose-50 text-[9px] font-bold uppercase tracking-wider"
-                        >
-                          Reject
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          onClick={() => handleApprove(user.id)}
-                          className="h-8 px-3 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[9px] font-bold uppercase tracking-wider shadow-sm"
-                        >
-                          Approve
-                        </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:bg-slate-50 rounded-lg">
+                            <MoreVertical className="w-5 h-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-xl border-slate-100 bg-white shadow-xl w-48 p-1">
+                          {user.billingStatus === 'unpaid' && (
+                            <>
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  const unpaidBill = bills.find(b => b.userId === user.id && b.status === 'unpaid');
+                                  if (unpaidBill) markBillAsPaid(unpaidBill.id);
+                                }}
+                                className="gap-2 text-xs font-black py-3 rounded-lg cursor-pointer uppercase tracking-wider text-emerald-600 hover:bg-emerald-50"
+                              >
+                                <DollarSign className="w-4 h-4" /> Resolve Bill
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => sendWhatsAppReminder(user)}
+                                className="gap-2 text-xs font-black py-3 rounded-lg cursor-pointer uppercase tracking-wider text-green-600 hover:bg-green-50"
+                              >
+                                <MessageSquare className="w-4 h-4" /> WhatsApp Reminder
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          <DropdownMenuItem 
+                            onClick={() => generateManualBill(user.id)}
+                            className="gap-2 text-[10px] font-bold py-3 rounded-lg cursor-pointer uppercase tracking-wider text-slate-600 hover:text-indigo-600"
+                          >
+                            <CreditCard className="w-4 h-4" /> Generate Manual Bill
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => { setAssignTarget(user); setIsAssignOpen(true); }}
+                            className="gap-2 text-[10px] font-bold py-3 rounded-lg cursor-pointer uppercase tracking-wider text-slate-600 hover:text-primary"
+                          >
+                            <Package className="w-4 h-4" /> Assign Package
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => { setLedgerUser(user); setIsLedgerOpen(true); }}
+                            className="gap-2 text-[10px] font-bold py-3 rounded-lg cursor-pointer uppercase tracking-wider text-slate-600 hover:text-primary"
+                          >
+                            <HistoryIcon className="w-4 h-4" /> Billing Ledger
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => { setEditingUser(user); setIsEditOpen(true); }}
+                            className="gap-2 text-[10px] font-bold py-3 rounded-lg cursor-pointer uppercase tracking-wider text-slate-600 hover:text-primary"
+                          >
+                            <Edit2 className="w-4 h-4" /> Edit Profile
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            onClick={() => toggleStatus(user)}
+                            className="gap-2 text-[10px] font-bold py-3 rounded-lg cursor-pointer uppercase tracking-wider text-slate-600"
+                          >
+                            {user.status === 'active' ? <Ban className="w-4 h-4 text-orange-500" /> : <CheckCircle2 className="w-4 h-4 text-emerald-500" />} 
+                            {user.status === 'active' ? 'Suspend' : 'Activate'}
+                          </DropdownMenuItem>
+                          <div className="h-px bg-slate-50 my-1" />
+                          <DropdownMenuItem 
+                            onClick={() => handleDelete(user.id)}
+                            className="gap-2 text-[10px] font-bold py-3 rounded-lg cursor-pointer text-rose-500 uppercase tracking-widest hover:bg-rose-50"
+                          >
+                            <Trash2 className="w-4 h-4" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    <div className="px-6 grid grid-cols-2 gap-3 mb-4">
+                      <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                        <p className="text-emerald-600/60 text-[8px] font-bold uppercase tracking-widest mb-1 leading-none">Wallet</p>
+                        <p className="text-sm font-extrabold text-emerald-600 leading-none">RS.{user.walletBalance?.toLocaleString() || '0'}</p>
                       </div>
+                      <div className="bg-rose-50 p-3 rounded-xl border border-rose-100">
+                        <p className="text-rose-600/60 text-[8px] font-bold uppercase tracking-widest mb-1 leading-none">Balance</p>
+                        <p className="text-sm font-extrabold text-rose-600 leading-none">RS.{user.balance?.toLocaleString() || '0'}</p>
+                      </div>
+                    </div>
+
+                    <div className="px-6 space-y-3 mb-6">
+                      <div className="flex flex-wrap gap-4">
+                        <div className="flex items-center gap-2">
+                          <Package className="w-3.5 h-3.5 text-slate-300" />
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{pkg?.name || 'NO PLAN'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-3.5 h-3.5 text-slate-300" />
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{formatDate(user.expiryDate, { month: 'short', day: 'numeric' })}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <Lock className="w-3.5 h-3.5 text-slate-300" />
+                          <span className="text-[10px] font-mono text-slate-500 font-bold overflow-hidden">
+                            {showPasswords[user.id] ? user.pppoePassword : '••••••••'}
+                          </span>
+                        </div>
+                        <button 
+                          onClick={() => setShowPasswords(prev => ({ ...prev, [user.id]: !prev[user.id] }))}
+                          className="p-1 hover:bg-white rounded-lg transition-all"
+                        >
+                          {showPasswords[user.id] ? <EyeOff className="w-3.5 h-3.5 text-primary" /> : <Eye className="w-3.5 h-3.5 text-slate-400" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-auto p-4 bg-slate-50/50 border-t border-slate-50 flex items-center justify-between gap-4">
+                      <div className="flex gap-2">
+                        <Badge className={cn(
+                          "rounded-lg font-bold text-[8px] px-3 py-1 border-none uppercase tracking-widest transition-colors",
+                          user.status === 'active' ? "bg-emerald-500 text-white shadow-lg shadow-emerald-200" : 
+                          user.status === 'suspended' ? "bg-rose-600 text-white shadow-lg shadow-rose-200" : 
+                          "bg-orange-500 text-white shadow-lg shadow-orange-200"
+                        )}>
+                          {user.status}
+                        </Badge>
+                        {user.billingStatus === 'unpaid' && (
+                          <Badge className="rounded-lg font-black text-[8px] px-3 py-1 border-none bg-rose-100 text-rose-600 uppercase tracking-widest border border-rose-200">
+                            UNPAID
+                          </Badge>
+                        )}
+                      </div>
+                      <Button 
+                        onClick={() => { setRenewTarget(user); setIsRenewOpen(true); }}
+                        className="h-9 px-4 rounded-lg bg-white hover:bg-primary hover:text-white text-primary border border-primary/20 text-[9px] font-bold uppercase tracking-widest shadow-sm transition-all"
+                      >
+                        Renew
+                      </Button>
                     </div>
                   </Card>
                 </motion.div>
-              ))}
-            </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border border-slate-100 shadow-sm mx-4 sm:mx-0">
+             <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                <Search className="w-8 h-8 text-slate-200" />
+             </div>
+             <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">No results found</h3>
+             <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Try searching with different keywords</p>
+             <Button 
+               variant="link" 
+               onClick={() => setSearchTerm('')}
+               className="mt-4 text-indigo-600 font-extrabold uppercase text-[10px] tracking-[0.2em]"
+             >
+               Clear all filters
+             </Button>
           </div>
         )}
-
-        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-          <div className="relative group flex-1 max-w-2xl w-full">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-colors group-focus-within:text-primary" />
-            <Input
-              placeholder="Search by name, username..."
-              className="input-modern pl-12 h-12 shadow-sm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          
-          <div className="flex items-center bg-white p-1 rounded-xl border border-slate-100 shadow-sm">
-            {(['all', 'paid', 'unpaid'] as const).map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setBillingFilter(filter)}
-                className={cn(
-                  "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-                  billingFilter === filter 
-                    ? (filter === 'unpaid' ? "bg-rose-500 text-white shadow-lg shadow-rose-500/20" : "bg-primary text-white shadow-lg shadow-primary/20")
-                    : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
-                )}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
-      <div className="px-4 sm:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-        {filteredUsers.map((user, i) => {
-          const pkg = packages.find(p => p.id === user.packageId);
-          return (
-            <motion.div
-              key={user.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: i * 0.03 }}
-            >
-              <Card className="bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-all group h-full flex flex-col relative">
-                <div className="p-6 pb-4 flex justify-between items-start">
-                  <div className="flex gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-primary border border-slate-100 group-hover:scale-105 transition-transform duration-500">
-                      <UserCircle2 className="w-6 h-6" />
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-slate-900 truncate tracking-tight">{user.name}</h4>
-                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest truncate mt-0.5">@{user.pppoeUsername}</p>
-                    </div>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:bg-slate-50 rounded-lg">
-                        <MoreVertical className="w-5 h-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-xl border-slate-100 bg-white shadow-xl w-48 p-1">
-                      {user.billingStatus === 'unpaid' && (
-                        <>
-                          <DropdownMenuItem 
-                            onClick={() => {
-                              const unpaidBill = bills.find(b => b.userId === user.id && b.status === 'unpaid');
-                              if (unpaidBill) markBillAsPaid(unpaidBill.id);
-                            }}
-                            className="gap-2 text-[10px] font-black py-3 rounded-lg cursor-pointer uppercase tracking-wider text-emerald-600 hover:bg-emerald-50"
-                          >
-                            <DollarSign className="w-4 h-4" /> Resolve Bill
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => sendWhatsAppReminder(user)}
-                            className="gap-2 text-[10px] font-black py-3 rounded-lg cursor-pointer uppercase tracking-wider text-green-600 hover:bg-green-50"
-                          >
-                            <MessageSquare className="w-4 h-4" /> WhatsApp Reminder
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                      <DropdownMenuItem 
-                        onClick={() => { setLedgerUser(user); setIsLedgerOpen(true); }}
-                        className="gap-2 text-[10px] font-bold py-3 rounded-lg cursor-pointer uppercase tracking-wider text-slate-600 hover:text-primary"
-                      >
-                        <HistoryIcon className="w-4 h-4" /> Billing Ledger
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => { setEditingUser(user); setIsEditOpen(true); }}
-                        className="gap-2 text-[10px] font-bold py-3 rounded-lg cursor-pointer uppercase tracking-wider text-slate-600 hover:text-primary"
-                      >
-                        <Edit2 className="w-4 h-4" /> Edit Profile
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => toggleStatus(user)}
-                        className="gap-2 text-[10px] font-bold py-3 rounded-lg cursor-pointer uppercase tracking-wider text-slate-600"
-                      >
-                        {user.status === 'active' ? <Ban className="w-4 h-4 text-orange-500" /> : <CheckCircle2 className="w-4 h-4 text-emerald-500" />} 
-                        {user.status === 'active' ? 'Suspend' : 'Activate'}
-                      </DropdownMenuItem>
-                      <div className="h-px bg-slate-50 my-1" />
-                      <DropdownMenuItem 
-                        onClick={() => handleDelete(user.id)}
-                        className="gap-2 text-[10px] font-bold py-3 rounded-lg cursor-pointer text-rose-500 uppercase tracking-widest hover:bg-rose-50"
-                      >
-                        <Trash2 className="w-4 h-4" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
-
-                <div className="px-6 grid grid-cols-2 gap-3 mb-4">
-                  <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-100">
-                    <p className="text-emerald-600/60 text-[8px] font-bold uppercase tracking-widest mb-1 leading-none">Wallet</p>
-                    <p className="text-sm font-extrabold text-emerald-600 leading-none">RS.{user.walletBalance?.toLocaleString() || '0'}</p>
-                  </div>
-                  <div className="bg-rose-50 p-3 rounded-xl border border-rose-100">
-                    <p className="text-rose-600/60 text-[8px] font-bold uppercase tracking-widest mb-1 leading-none">Balance</p>
-                    <p className="text-sm font-extrabold text-rose-600 leading-none">RS.{user.balance?.toLocaleString() || '0'}</p>
-                  </div>
-                </div>
-
-                <div className="px-6 space-y-3 mb-6">
-                  <div className="flex flex-wrap gap-4">
-                    <div className="flex items-center gap-2">
-                      <Package className="w-3.5 h-3.5 text-slate-300" />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{pkg?.name || 'NO PLAN'}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-3.5 h-3.5 text-slate-300" />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{formatDate(user.expiryDate, { month: 'short', day: 'numeric' })}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between bg-slate-50 px-4 py-3 rounded-xl border border-slate-100">
-                    <div className="flex items-center gap-2">
-                      <Lock className="w-3.5 h-3.5 text-slate-300" />
-                      <span className="text-[10px] font-mono text-slate-500 font-bold overflow-hidden">
-                        {showPasswords[user.id] ? user.pppoePassword : '••••••••'}
-                      </span>
-                    </div>
-                    <button 
-                      onClick={() => setShowPasswords(prev => ({ ...prev, [user.id]: !prev[user.id] }))}
-                      className="p-1 hover:bg-white rounded-lg transition-all"
+      {/* Assign Package Dialog */}
+      <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
+        <DialogContent className="sm:max-w-[480px] rounded-2xl border-slate-100 bg-white shadow-2xl p-0 overflow-hidden text-slate-900">
+          {assignTarget && (
+            <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
+              <div className="bg-slate-50 p-8 border-b border-slate-100">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-extrabold tracking-tight">Assign Package</DialogTitle>
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Select a plan for {assignTarget.name}</p>
+                </DialogHeader>
+              </div>
+              <div className="p-8 space-y-6">
+                <div className="grid gap-6">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Select Plan</Label>
+                    <Select 
+                      value={selectedPackageId}
+                      onValueChange={setSelectedPackageId}
                     >
-                      {showPasswords[user.id] ? <EyeOff className="w-3.5 h-3.5 text-primary" /> : <Eye className="w-3.5 h-3.5 text-slate-400" />}
-                    </button>
+                      <SelectTrigger className="input-modern w-full px-4 h-12">
+                        <SelectValue placeholder="Choose a package" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
+                        {packages.map(p => (
+                          <SelectItem key={p.id} value={p.id} className="font-bold text-slate-900 rounded-lg py-3 cursor-pointer hover:bg-slate-50 uppercase text-[10px] tracking-widest">
+                            {p.name} • {p.speed} • RS.{p.price}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
+                  
+                  {selectedPackageId && (
+                    <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-2">
+                       <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Package</span>
+                          <span className="text-xs font-bold text-indigo-600 uppercase">{packages.find(p => p.id === selectedPackageId)?.name}</span>
+                       </div>
+                       <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Speed</span>
+                          <span className="text-xs font-bold text-indigo-600 uppercase">{packages.find(p => p.id === selectedPackageId)?.speed}</span>
+                       </div>
+                       <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Price</span>
+                          <span className="text-xs font-bold text-indigo-600 uppercase">Rs. {packages.find(p => p.id === selectedPackageId)?.price}</span>
+                       </div>
+                    </div>
+                  )}
 
-                <div className="mt-auto p-4 bg-slate-50/50 border-t border-slate-50 flex items-center justify-between gap-4">
-                  <div className="flex gap-2">
-                    <Badge className={cn(
-                      "rounded-lg font-bold text-[8px] px-3 py-1 border-none uppercase tracking-widest",
-                      user.status === 'active' ? "bg-emerald-500 text-white" : "bg-rose-500 text-white"
-                    )}>
-                      {user.status}
-                    </Badge>
-                    {user.billingStatus === 'unpaid' && (
-                      <Badge className="rounded-lg font-black text-[8px] px-3 py-1 border-none bg-rose-100 text-rose-600 uppercase tracking-widest">
-                        UNPAID
-                      </Badge>
-                    )}
-                  </div>
                   <Button 
-                    onClick={() => { setRenewTarget(user); setIsRenewOpen(true); }}
-                    className="h-9 px-4 rounded-lg bg-white hover:bg-primary hover:text-white text-primary border border-primary/20 text-[9px] font-bold uppercase tracking-widest shadow-sm transition-all"
+                    onClick={handleAssignPackage}
+                    disabled={!selectedPackageId}
+                    className="w-full mt-4 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm uppercase tracking-widest shadow-xl"
                   >
-                    Renew
+                    Assign Plan
                   </Button>
                 </div>
-              </Card>
-            </motion.div>
-          );
-        })}
-      </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Edit User Dialog - Light */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>

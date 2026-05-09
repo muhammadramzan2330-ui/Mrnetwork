@@ -5,20 +5,26 @@ import {
   ShieldOff, 
   SlidersHorizontal, 
   LogOut, 
+  RefreshCw,
   ArrowUpRight, 
   ArrowDownRight, 
   Users, 
   UserCheck, 
   Package, 
   CreditCard, 
+  CheckCircle2,
   MessageSquare,
   ChevronRight,
   TrendingUp,
   Calendar,
   History,
-  Activity
+  Activity,
+  AlertCircle,
+  LayoutDashboard,
+  Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { motion } from 'motion/react';
 import { cn, formatDate, formatTime } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -39,8 +45,9 @@ import { useAuth } from '../hooks/useAuth';
 export default function Dashboard() {
   const navigate = useNavigate();
   const { profile, isAdmin, isCustomer } = useAuth();
-  const { users, subdealers, packages, requests, payments, bills, treasury, loading, checkExpiries } = useSystem();
+  const { users, subdealers, packages, requests, payments, bills, treasury, loading, checkExpiries, generateMonthlyBills } = useSystem();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -48,8 +55,21 @@ export default function Dashboard() {
     }
   }, [loading]);
 
-  const activeUsers = users.filter(u => u.status === 'active');
-  const expiredUsers = users.filter(u => u.status === 'expired' || u.status === 'suspended');
+  const handleSyncBills = async () => {
+    setIsSyncing(true);
+    try {
+      await generateMonthlyBills();
+      toast.success("Billing data synchronized");
+    } catch (e) {
+      toast.error("Billing sync failed");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const activeUsersCount = users.filter(u => u.status === 'active').length;
+  const suspendedUsersCount = users.filter(u => u.status === 'suspended').length;
+  const expiredUsersCount = users.filter(u => u.status === 'expired').length;
   const pendingRequests = requests.filter(r => r.status === 'pending');
   const recentPayments = payments.slice(0, 5);
   const userPayments = isAdmin ? payments : payments.filter(p => p.userId === profile?.uid);
@@ -60,15 +80,20 @@ export default function Dashboard() {
     .reduce((sum, p) => sum + (p.amount || 0), 0);
   
   const pendingPaymentsCount = payments.filter(p => p.status === 'pending').length;
+  const pendingUsersCount = users.filter(u => u.status === 'pending').length;
   const unpaidBillsCount = bills.filter(b => b.status === 'unpaid').length;
+  const paidBillsCount = bills.filter(b => b.status === 'paid').length;
+  const overdueBillsCount = bills.filter(b => b.status === 'unpaid' && new Date(b.dueDate) < new Date()).length;
 
   const stats = isAdmin ? [
-    { label: 'Subscribers', value: users.length.toString(), icon: Users, color: 'bg-indigo-100 text-indigo-600' },
-    { label: 'Online Lines', value: activeUsers.length.toString(), icon: UserCheck, color: 'bg-emerald-100 text-emerald-600' },
-    { label: 'Pending Approvals', value: pendingPaymentsCount.toString(), icon: Activity, color: 'bg-rose-100 text-rose-600' },
-    { label: 'Net Revenue', value: `Rs. ${totalIncome.toLocaleString()}`, icon: Wallet, color: 'bg-amber-100 text-amber-600' },
+    { label: 'Active', value: activeUsersCount.toString(), icon: UserCheck, color: 'bg-emerald-100 text-emerald-600' },
+    { label: 'Suspended', value: suspendedUsersCount.toString(), icon: ShieldOff, color: 'bg-rose-100 text-rose-600' },
+    { label: 'Expired', value: expiredUsersCount.toString(), icon: AlertCircle, color: 'bg-amber-100 text-amber-600' },
+    { label: 'Unpaid Bills', value: unpaidBillsCount.toString(), icon: CreditCard, color: 'bg-rose-100 text-rose-600' },
+    { label: 'Paid Bills', value: paidBillsCount.toString(), icon: CheckCircle2, color: 'bg-emerald-100 text-emerald-600' },
+    { label: 'Invoiced', value: `Rs. ${totalIncome.toLocaleString()}`, icon: Wallet, color: 'bg-indigo-100 text-indigo-600' },
   ] : [
-    { label: 'Active', value: activeUsers.length.toString(), icon: UserCheck, color: 'bg-emerald-100 text-emerald-600' },
+    { label: 'Active', value: activeUsersCount.toString(), icon: UserCheck, color: 'bg-emerald-100 text-emerald-600' },
     { label: 'Dealers', value: subdealers.length.toString(), icon: Store, color: 'bg-indigo-100 text-indigo-600' },
     { label: 'Plans', value: packages.length.toString(), icon: Package, color: 'bg-indigo-100 text-indigo-600' },
     { label: 'Pending', value: pendingRequests.length.toString(), icon: Activity, color: 'bg-amber-100 text-amber-600' },
@@ -88,6 +113,7 @@ export default function Dashboard() {
   };
 
   const headerActions = [
+    { icon: RefreshCw, label: isSyncing ? 'Syncing...' : 'Sync Bills', action: handleSyncBills },
     { icon: TrendingUp, label: 'Reports', path: '/reports' },
     { icon: History, label: 'System Logs', path: '/audit-logs' },
     { icon: SlidersHorizontal, label: 'Billing Settings', path: '/billing-settings' },
@@ -103,12 +129,47 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-10">
+    <div className="flex flex-col min-h-full bg-[#F8FAFC]">
+      {/* Global Search & Actions Header */}
+      <div className="sticky top-[60px] md:top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/60 pt-6 pb-6 shadow-sm transition-all duration-300">
+        <div className="px-4 sm:px-8 max-w-7xl mx-auto w-full space-y-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex gap-4 items-center">
+              <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-200 rotate-3">
+                <LayoutDashboard className="w-6 h-6" />
+              </div>
+              <div className="flex flex-col">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none uppercase">Admin HQ</h2>
+                <div className="flex items-center gap-2 mt-1.5 font-mono">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] leading-none">System Terminal // Live</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+              <div className="relative group flex-1 md:w-80 lg:w-[480px]">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-indigo-600 group-focus-within:bg-indigo-50 group-focus-within:border-indigo-100 transition-all">
+                  <Search className="w-4 h-4" />
+                </div>
+                <Input
+                  placeholder="Global Search (Customers, Bills, Reports)..."
+                  className="input-modern pl-14 h-14 text-sm font-bold border-slate-200 bg-white shadow-md focus:shadow-lg focus:ring-4 focus:ring-indigo-500/5 transition-all text-slate-900 placeholder:text-slate-400 placeholder:font-medium rounded-2xl cursor-pointer"
+                  onClick={() => navigate('/users')} // Redirect to users for search by default
+                  readOnly
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 px-2 py-1 bg-slate-100 text-[9px] font-black text-slate-400 rounded-md border border-slate-200 uppercase tracking-tighter">Enter</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Premium Header with Modern Gradient */}
-      <div className="header-gradient pt-8 pb-20 px-4 sm:px-8 text-white relative overflow-hidden md:rounded-t-3xl">
+      <div className="header-gradient pt-8 pb-20 px-4 sm:px-8 text-white relative overflow-hidden md:rounded-b-3xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center max-w-7xl mx-auto relative z-10 gap-6">
           <div>
-            <p className="text-white/60 text-[10px] font-bold uppercase tracking-[0.3em] mb-1">M & Network // Admin</p>
+            <p className="text-white/60 text-[11px] font-bold uppercase tracking-[0.3em] mb-1">M & Network // Admin</p>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">{isAdmin ? 'Overview Dashboard' : 'Customer Console'}</h1>
             <p className="text-white/80 text-sm mt-2 font-medium flex items-center gap-2">
               <Calendar className="w-4 h-4 opacity-70" />
@@ -136,7 +197,7 @@ export default function Dashboard() {
 
       <div className="px-4 sm:px-8 -mt-10 max-w-7xl mx-auto w-full relative z-20 space-y-6">
         {/* Main Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -184,7 +245,7 @@ export default function Dashboard() {
                       <ArrowUpRight className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cash Inflow</p>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Cash Inflow</p>
                       <p className="text-base font-bold text-emerald-600">Rs. {treasury?.todayIn?.toLocaleString() || '0'}</p>
                     </div>
                   </div>
@@ -193,7 +254,7 @@ export default function Dashboard() {
                       <ArrowDownRight className="w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Admin Payouts</p>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Admin Payouts</p>
                       <p className="text-base font-bold text-rose-600">Rs. {treasury?.todayOut?.toLocaleString() || '0'}</p>
                     </div>
                   </div>
@@ -247,7 +308,7 @@ export default function Dashboard() {
               </h3>
               <button 
                 onClick={() => navigate('/payments')} 
-                className="text-[10px] font-bold text-indigo-600 hover:underline uppercase tracking-wider"
+                className="text-[11px] font-bold text-indigo-600 hover:underline uppercase tracking-wider"
               >
                 View All
               </button>
@@ -297,7 +358,7 @@ export default function Dashboard() {
               </h3>
               <button 
                 onClick={() => navigate('/requests')} 
-                className="text-[10px] font-bold text-indigo-600 hover:underline uppercase tracking-wider"
+                className="text-[11px] font-bold text-indigo-600 hover:underline uppercase tracking-wider"
               >
                  {isAdmin ? 'Manage' : 'Request'}
               </button>

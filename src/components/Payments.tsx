@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Search, Receipt, Printer, Download, ArrowUpRight, ArrowDownRight, Wallet, CreditCard, Banknote, Building2, Filter, CheckCircle2, XCircle, Clock, ChevronDown, RefreshCw, MessageSquare, Phone } from 'lucide-react';
+import { generateInvoicePDF, generateReceiptPDF } from '@/services/pdfService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,10 +22,11 @@ import { toast } from 'sonner';
 
 export default function Payments() {
   const { profile, isAdmin } = useAuth();
-  const { payments, users, treasury, recordPayment, approvePayment, rejectPayment, bills, markBillAsPaid, generateMonthlyBills } = useSystem();
+  const { payments, users, treasury, recordPayment, approvePayment, rejectPayment, bills, markBillAsPaid, generateMonthlyBills, addLog } = useSystem();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDate, setFilterDate] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [billFilter, setBillFilter] = useState<'all' | 'paid' | 'unpaid' | 'overdue'>('all');
   const [viewMode, setViewMode] = useState<'payments' | 'dues'>('payments');
   const [isOpen, setIsOpen] = useState(false);
 
@@ -89,139 +91,243 @@ export default function Payments() {
 
   const filteredPayments = payments
     .filter(p => isAdmin || p.userId === profile?.id)
-    .filter(p => 
-      ((p.userName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-       (p.method || '').toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (filterDate === '' || p.date.includes(filterDate)) &&
-      (filterStatus === 'all' || p.status === filterStatus)
-    );
+    .filter(p => {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = 
+        (p.userName || '').toLowerCase().includes(searchLower) || 
+        (p.method || '').toLowerCase().includes(searchLower) ||
+        (p.reference || '').toLowerCase().includes(searchLower) ||
+        (p.amount || 0).toString().includes(searchLower);
+
+      return matchesSearch &&
+        (filterDate === '' || p.date.includes(filterDate)) &&
+        (filterStatus === 'all' || p.status === filterStatus);
+    });
 
   const filteredBills = bills
     .filter(b => isAdmin || b.userId === profile?.id)
-    .filter(b => 
-      (b.status === 'unpaid') &&
-      ((b.userName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-       (b.month || '').toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (filterDate === '' || b.dueDate.includes(filterDate))
-    );
+    .filter(b => {
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = 
+        (b.userName || '').toLowerCase().includes(searchLower) || 
+        (b.packageName || '').toLowerCase().includes(searchLower) ||
+        (b.month || '').toLowerCase().includes(searchLower) ||
+        (b.status || '').toLowerCase().includes(searchLower) ||
+        (b.dueDate || '').toLowerCase().includes(searchLower);
+
+      const matchesDate = (filterDate === '' || b.dueDate.includes(filterDate));
+      
+      let matchesFilter = true;
+      if (billFilter === 'paid') matchesFilter = b.status === 'paid';
+      if (billFilter === 'unpaid') matchesFilter = b.status === 'unpaid';
+      if (billFilter === 'overdue') matchesFilter = (b.status === 'unpaid' && new Date(b.dueDate) < new Date());
+      
+      return matchesSearch && matchesDate && matchesFilter;
+    });
 
   const displayData = viewMode === 'payments' ? filteredPayments : filteredBills;
 
   return (
     <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-24 md:pb-8">
-      {/* Header and Action */}
-      <div className="px-4 sm:px-8 py-6 space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-          <div className="flex flex-col">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Financial Ledger</h2>
-            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">Manage payments and billing transactions</p>
-          </div>
-          <div className="flex gap-2 w-full sm:w-auto">
-            {isAdmin && (
-              <Button 
-                onClick={() => {
-                  generateMonthlyBills();
-                  toast.success("Billing generation cycle started");
-                }}
-                variant="outline"
-                className="bg-white border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl gap-2 h-12 text-xs font-bold uppercase tracking-wider px-6 shadow-sm transition-all active:scale-95"
-              >
-                <RefreshCw className="w-4 h-4" /> Generate Bills
-              </Button>
-            )}
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2 h-12 text-xs font-bold uppercase tracking-wider px-8 shadow-lg shadow-indigo-100 transition-all active:scale-95">
-                  <Plus className="w-4 h-4" /> {isAdmin ? 'Add Payment' : 'Pay Online'}
-                </Button>
-              </DialogTrigger>
-            <DialogContent className="sm:max-w-[480px] rounded-2xl border-slate-100 bg-white shadow-2xl p-0 overflow-hidden text-slate-900">
-              <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
-                <div className="header-gradient p-8 text-white relative">
-                  <DialogHeader>
-                    <DialogTitle className="text-2xl font-extrabold tracking-tight">{isAdmin ? 'Record Payment' : 'Submit Payment'}</DialogTitle>
-                  </DialogHeader>
-                  <p className="text-white/60 text-[10px] font-bold mt-2 uppercase tracking-widest">{isAdmin ? 'Manually record customer payment' : 'Submit your payment details'}</p>
-                </div>
-                <div className="p-6 sm:p-8 space-y-6 text-slate-900">
-                  <div className="grid gap-6">
-                    {isAdmin && (
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Subscriber</Label>
-                        <Select 
-                          value={newPayment.userId} 
-                          onValueChange={(val) => {
-                            const user = users.find(u => u.id === val);
-                            setNewPayment({ ...newPayment, userId: val, userName: user?.name || '' });
-                          }}
-                        >
-                          <SelectTrigger className="input-modern w-full px-4 h-12">
-                            <SelectValue placeholder="Select Subscriber" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
-                            {users.map(u => (
-                              <SelectItem key={u.id} value={u.id} className="font-bold text-slate-900 rounded-lg py-3 cursor-pointer hover:bg-slate-50 uppercase text-[10px] tracking-widest">
-                                {u.name} — ({u.pppoeUsername})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-1 gap-6">
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Amount (Rs)</Label>
-                        <Input 
-                          type="number" 
-                          placeholder="0.00" 
-                          className="input-modern font-bold text-lg px-4 h-12"
-                          value={newPayment.amount}
-                          onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Payment Method</Label>
-                        <Select value={newPayment.method} onValueChange={(val) => setNewPayment({ ...newPayment, method: val })}>
-                          <SelectTrigger className="input-modern w-full px-4 h-12">
-                            <SelectValue placeholder="Method" />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
-                            {isAdmin && <SelectItem value="cash" className="font-bold py-3 text-[10px] tracking-widest">Cash Payment</SelectItem>}
-                            <SelectItem value="easypaisa" className="font-bold py-3 text-[10px] tracking-widest">Easypaisa</SelectItem>
-                            <SelectItem value="jazzcash" className="font-bold py-3 text-[10px] tracking-widest">JazzCash</SelectItem>
-                            <SelectItem value="bank" className="font-bold py-3 text-[10px] tracking-widest">Bank Transfer</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Transaction Reference</Label>
-                      <Input 
-                        placeholder="e.g. TXN-10293847" 
-                        className="input-modern px-4 h-12"
-                        value={newPayment.reference}
-                        onChange={(e) => setNewPayment({ ...newPayment, reference: e.target.value })}
-                      />
-                    </div>
-                    <Button 
-                      onClick={handleAddPayment}
-                      className="w-full mt-4 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-indigo-100"
-                    >
-                      {isAdmin ? 'Record Payment' : 'Submit Payment Request'}
-                    </Button>
-                  </div>
-                </div>
+      {/* Sticky Top Header Section */}
+      <div className="sticky top-[60px] md:top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/60 pt-6 pb-4 shadow-sm transition-all duration-300">
+        <div className="px-4 sm:px-8 space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex flex-col">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none uppercase">Financials</h2>
+              <div className="flex items-center gap-2 mt-1.5 font-mono">
+                <p className="text-indigo-600 text-[9px] font-black uppercase tracking-[0.2em] leading-none">Ledger active</p>
+                {isAdmin && (
+                  <Badge variant="outline" className="text-[8px] font-bold border-slate-200 text-slate-500 uppercase h-4 px-1 rounded bg-white">ADMIN VIEW</Badge>
+                )}
               </div>
-            </DialogContent>
-          </Dialog>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              {isAdmin && (
+                <Button 
+                  onClick={() => {
+                    generateMonthlyBills();
+                    toast.success("Billing generation cycle started");
+                  }}
+                  variant="outline"
+                  className="bg-white border-slate-200 text-slate-600 hover:bg-slate-50 rounded-xl gap-2 h-11 text-[10px] font-black uppercase tracking-widest px-6 shadow-sm transition-all active:scale-95"
+                >
+                  <RefreshCw className="w-4 h-4" /> Bills
+                </Button>
+              )}
+              <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogTrigger asChild>
+                  <Button className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2 h-11 text-[10px] font-black uppercase tracking-widest px-6 shadow-lg shadow-indigo-200 transition-all active:scale-95">
+                    <Plus className="w-4 h-4" /> {isAdmin ? 'Add Payment' : 'Pay Online'}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[480px] rounded-2xl border-slate-100 bg-white shadow-2xl p-0 overflow-hidden text-slate-900">
+                  <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
+                    <div className="header-gradient p-8 text-white relative">
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl font-extrabold tracking-tight">{isAdmin ? 'Record Payment' : 'Submit Payment'}</DialogTitle>
+                      </DialogHeader>
+                      <p className="text-white/60 text-[11px] font-bold mt-2 uppercase tracking-widest">{isAdmin ? 'Manually record customer payment' : 'Submit your payment details'}</p>
+                    </div>
+                    <div className="p-6 sm:p-8 space-y-6 text-slate-900">
+                      <div className="grid gap-6">
+                        {isAdmin && (
+                          <div className="space-y-2">
+                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Subscriber</Label>
+                            <Select 
+                              value={newPayment.userId} 
+                              onValueChange={(val) => {
+                                const user = users.find(u => u.id === val);
+                                setNewPayment({ ...newPayment, userId: val, userName: user?.name || '' });
+                              }}
+                            >
+                              <SelectTrigger className="input-modern w-full px-4 h-12">
+                                <SelectValue placeholder="Select Subscriber" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
+                                {users.map(u => (
+                                  <SelectItem key={u.id} value={u.id} className="font-bold text-slate-900 rounded-lg py-3 cursor-pointer hover:bg-slate-50 uppercase text-[10px] tracking-widest">
+                                    {u.name} — ({u.pppoeUsername})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 gap-6">
+                          <div className="space-y-2">
+                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Amount (Rs)</Label>
+                            <Input 
+                              type="number" 
+                              placeholder="0.00" 
+                              className="input-modern font-bold text-lg px-4 h-12"
+                              value={newPayment.amount}
+                              onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Payment Method</Label>
+                            <Select value={newPayment.method} onValueChange={(val) => setNewPayment({ ...newPayment, method: val })}>
+                              <SelectTrigger className="input-modern w-full px-4 h-12">
+                                <SelectValue placeholder="Method" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
+                                {isAdmin && <SelectItem value="cash" className="font-bold py-3 text-[10px] tracking-widest">Cash Payment</SelectItem>}
+                                <SelectItem value="easypaisa" className="font-bold py-3 text-[10px] tracking-widest">Easypaisa</SelectItem>
+                                <SelectItem value="jazzcash" className="font-bold py-3 text-[10px] tracking-widest">JazzCash</SelectItem>
+                                <SelectItem value="bank" className="font-bold py-3 text-[10px] tracking-widest">Bank Transfer</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Transaction Reference</Label>
+                          <Input 
+                            placeholder="e.g. TXN-10293847" 
+                            className="input-modern px-4 h-12"
+                            value={newPayment.reference}
+                            onChange={(e) => setNewPayment({ ...newPayment, reference: e.target.value })}
+                          />
+                        </div>
+                        <Button 
+                          onClick={handleAddPayment}
+                          className="w-full mt-4 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-indigo-100"
+                        >
+                          {isAdmin ? 'Record Payment' : 'Submit Payment Request'}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center pt-2">
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100/50 w-fit rounded-xl border border-slate-200/40 shadow-inner">
+              <button
+                onClick={() => setViewMode('payments')}
+                className={cn(
+                  "px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
+                  viewMode === 'payments' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+                )}
+              >
+                Payments
+              </button>
+              <button
+                onClick={() => setViewMode('dues')}
+                className={cn(
+                  "px-5 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
+                  viewMode === 'dues' ? "bg-rose-500 text-white shadow-md shadow-rose-500/20" : "text-slate-400 hover:text-slate-600"
+                )}
+              >
+                Bills
+              </button>
+            </div>
+
+            <div className="relative group w-full md:max-w-xl">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-indigo-600 group-focus-within:bg-indigo-50 group-focus-within:border-indigo-100 transition-all">
+                <Search className="w-4 h-4" />
+              </div>
+              <Input
+                placeholder={viewMode === 'payments' ? "Search Payments (Name, Reference, Amount)..." : "Search Bills (Customer, Month, Status)..."}
+                className="input-modern pl-14 pr-12 h-14 text-sm font-bold border-slate-200 bg-white shadow-md focus:shadow-lg focus:ring-4 focus:ring-indigo-500/5 transition-all text-slate-900 placeholder:text-slate-400 placeholder:font-medium rounded-2xl"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button 
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-rose-50 rounded-xl text-slate-400 hover:text-rose-500 transition-all"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 custom-scrollbar ml-auto">
+                {viewMode === 'dues' && (
+                  <div className="flex items-center bg-white/50 p-1 rounded-xl border border-slate-200/60 shadow-sm whitespace-nowrap">
+                    {(['all', 'unpaid', 'paid', 'overdue'] as const).map((filter) => (
+                      <button
+                        key={filter}
+                        onClick={() => setBillFilter(filter)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
+                          billFilter === filter 
+                            ? (filter === 'overdue' ? "bg-rose-500 text-white shadow-md shadow-rose-500/20" : "bg-indigo-600 text-white shadow-md shadow-indigo-500/20")
+                            : "text-slate-400 hover:text-slate-600"
+                        )}
+                      >
+                        {filter}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="min-w-[120px]">
+                  <Select onValueChange={setFilterStatus} defaultValue="all">
+                    <SelectTrigger className="input-modern h-11 text-[9px] font-black uppercase tracking-widest px-4 border-slate-200/60 bg-white/50 shadow-sm">
+                      <SelectValue placeholder="STATUS" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
+                      <SelectItem value="all" className="font-bold py-3 text-[9px] tracking-widest">All Status</SelectItem>
+                      <SelectItem value="pending" className="font-bold py-3 text-[9px] tracking-widest text-orange-500">Pending</SelectItem>
+                      <SelectItem value="approved" className="font-bold py-3 text-[9px] tracking-widest text-emerald-500">Approved</SelectItem>
+                      <SelectItem value="rejected" className="font-bold py-3 text-[9px] tracking-widest text-rose-500">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Treasury Stats Grid */}
+      <div className="px-4 sm:px-8 py-6 space-y-8">
+        {/* Treasury Stats Grid */}
         {isAdmin && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <Card className="bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden p-6 group hover:shadow-md transition-all">
               <p className="text-emerald-500 text-[10px] font-bold uppercase tracking-widest mb-2 leading-none">Net Balance</p>
               <div className="flex items-center gap-3">
@@ -249,25 +355,46 @@ export default function Payments() {
         )}
 
         {/* View Mode Toggle */}
-        <div className="flex items-center gap-2 p-1 bg-slate-100/50 w-fit rounded-xl border border-slate-200 shadow-inner">
-          <button
-            onClick={() => setViewMode('payments')}
-            className={cn(
-              "px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-              viewMode === 'payments' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
-            )}
-          >
-            Payments
-          </button>
-          <button
-            onClick={() => setViewMode('dues')}
-            className={cn(
-              "px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
-              viewMode === 'dues' ? "bg-white text-rose-500 shadow-sm" : "text-slate-400 hover:text-slate-600"
-            )}
-          >
-            Unpaid Dues
-          </button>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-2 p-1 bg-slate-100/50 w-fit rounded-xl border border-slate-200 shadow-inner">
+            <button
+              onClick={() => setViewMode('payments')}
+              className={cn(
+                "px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                viewMode === 'payments' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              Payments
+            </button>
+            <button
+              onClick={() => setViewMode('dues')}
+              className={cn(
+                "px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                viewMode === 'dues' ? "bg-white text-rose-500 shadow-sm" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              Billing Ledger
+            </button>
+          </div>
+
+          {viewMode === 'dues' && (
+            <div className="flex items-center gap-2 bg-white p-1 rounded-xl border border-slate-100 shadow-sm">
+              {(['all', 'unpaid', 'paid', 'overdue'] as const).map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setBillFilter(filter)}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all",
+                    billFilter === filter 
+                      ? (filter === 'overdue' ? "bg-rose-500 text-white shadow-lg" : "bg-indigo-600 text-white shadow-lg")
+                      : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+                  )}
+                >
+                  {filter}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Search and Filters */}
@@ -275,11 +402,19 @@ export default function Payments() {
           <div className="relative flex-1 group">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-colors group-focus-within:text-indigo-600" />
             <Input
-              placeholder="Search by name or method..."
-              className="input-modern pl-12 h-12 shadow-sm px-4"
+              placeholder={viewMode === 'payments' ? "Search by name, method, reference..." : "Search by name, package, status..."}
+              className="input-modern pl-12 pr-12 h-12 shadow-sm px-4"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            {searchTerm && (
+              <button 
+                onClick={() => setSearchTerm('')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-50 rounded-full text-slate-400 hover:text-slate-600 transition-all"
+              >
+                <XCircle className="w-4 h-4" />
+              </button>
+            )}
           </div>
           <div className="flex gap-4 overflow-x-auto pb-2 sm:pb-0 custom-scrollbar">
             <div className="min-w-[140px]">
@@ -306,150 +441,256 @@ export default function Payments() {
       </div>
 
       {/* Transaction Feed */}
-      <div className="px-4 sm:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-        {displayData.map((item, i) => (
-          <motion.div
-            key={item.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.02 }}
-          >
-            <Card className={cn(
-              "bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-all group h-full flex flex-col relative",
-              item.status === 'rejected' && "opacity-60 bg-slate-50/50",
-              viewMode === 'dues' && "border-rose-100"
-            )}>
-              <div className="p-6 pb-4 flex justify-between items-start">
-                <div className="flex gap-4">
-                  <div className={cn(
-                    "w-12 h-12 rounded-xl flex items-center justify-center border transition-transform duration-500 group-hover:scale-105",
-                    viewMode === 'payments' 
-                      ? (item.type === 'in' ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-rose-50 text-rose-500 border-rose-100')
-                      : 'bg-rose-50 text-rose-500 border-rose-100'
-                  )}>
-                    {viewMode === 'payments' 
-                      ? (item.type === 'in' ? <ArrowUpRight className="w-6 h-6" /> : <ArrowDownRight className="w-6 h-6" />)
-                      : <Receipt className="w-6 h-6" />
-                    }
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="font-bold text-slate-900 truncate tracking-tight text-sm uppercase">{item.userName}</h4>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{formatDate(item.date || item.dueDate, { month: 'short', day: 'numeric' })}</span>
-                      <span className="w-1 h-1 rounded-full bg-slate-200" />
-                      <div className="flex items-center gap-1.5 grayscale group-hover:grayscale-0 transition-all opacity-60 group-hover:opacity-100">
-                        {viewMode === 'payments' ? getMethodIcon(item.method) : <CreditCard className="w-3.5 h-3.5 text-slate-400" />}
-                        <span className="text-slate-500 text-[9px] font-bold uppercase tracking-widest leading-none">
-                          {viewMode === 'payments' ? item.method : `Bill: ${item.month}`}
-                        </span>
+      <div className="px-4 sm:px-8">
+        {displayData.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+            {displayData.map((item, i) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.02 }}
+              >
+                <Card className={cn(
+                  "bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-all group h-full flex flex-col relative",
+                  item.status === 'rejected' && "opacity-60 bg-slate-50/50",
+                  viewMode === 'dues' && "border-rose-100"
+                )}>
+                  <div className="p-6 pb-4 flex justify-between items-start">
+                    <div className="flex gap-4">
+                      <div className={cn(
+                        "w-12 h-12 rounded-xl flex items-center justify-center border transition-transform duration-500 group-hover:scale-105",
+                        viewMode === 'payments' 
+                          ? (item.type === 'in' ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 'bg-rose-50 text-rose-500 border-rose-100')
+                          : 'bg-rose-50 text-rose-500 border-rose-100'
+                      )}>
+                        {viewMode === 'payments' 
+                          ? (item.type === 'in' ? <ArrowUpRight className="w-6 h-6" /> : <ArrowDownRight className="w-6 h-6" />)
+                          : <Receipt className="w-6 h-6" />
+                        }
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-slate-900 truncate tracking-tight text-sm uppercase">{item.userName}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{formatDate(item.date || item.dueDate, { month: 'short', day: 'numeric' })}</span>
+                          <span className="w-1 h-1 rounded-full bg-slate-200" />
+                          <div className="flex items-center gap-1.5 grayscale group-hover:grayscale-0 transition-all opacity-60 group-hover:opacity-100">
+                            {viewMode === 'payments' ? getMethodIcon(item.method) : <CreditCard className="w-3.5 h-3.5 text-slate-400" />}
+                            <span className="text-slate-500 text-[9px] font-bold uppercase tracking-widest leading-none">
+                              {viewMode === 'payments' ? item.method : `Bill: ${item.month}`}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              <div className="px-6 flex justify-between items-end mb-4">
-                <div>
-                  <p className={cn(
-                    "font-extrabold text-xl tracking-tight leading-none",
-                    (viewMode === 'payments' && item.type === 'in') ? 'text-emerald-600' : 'text-rose-600'
-                  )}>
-                    {viewMode === 'payments' ? (item.type === 'in' ? '+' : '-') : ''} RS.{item.amount?.toLocaleString()}
-                  </p>
-                </div>
-                {viewMode === 'payments' ? getStatusBadge(item.status) : (
-                  <Badge className="bg-rose-50 text-rose-600 border-none text-[8px] font-black tracking-widest">UNPAID</Badge>
-                )}
-              </div>
-
-              <div className="px-6 pb-6 mt-auto">
-                {(item.reference || viewMode === 'dues') && (
-                  <div className={cn(
-                    "px-4 py-3 rounded-xl border flex justify-between items-center group-hover:bg-slate-100/50 transition-colors",
-                    viewMode === 'dues' ? "bg-rose-50/30 border-rose-100" : "bg-slate-50 border-slate-100"
-                  )}>
-                    <div className="min-w-0 overflow-hidden">
-                      <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
-                        {viewMode === 'payments' ? 'Reference ID' : 'Service Unit'}
-                      </p>
+                  <div className="px-6 flex justify-between items-end mb-4">
+                    <div>
                       <p className={cn(
-                        "text-[10px] font-bold truncate font-mono",
-                        viewMode === 'dues' ? "text-slate-600" : "text-indigo-600"
+                        "font-extrabold text-xl tracking-tight leading-none",
+                        (viewMode === 'payments' && item.type === 'in') ? 'text-emerald-600' : 'text-rose-600'
                       )}>
-                        {viewMode === 'payments' ? item.reference : 'Billing System'}
+                        {viewMode === 'payments' ? (item.type === 'in' ? '+' : '-') : ''} RS.{item.amount?.toLocaleString()}
                       </p>
                     </div>
+                    {viewMode === 'payments' ? getStatusBadge(item.status) : (
+                      <Badge className={cn(
+                        "border-none text-[8px] font-black tracking-widest uppercase",
+                        item.status === 'paid' ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+                      )}>
+                        {item.status || 'UNPAID'}
+                      </Badge>
+                    )}
                   </div>
-                )}
 
-                <div className="mt-6 flex justify-between items-center pt-4 border-t border-slate-50">
-                   <div className="flex gap-2">
-                    <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors">
-                      <Printer className="w-4 h-4" />
-                    </button>
-                    <button className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors">
-                      <Download className="w-4 h-4" />
-                    </button>
-                  </div>
-                  
-                  {viewMode === 'payments' && item.status === 'pending' && (
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => rejectPayment(item.id)}
-                        className="h-9 px-3 text-rose-500 font-bold text-[9px] hover:bg-rose-50 rounded-lg uppercase tracking-wider"
-                      >
-                        Reject
-                      </Button>
-                      <Button 
-                        size="sm"
-                        onClick={() => handleApprove(item.id)}
-                        className={cn(
-                          "h-9 px-4 rounded-lg text-[10px] font-bold uppercase transition-all shadow-sm",
-                          confirmingId === item.id ? "bg-orange-500 hover:bg-orange-600 text-white" : "bg-indigo-600 hover:bg-indigo-700 text-white"
-                        )}
-                      >
-                        {confirmingId === item.id ? "Confirm?" : "Approve"}
-                      </Button>
-                    </div>
-                  )}
-                  {viewMode === 'dues' && (
-                    <div className="flex items-center gap-2">
-                       {isAdmin && (
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
+                  <div className="px-6 pb-6 mt-auto">
+                    {(item.reference || viewMode === 'dues') && (
+                      <div className={cn(
+                        "px-4 py-3 rounded-xl border flex justify-between items-center group-hover:bg-slate-100/50 transition-colors",
+                        viewMode === 'dues' ? "bg-rose-50/30 border-rose-100" : "bg-slate-50 border-slate-100"
+                      )}>
+                        <div className="min-w-0 overflow-hidden">
+                          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                            {viewMode === 'payments' ? 'Reference ID' : 'Service Unit'}
+                          </p>
+                          <p className={cn(
+                            "text-[10px] font-bold truncate font-mono",
+                            viewMode === 'dues' ? "text-slate-600" : "text-indigo-600"
+                          )}>
+                            {viewMode === 'payments' ? item.reference : (item.packageName || 'Monthly Bill')}
+                          </p>
+                        </div>
+                      </div>
+                    )}                     <div className="mt-6 flex justify-between items-center pt-4 border-t border-slate-50">
+                       <div className="flex gap-2">
+                        <button 
                           onClick={() => {
                             const user = users.find(u => u.id === item.userId);
-                            if (!user?.phone) {
-                              toast.error("No phone number found");
-                              return;
+                            if (viewMode === 'dues') {
+                              generateInvoicePDF({
+                                invoiceNumber: item.id.slice(-8).toUpperCase(),
+                                customerName: item.userName || user?.name || 'Customer',
+                                phone: user?.phone || 'N/A',
+                                packageName: item.packageName || 'Service',
+                                speed: user?.packageSpeed || 'Standard',
+                                amount: item.amount,
+                                dueDate: formatDate(item.dueDate),
+                                status: item.status || 'UNPAID',
+                                createdDate: formatDate(item.date || new Date())
+                              });
+                              if (addLog) addLog('Invoice Printed', item.userName, 'admin', `Invoice #${item.id.slice(-8)}`);
+                            } else if (viewMode === 'payments' && item.status === 'approved') {
+                              generateReceiptPDF({
+                                invoiceNumber: item.id.slice(-8).toUpperCase(),
+                                customerName: item.userName || user?.name || 'Customer',
+                                phone: user?.phone || 'N/A',
+                                packageName: item.packageName || 'Account Recharge',
+                                speed: 'N/A',
+                                amount: item.amount,
+                                dueDate: 'N/A',
+                                status: 'PAID',
+                                createdDate: formatDate(item.date),
+                                paymentMethod: item.method,
+                                reference: item.reference || item.id.slice(-8)
+                              });
+                              if (addLog) addLog('Receipt Printed', item.userName, 'admin', `Ref: ${item.reference}`);
+                            } else {
+                              toast.error("Only approved payments or bills can be printed");
                             }
-                            const cleanPhone = user.phone.replace(/\D/g, '');
-                            const message = encodeURIComponent(`Dear ${user.name}, your bill for ${item.month} is Rs. ${item.amount}. Please pay urgently to avoid disconnection.`);
-                            const whatsappUrl = `https://wa.me/${cleanPhone.startsWith('92') ? cleanPhone : '92' + cleanPhone}?text=${message}`;
-                            window.open(whatsappUrl, '_blank');
                           }}
-                          className="h-9 px-3 text-emerald-500 font-bold text-[9px] hover:bg-emerald-50 rounded-lg uppercase tracking-wider gap-2"
+                          className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors"
                         >
-                          <MessageSquare className="w-3.5 h-3.5" /> WhatsApp
-                        </Button>
+                          <Printer className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            const user = users.find(u => u.id === item.userId);
+                            if (viewMode === 'dues') {
+                              generateInvoicePDF({
+                                invoiceNumber: item.id.slice(-8).toUpperCase(),
+                                customerName: item.userName || user?.name || 'Customer',
+                                phone: user?.phone || 'N/A',
+                                packageName: item.packageName || 'Service',
+                                speed: user?.packageSpeed || 'Standard',
+                                amount: item.amount,
+                                dueDate: formatDate(item.dueDate),
+                                status: item.status || 'UNPAID',
+                                createdDate: formatDate(item.date || new Date())
+                              });
+                              if (addLog) addLog('Invoice Downloaded', item.userName, 'admin', `Invoice #${item.id.slice(-8)}`);
+                            } else if (viewMode === 'payments' && item.status === 'approved') {
+                              generateReceiptPDF({
+                                invoiceNumber: item.id.slice(-8).toUpperCase(),
+                                customerName: item.userName || user?.name || 'Customer',
+                                phone: user?.phone || 'N/A',
+                                packageName: item.packageName || 'Account Recharge',
+                                speed: 'N/A',
+                                amount: item.amount,
+                                dueDate: 'N/A',
+                                status: 'PAID',
+                                createdDate: formatDate(item.date),
+                                paymentMethod: item.method,
+                                reference: item.reference || item.id.slice(-8)
+                              });
+                              if (addLog) addLog('Receipt Downloaded', item.userName, 'admin', `Ref: ${item.reference}`);
+                            } else {
+                              toast.error("Only approved payments or bills can be exported");
+                            }
+                          }}
+                          className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      </div>
+                      
+                      {viewMode === 'payments' && item.status === 'pending' && (
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => rejectPayment(item.id)}
+                            className="h-9 px-3 text-rose-500 font-bold text-[9px] hover:bg-rose-50 rounded-lg uppercase tracking-wider"
+                          >
+                            Reject
+                          </Button>
+                          <Button 
+                            size="sm"
+                            onClick={() => handleApprove(item.id)}
+                            className={cn(
+                              "h-9 px-4 rounded-lg text-[10px] font-bold uppercase transition-all shadow-sm",
+                              confirmingId === item.id ? "bg-orange-500 hover:bg-orange-600 text-white" : "bg-indigo-600 hover:bg-indigo-700 text-white"
+                            )}
+                          >
+                            {confirmingId === item.id ? "Confirm?" : "Approve"}
+                          </Button>
+                        </div>
                       )}
-                      <Button 
-                        size="sm"
-                        onClick={() => markBillAsPaid(item.id)}
-                        className="h-9 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-emerald-500/20"
-                      >
-                        Resolve
-                      </Button>
+                      {viewMode === 'dues' && item.status !== 'paid' && (
+                        <div className="flex items-center gap-2">
+                           {isAdmin && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                const user = users.find(u => u.id === item.userId);
+                                if (!user?.phone) {
+                                  toast.error("No phone number found for this customer");
+                                  return;
+                                }
+                                const cleanPhone = user.phone.replace(/\D/g, '');
+                                const formattedDate = formatDate(item.dueDate);
+                                const message = encodeURIComponent(
+                                  `Dear ${item.userName || user.name}, your internet bill is due. Please pay your bill before due date.\n\n` +
+                                  `Customer: ${item.userName || user.name}\n` +
+                                  `Package: ${item.packageName || 'Internet Service'}\n` +
+                                  `Amount: RS. ${item.amount?.toLocaleString()}\n` +
+                                  `Due Date: ${formattedDate}`
+                                );
+                                const whatsappUrl = `https://wa.me/${cleanPhone.startsWith('92') ? cleanPhone : '92' + cleanPhone}?text=${message}`;
+                                window.open(whatsappUrl, '_blank');
+                                toast.success("WhatsApp reminder opened");
+                              }}
+                              className="h-9 px-3 text-emerald-600 font-black text-[9px] hover:bg-emerald-50 rounded-lg uppercase tracking-widest gap-2 bg-emerald-50/50 border border-emerald-100"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" /> Remind
+                            </Button>
+                          )}
+                          <Button 
+                            size="sm"
+                            onClick={() => markBillAsPaid(item.id)}
+                            className="h-9 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-emerald-500/20"
+                          >
+                            Resolve
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        ))}
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-24 bg-white rounded-3xl border border-slate-100 shadow-sm">
+             <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+                <Search className="w-8 h-8 text-slate-200" />
+             </div>
+             <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">No records found</h3>
+             <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Try searching with different keywords</p>
+             <Button 
+               variant="link" 
+               onClick={() => {
+                 setSearchTerm('');
+                 setFilterDate('');
+                 setFilterStatus('all');
+               }}
+               className="mt-4 text-indigo-600 font-extrabold uppercase text-[10px] tracking-[0.2em]"
+             >
+               Clear all filters
+             </Button>
+          </div>
+        )}
       </div>
     </div>
   );

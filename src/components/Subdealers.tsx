@@ -83,106 +83,101 @@ export default function Subdealers() {
 
   return (
     <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-24 md:pb-8 text-slate-900">
-      {/* Header and Action */}
-      <div className="px-4 sm:px-8 py-6 space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-          <div className="flex flex-col">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-none uppercase">Sub Dealers</h2>
-            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none">Manage your sub dealer network & partnerships</p>
-          </div>
-          <div className="flex gap-4 w-full sm:w-auto">
-            <Button 
-              onClick={() => setViewHistory(!viewHistory)} 
-              variant="outline" 
-              className="flex-1 sm:flex-none rounded-xl gap-3 h-12 text-[10px] font-bold border-slate-200 bg-white shadow-sm px-6 hover:bg-slate-50 text-slate-600 transition-all uppercase tracking-wider"
-            >
-              {viewHistory ? <Store className="w-4 h-4" /> : <History className="w-4 h-4" />}
-              {viewHistory ? 'Dealer Grid' : 'Payout History'}
-            </Button>
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-3 h-12 text-[10px] font-bold px-8 shadow-lg shadow-indigo-100 transition-all active:scale-95 uppercase tracking-wider">
-                  <Plus className="w-4 h-4" /> 
-                  <span>Add Sub Dealer</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[520px] rounded-2xl border-slate-100 bg-white shadow-2xl p-0 overflow-hidden text-slate-900">
-                <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
-                  <div className="header-gradient p-8 text-white relative">
-                    <DialogHeader>
-                      <DialogTitle className="text-2xl font-extrabold tracking-tight">Dealer Configuration</DialogTitle>
-                    </DialogHeader>
-                    <p className="text-white/60 text-[10px] font-bold mt-2 uppercase tracking-widest leading-none">Register a new sub dealer partnership</p>
-                  </div>
-                  <div className="p-6 sm:p-8 space-y-6 text-slate-900">
-                    <div className="grid gap-6">
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Dealer Name</Label>
-                        <Input 
-                          placeholder="e.g. Zain Ali" 
-                          className="input-modern px-4 h-12"
-                          value={newDealer.name}
-                          onChange={(e) => setNewDealer({ ...newDealer, name: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Region / Area</Label>
-                        <Input 
-                          placeholder="e.g. Model Town, Lahore" 
-                          className="input-modern px-4 h-12"
-                          value={newDealer.area}
-                          onChange={(e) => setNewDealer({ ...newDealer, area: e.target.value })}
-                        />
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      {/* Sticky Top Header Section */}
+      <div className="sticky top-[60px] md:top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/60 pt-6 pb-4 shadow-sm transition-all duration-300">
+        <div className="px-4 sm:px-8 space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+            <div className="flex flex-col">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none uppercase">Sub Dealers</h2>
+              <p className="text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] mt-1.5 leading-none font-mono">Dealer & Partner Network</p>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button 
+                onClick={() => setViewHistory(!viewHistory)} 
+                variant="outline" 
+                className="flex-1 sm:flex-none rounded-xl gap-3 h-11 text-[10px] font-black border-slate-200 bg-white shadow-sm px-6 hover:bg-slate-50 text-slate-600 transition-all uppercase tracking-widest"
+              >
+                {viewHistory ? <Store className="w-4 h-4" /> : <History className="w-4 h-4" />}
+                {viewHistory ? 'Dealers' : 'Payouts'}
+              </Button>
+              <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogTrigger asChild>
+                  <Button className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-3 h-11 text-[10px] font-black px-8 shadow-lg shadow-indigo-200 transition-all active:scale-95 uppercase tracking-widest">
+                    <Plus className="w-4 h-4" /> Add Partner
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[520px] rounded-2xl border-slate-100 bg-white shadow-2xl p-0 overflow-hidden text-slate-900">
+                  <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
+                    <div className="header-gradient p-8 text-white relative">
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl font-extrabold tracking-tight">Dealer Configuration</DialogTitle>
+                      </DialogHeader>
+                      <p className="text-white/60 text-[10px] font-bold mt-2 uppercase tracking-widest leading-none">Register a new sub dealer partnership</p>
+                    </div>
+                    <div className="p-6 sm:p-8 space-y-6 text-slate-900">
+                      <div className="grid gap-6">
                         <div className="space-y-2">
-                          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Commission Type</Label>
-                          <Select onValueChange={(val: any) => setNewDealer({ ...newDealer, commissionType: val })} defaultValue={newDealer.commissionType}>
-                            <SelectTrigger className="input-modern w-full px-4 h-12">
-                              <SelectValue placeholder="Protocol" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
-                              <SelectItem value="percentage" className="font-bold py-3 text-[10px] tracking-widest">Percentage (%)</SelectItem>
-                              <SelectItem value="fixed" className="font-bold py-3 text-[10px] tracking-widest">Fixed (Rs.)</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Commission Value</Label>
+                          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Dealer Name</Label>
                           <Input 
-                            type="number" 
-                            placeholder="20" 
-                            className="input-modern text-center font-bold text-indigo-600 px-4 h-12"
-                            value={newDealer.commissionValue}
-                            onChange={(e) => setNewDealer({ ...newDealer, commissionValue: e.target.value })}
+                            placeholder="e.g. Zain Ali" 
+                            className="input-modern px-4 h-12"
+                            value={newDealer.name}
+                            onChange={(e) => setNewDealer({ ...newDealer, name: e.target.value })}
                           />
                         </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Region / Area</Label>
+                          <Input 
+                            placeholder="e.g. Model Town, Lahore" 
+                            className="input-modern px-4 h-12"
+                            value={newDealer.area}
+                            onChange={(e) => setNewDealer({ ...newDealer, area: e.target.value })}
+                          />
+                        </div>
+                        <Button 
+                          onClick={handleAddDealer}
+                          className="w-full mt-4 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-indigo-100"
+                        >
+                          Create Partnership
+                        </Button>
                       </div>
-                      <Button 
-                        onClick={handleAddDealer}
-                        className="w-full mt-4 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-indigo-100"
-                      >
-                        Create Partnership
-                      </Button>
                     </div>
                   </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center pt-2">
+            {!viewHistory && (
+              <div className="relative group w-full md:max-w-xl">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-indigo-600 group-focus-within:bg-indigo-50 group-focus-within:border-indigo-100 transition-all">
+                  <Search className="w-4 h-4" />
                 </div>
-              </DialogContent>
-            </Dialog>
+                <Input
+                  placeholder="Search Partners (Name, Area, Code)..."
+                  className="input-modern pl-14 pr-12 h-14 text-sm font-bold border-slate-200 bg-white shadow-md focus:shadow-lg focus:ring-4 focus:ring-indigo-500/5 transition-all text-slate-900 placeholder:text-slate-400 placeholder:font-medium rounded-2xl"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
+                  <button 
+                    onClick={() => setSearchTerm('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-rose-50 rounded-xl text-slate-400 hover:text-rose-500 transition-all"
+                  >
+                    <XCircle className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+            )}
+            
+            <div className="flex items-center bg-slate-100/50 p-1 rounded-xl border border-slate-200/40 shadow-inner ml-auto">
+              <Badge className="bg-indigo-50 text-indigo-600 border-indigo-100 text-[10px] font-black h-8 px-4 rounded-lg uppercase tracking-wider">
+                {filteredDealers.length} Active Partners
+              </Badge>
+            </div>
           </div>
         </div>
-
-        {!viewHistory && (
-          <div className="relative group pt-2">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-colors group-focus-within:text-indigo-600" />
-            <Input
-              placeholder="Search sub dealers by name or area..."
-              className="input-modern pl-12 h-12 shadow-sm px-4"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-        )}
       </div>
 
       <div className="px-4 sm:px-8 pb-20">

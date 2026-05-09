@@ -36,7 +36,8 @@ interface SystemActions {
   requestWithdrawal: (amount: number, details: string) => Promise<void>;
   adminWithdrawal: (amount: number, details: string) => Promise<void>;
   processWithdrawal: (requestId: string, approved: boolean) => Promise<void>;
-  markBillAsPaid: (billId: string) => Promise<void>;
+  markBillAsPaid: (billId: string, method?: string) => Promise<void>;
+  generateManualBill: (userId: string) => Promise<void>;
   generateMonthlyBills: () => Promise<void>;
   addLog: (action: string, target: string, type: string, details?: string) => Promise<void>;
   sendSMS: (userId: string, phone: string, message: string, type: 'reminder' | 'expiry_alert' | 'payment_confirmation') => Promise<void>;
@@ -148,18 +149,33 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
 
   const checkExpiries = async () => {
     const now = new Date();
-    const expiredUsers = state.users.filter(u => u.status === 'active' && new Date(u.expiryDate) <= now);
     
-    for (const user of expiredUsers) {
+    // 1. Check for expired plans based on expiryDate
+    const expiredUsersByDate = state.users.filter(u => u.status === 'active' && new Date(u.expiryDate) <= now);
+    
+    // 2. Check for overdue bills (Unpaid after Due Date)
+    const usersWithOverdueBills = state.users.filter(u => {
+      if (u.status !== 'active') return false;
+      const overdueBill = state.bills.find(b => b.userId === u.id && b.status === 'unpaid' && new Date(b.dueDate) < now);
+      return !!overdueBill;
+    });
+
+    // Merge unique users to process
+    const usersToProcess = Array.from(new Set([...expiredUsersByDate, ...usersWithOverdueBills]));
+    
+    for (const user of usersToProcess) {
       const pkg = state.packages.find(p => p.id === user.packageId);
       if (!pkg) continue;
 
       if (user.walletBalance >= pkg.price) {
-        // Auto Renew
+        // Auto Renew / Pay Bill logic
         try {
           await runTransaction(db, async (transaction) => {
             const userRef = doc(db, 'user', user.id);
             const treasuryRef = doc(db, 'treasury', 'current');
+            
+            // If it was an overdue bill, we should also mark that bill as paid
+            const overdueBill = state.bills.find(b => b.userId === user.id && b.status === 'unpaid' && new Date(b.dueDate) < now);
             
             const newExpiry = new Date();
             newExpiry.setDate(newExpiry.getDate() + (pkg.validity || 30));
@@ -167,8 +183,17 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
             transaction.update(userRef, {
               walletBalance: increment(-pkg.price),
               expiryDate: newExpiry.toISOString(),
+              status: 'active',
+              billingStatus: 'paid',
               updatedAt: Timestamp.now()
             });
+
+            if (overdueBill) {
+              transaction.update(doc(db, 'bills', overdueBill.id), {
+                status: 'paid',
+                updatedAt: Timestamp.now()
+              });
+            }
 
             // Shares logic (Default to 60/40 or user specified)
             const subdealerShare = pkg.subdealerShare || (pkg.price * 0.4);
@@ -198,16 +223,16 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
               date: Timestamp.now()
             });
           });
-          await addLog('Auto-Renewal', user.name, 'system', `Balance deducted: Rs. ${pkg.price}`);
-          await sendSMS(user.id, user.whatsapp || user.phone, `Your package has been auto-renewed. Enjoy your service!`, 'payment_confirmation');
+          await addLog('Auto-Renewal/Payment', user.name, 'system', `Balance deducted: Rs. ${pkg.price} due to billing/expiry`);
+          await sendSMS(user.id, user.whatsapp || user.phone, `Your service has been automatically renewed. Enjoy!`, 'payment_confirmation');
         } catch (e) {
-          console.error('Auto-renew failed', e);
+          console.error('Auto-renew/payment failed', e);
         }
       } else {
-        // Mark as expired
+        // Mark as expired/overdue
         await updateDocument('user', user.id, { status: 'expired' });
-        await addLog('Account Expired', user.name, 'system');
-        await sendSMS(user.id, user.whatsapp || user.phone, `Your package has expired. Please recharge to continue service.`, 'expiry_alert');
+        await addLog('Account Expired/Overdue', user.name, 'system', 'Unpaid bill or plan expired');
+        await sendSMS(user.id, user.whatsapp || user.phone, `Your service has been suspended due to non-payment or expiry. Please recharge.`, 'expiry_alert');
       }
     }
   };
@@ -424,17 +449,83 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const markBillAsPaid = async (billId: string) => {
+  const markBillAsPaid = async (billId: string, method: string = 'cash') => {
     try {
-      await updateDocument('bills', billId, { status: 'paid' });
       const bill = state.bills.find(b => b.id === billId);
-      if (bill) {
-        await updateDocument('user', bill.userId, { billingStatus: 'paid' });
-        await addLog('Bill Paid', bill.userName, 'payment', `Amount: Rs. ${bill.amount} | Month: ${bill.month}`);
-      }
-      toast.success('Bill marked as paid');
-    } catch (e) {
-      toast.error('Failed to update bill');
+      if (!bill) throw new Error("Bill not found");
+
+      await runTransaction(db, async (transaction) => {
+        const billRef = doc(db, 'bills', billId);
+        const userRef = doc(db, 'user', bill.userId);
+        const treasuryRef = doc(db, 'treasury', 'current');
+        const paymentRef = doc(collection(db, 'payments'));
+
+        transaction.update(billRef, { status: 'paid', updatedAt: Timestamp.now() });
+        transaction.update(userRef, { billingStatus: 'paid', lastPaymentDate: Timestamp.now() });
+        
+        transaction.set(paymentRef, {
+          userId: bill.userId,
+          userName: bill.userName,
+          amount: bill.amount,
+          method: method,
+          date: Timestamp.now(),
+          type: 'in',
+          category: 'subscription',
+          status: 'approved',
+          billId: billId,
+          reference: `BILL-${billId.slice(-6).toUpperCase()}`
+        });
+
+        transaction.update(treasuryRef, {
+          balance: increment(bill.amount),
+          todayIn: increment(bill.amount)
+        });
+      });
+
+      await addLog('Bill Paid', bill.userName, 'payment', `Amount: Rs. ${bill.amount} | Month: ${bill.month}`);
+      toast.success('Bill marked as paid and payment recorded');
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to update bill');
+    }
+  };
+
+  const generateManualBill = async (userId: string) => {
+    try {
+      const user = state.users.find(u => u.id === userId);
+      if (!user) throw new Error("User not found");
+
+      const today = new Date();
+      const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+      
+      const pkg = state.packages.find(p => p.id === user.packageId);
+      const amount = user.planPrice || pkg?.price || 0;
+      
+      if (amount <= 0) throw new Error("User has no plan price or package price set");
+
+      const dueDate = new Date(today.getFullYear(), today.getMonth(), 10);
+      if (dueDate < today) dueDate.setMonth(dueDate.getMonth() + 1);
+
+      await addDocument('bills', {
+        userId: user.id,
+        userName: user.name,
+        packageName: user.packageName || pkg?.name || 'Standard Package',
+        amount: amount,
+        month: currentMonth,
+        dueDate: dueDate.toISOString(),
+        status: 'unpaid',
+        createdAt: new Date().toISOString()
+      });
+
+      await updateDocument('user', user.id, { 
+        billingStatus: 'unpaid',
+        planPrice: amount,
+        dueDate: dueDate.toISOString()
+      });
+
+      await addLog('Manual Bill Generated', user.name, 'system', `Month: ${currentMonth}`);
+      toast.success(`Bill generated for ${user.name}`);
+    } catch (e: any) {
+      toast.error(e.message || 'Failed to generate bill');
     }
   };
 
@@ -462,6 +553,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
             await addDocument('bills', {
               userId: user.id,
               userName: user.name,
+              packageName: user.packageName || pkg?.name || 'Standard Package',
               amount: amount,
               month: currentMonth,
               dueDate: dueDate.toISOString(),
@@ -511,6 +603,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       sendSMS, 
       checkExpiries,
       markBillAsPaid,
+      generateManualBill,
       generateMonthlyBills,
       updateSettings
     }}>

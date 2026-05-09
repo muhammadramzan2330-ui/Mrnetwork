@@ -13,6 +13,9 @@ interface UserProfile {
   status: string;
   package?: string;
   packageId?: string;
+  packageName?: string;
+  packageSpeed?: string;
+  packagePrice?: number;
   plan?: string;
   paymentStatus?: string;
   createdAt?: any;
@@ -99,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 email: firebaseUser.email,
                 phone: '', 
                 role: isDeveloper ? 'admin' : 'customer',
-                status: 'active',
+                status: isDeveloper ? 'active' : 'pending',
                 plan: "",
                 paymentStatus: "pending",
                 createdAt: serverTimestamp(),

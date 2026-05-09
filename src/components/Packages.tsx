@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Package, Zap, DollarSign, Clock, ArrowUp, ArrowDown, Edit2, Trash2, Power, Globe, ShieldCheck } from 'lucide-react';
+import { Plus, Search, Package, Zap, DollarSign, Clock, ArrowUp, ArrowDown, Edit2, Trash2, Power, Globe, ShieldCheck, XCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,8 +44,11 @@ export default function Packages() {
     try {
       await addDocument('packages', {
         name: newPkg.name,
+        packageName: newPkg.name, // Required field
         speed: newPkg.speed || '10 Mbps',
         price: Number(newPkg.price),
+        duration: 'monthly', // Required field
+        status: 'active', // Required field
         subdealerShare: Number(newPkg.subdealerShare),
         adminShare: Number(newPkg.adminShare),
         tax: Number(newPkg.tax || 0),
@@ -94,127 +97,104 @@ export default function Packages() {
 
   return (
     <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-24 md:pb-8">
-      {/* Header and Action */}
-      <div className="px-4 sm:px-8 py-6 space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-          <div className="flex flex-col">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Internet Plans</h2>
-            <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-1">
-              {isAdmin ? 'Manage and configure ISP service packages' : 'Browse available internet service plans'}
-            </p>
-          </div>
-          {isAdmin && (
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-              <DialogTrigger asChild>
-                <Button className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2 h-12 text-xs font-bold uppercase tracking-wider px-8 shadow-lg shadow-indigo-100 transition-all active:scale-95">
-                  <Plus className="w-4 h-4" /> Add Service Plan
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[560px] rounded-2xl border-slate-100 bg-white shadow-2xl p-0 overflow-hidden text-slate-900">
-                <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
-                  <div className="header-gradient p-8 text-white relative">
-                    <DialogHeader>
-                      <DialogTitle className="text-2xl font-extrabold tracking-tight">Create Internet Plan</DialogTitle>
-                    </DialogHeader>
-                    <p className="text-white/60 text-[10px] font-bold mt-2 uppercase tracking-widest">Set up a new internet package</p>
-                  </div>
-                  <div className="p-6 sm:p-8 space-y-6 text-slate-900">
-                    <div className="grid gap-6">
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Plan Name</Label>
-                        <Input 
-                          placeholder="e.g. Pro Gamer Fiber" 
-                          className="input-modern px-4 h-12"
-                          value={newPkg.name}
-                          onChange={(e) => setNewPkg({ ...newPkg, name: e.target.value })}
-                        />
+      {/* Sticky Top Header Section */}
+      <div className="sticky top-[60px] md:top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/60 pt-6 pb-4 shadow-sm transition-all duration-300">
+        <div className="px-4 sm:px-8 space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+            <div className="flex flex-col">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-none uppercase">Service Plans</h2>
+              <p className="text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] mt-1.5 leading-none font-mono">
+                {isAdmin ? 'System Pricing Registry' : 'Available ISP Packages'}
+              </p>
+            </div>
+            {isAdmin && (
+              <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogTrigger asChild>
+                  <Button className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2 h-11 text-[10px] font-black uppercase tracking-widest px-8 shadow-lg shadow-indigo-200 transition-all active:scale-95">
+                    <Plus className="w-4 h-4" /> Add Service Plan
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[560px] rounded-2xl border-slate-100 bg-white shadow-2xl p-0 overflow-hidden text-slate-900">
+                  <div className="max-h-[90vh] overflow-y-auto custom-scrollbar">
+                    <div className="header-gradient p-8 text-white relative">
+                      <DialogHeader>
+                        <DialogTitle className="text-2xl font-extrabold tracking-tight">Create Internet Plan</DialogTitle>
+                      </DialogHeader>
+                      <p className="text-white/60 text-[11px] font-bold mt-2 uppercase tracking-widest">Set up a new internet package</p>
+                    </div>
+                    <div className="p-6 sm:p-8 space-y-6 text-slate-900">
+                      <div className="grid gap-6">
+                        <div className="space-y-2">
+                          <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Plan Name</Label>
+                          <Input 
+                            placeholder="e.g. Pro Gamer Fiber" 
+                            className="input-modern px-4 h-12"
+                            value={newPkg.name}
+                            onChange={(e) => setNewPkg({ ...newPkg, name: e.target.value })}
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Speed Label</Label>
+                            <Input 
+                              placeholder="50 Mbps" 
+                              className="input-modern px-4 h-12"
+                              value={newPkg.speed}
+                              onChange={(e) => setNewPkg({ ...newPkg, speed: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Price (Rs.)</Label>
+                            <Input 
+                              type="number" 
+                              placeholder="3000" 
+                              className="input-modern font-bold text-emerald-600 px-4 h-12"
+                              value={newPkg.price}
+                              onChange={(e) => setNewPkg({ ...newPkg, price: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <Button 
+                          onClick={handleAddPackage}
+                          className="w-full mt-4 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-indigo-100"
+                        >
+                          Save Plan
+                        </Button>
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Speed Label</Label>
-                          <Input 
-                            placeholder="50 Mbps" 
-                            className="input-modern px-4 h-12"
-                            value={newPkg.speed}
-                            onChange={(e) => setNewPkg({ ...newPkg, speed: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Price (Rs.)</Label>
-                          <Input 
-                            type="number" 
-                            placeholder="3000" 
-                            className="input-modern font-bold text-emerald-600 px-4 h-12"
-                            value={newPkg.price}
-                            onChange={(e) => setNewPkg({ ...newPkg, price: e.target.value })}
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Uplink Speed</Label>
-                          <Input 
-                            placeholder="25 Mbps" 
-                            className="input-modern px-4 h-12"
-                            value={newPkg.upload}
-                            onChange={(e) => setNewPkg({ ...newPkg, upload: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Downlink Speed</Label>
-                          <Input 
-                            placeholder="50 Mbps" 
-                            className="input-modern px-4 h-12"
-                            value={newPkg.download}
-                            onChange={(e) => setNewPkg({ ...newPkg, download: e.target.value })}
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Sub Dealer Share (Rs)</Label>
-                          <Input 
-                            type="number"
-                            placeholder="590"
-                            className="input-modern px-4 h-12"
-                            value={newPkg.subdealerShare}
-                            onChange={(e) => setNewPkg({ ...newPkg, subdealerShare: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Admin Share (Rs)</Label>
-                          <Input 
-                            type="number"
-                            placeholder="910"
-                            className="input-modern px-4 h-12"
-                            value={newPkg.adminShare}
-                            onChange={(e) => setNewPkg({ ...newPkg, adminShare: e.target.value })}
-                          />
-                        </div>
-                      </div>
-                      <Button 
-                        onClick={handleAddPackage}
-                        className="w-full mt-4 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-indigo-100"
-                      >
-                        Save Plan
-                      </Button>
                     </div>
                   </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
 
-        {/* Search */}
-        <div className="relative group pt-2">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-colors group-focus-within:text-indigo-600" />
-          <Input
-            placeholder="Search internet plans..."
-            className="input-modern pl-12 h-12 shadow-sm px-4"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center pt-2">
+            <div className="relative group w-full md:max-w-xl">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-indigo-600 group-focus-within:bg-indigo-50 group-focus-within:border-indigo-100 transition-all">
+                <Search className="w-4 h-4" />
+              </div>
+              <Input
+                placeholder="Search Internet Plans (Name, Speed, Code)..."
+                className="input-modern pl-14 pr-12 h-14 text-sm font-bold border-slate-200 bg-white shadow-md focus:shadow-lg focus:ring-4 focus:ring-indigo-500/5 transition-all text-slate-900 placeholder:text-slate-400 placeholder:font-medium rounded-2xl"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              {searchTerm && (
+                <button 
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-rose-50 rounded-xl text-slate-400 hover:text-rose-500 transition-all"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+            
+            <div className="flex items-center bg-slate-100/50 p-1 rounded-xl border border-slate-200/40 shadow-inner ml-auto">
+              <Badge className="bg-indigo-50 text-indigo-600 border-indigo-100 text-[10px] font-black h-8 px-4 rounded-lg uppercase tracking-wider">
+                {filteredPackages.length} Plans Available
+              </Badge>
+            </div>
+          </div>
         </div>
       </div>
 

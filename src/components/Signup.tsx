@@ -40,7 +40,7 @@ export default function Signup() {
           email: result.user.email,
           phone,
           role: isDeveloper ? 'admin' : 'customer',
-          status: 'active',
+          status: isDeveloper ? 'active' : 'pending',
           plan: "",
           paymentStatus: "pending"
         });

@@ -1,4 +1,4 @@
-export type UserStatus = 'active' | 'expired' | 'suspended';
+export type UserStatus = 'active' | 'expired' | 'suspended' | 'pending' | 'rejected';
 
 export interface ISPUser {
   id: string;
@@ -10,22 +10,29 @@ export interface ISPUser {
   address: string;
   whatsapp: string;
   packageId: string;
+  packageName?: string;
+  packageSpeed?: string;
+  packagePrice?: number;
   expiryDate: string; // ISO string
   status: UserStatus;
   createdAt: string;
   balance: number;
+  walletBalance?: number;
 }
 
 export interface ISPPackage {
   id: string;
   name: string;
+  packageName?: string;
   speed: string; // e.g. "10 Mbps"
   price: number;
+  duration?: 'monthly';
   tax: number;
   validity: number; // in days
   uploadSpeed: string;
   downloadSpeed: string;
   enabled: boolean;
+  status?: 'active' | 'inactive';
 }
 
 export interface Payment {
