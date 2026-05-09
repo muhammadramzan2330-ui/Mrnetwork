@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
@@ -57,6 +58,19 @@ function AppRoutes() {
   }
 
   const { user, profile, loading, isAdmin, isCustomer, error } = useAuth();
+
+  useEffect(() => {
+    if (user && profile) {
+      console.log("AUTH_ROUTING_TRACE:", {
+        email: user.email,
+        uid: user.uid,
+        firestore_role: profile.role,
+        firestore_status: profile.status,
+        calculated_isAdmin: isAdmin,
+        calculated_isCustomer: isCustomer
+      });
+    }
+  }, [user, profile, isAdmin, isCustomer]);
 
   const handleLogout = () => signOut(auth);
 
@@ -266,7 +280,7 @@ function AppRoutes() {
         <Routes>
           {isAdmin ? (
             <>
-              <Route path="/" element={<Dashboard />} />
+              <Route path="/admin" element={<Dashboard />} />
               <Route path="/payments" element={<Payments />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/requests" element={<Requests />} />
@@ -276,18 +290,20 @@ function AppRoutes() {
               <Route path="/treasury" element={<Treasury />} />
               <Route path="/audit-logs" element={<AuditLogs />} />
               <Route path="/billing-settings" element={<BillingSettings />} />
+              <Route path="/" element={<Navigate to="/admin" replace />} />
+              <Route path="*" element={<Navigate to="/admin" replace />} />
             </>
           ) : isCustomer ? (
             <>
-              <Route path="/" element={<CustomerDashboard />} />
+              <Route path="/dashboard" element={<CustomerDashboard />} />
               <Route path="/payments" element={<Payments />} />
               <Route path="/packages" element={<Packages />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </>
           ) : (
             <Route path="*" element={<Navigate to="/" replace />} />
           )}
-          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
     </SystemProvider>

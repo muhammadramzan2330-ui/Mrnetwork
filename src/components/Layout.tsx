@@ -15,7 +15,7 @@ export default function Layout({ children }: LayoutProps) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   
   const navItems = [
-    { icon: LayoutDashboard, label: 'Home', to: '/', show: true },
+    { icon: LayoutDashboard, label: 'Home', to: isAdmin ? '/admin' : '/dashboard', show: true },
     { icon: CreditCard, label: 'Payments', to: '/payments', show: true },
     { icon: Store, label: 'Dealers', to: '/subdealers', show: isAdmin },
     { icon: TrendingUp, label: 'Reports', to: '/reports', show: isAdmin },
