@@ -1,14 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSystem } from '@/contexts/SystemContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { 
   User, 
   Package, 
-  Settings, 
   Phone, 
   CreditCard, 
   Calendar,
@@ -21,9 +21,10 @@ import {
   Shield,
   Smartphone,
   MapPin,
-  ExternalLink,
   History,
-  Download
+  Download,
+  Search,
+  XCircle
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { formatDate, formatCurrency, cn } from '@/lib/utils';
@@ -35,16 +36,32 @@ import { toast } from 'sonner';
 
 export default function CustomerDashboard() {
   const { profile } = useAuth();
-  const { bills, settings, packages, addLog } = useSystem();
+  const { bills, settings, packages, addLog, payments } = useSystem();
+  const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
   if (!profile) return null;
 
   const userBills = bills.filter(b => b.userId === profile.id);
+  
+  // Search filter logic
+  const filteredBills = userBills.filter(bill => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      (bill.packageName || '').toLowerCase().includes(searchLower) ||
+      (bill.month || '').toLowerCase().includes(searchLower) ||
+      (bill.status || '').toLowerCase().includes(searchLower) ||
+      bill.amount.toString().includes(searchLower) ||
+      formatDate(bill.dueDate).toLowerCase().includes(searchLower)
+    );
+  });
+
   const currentBill = userBills
     .sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime())[0];
   
-  const assignedPackage = packages.find(p => p.id === profile.packageId);
+  // Get assigned package based on either packageId or plan string
+  const assignedPackage = packages.find(p => p.id === (profile.packageId || profile.plan));
 
   const handleLogout = async () => {
     try {
@@ -115,6 +132,27 @@ export default function CustomerDashboard() {
       </div>
 
       <div className="px-4 sm:px-8 -mt-20 max-w-7xl mx-auto w-full relative z-20 space-y-8">
+        {/* Visible Search Bar at the Top */}
+        <div className="relative group w-full mb-4">
+          <div className="absolute left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-indigo-600 group-focus-within:bg-indigo-50 group-focus-within:border-indigo-100 transition-all shadow-sm">
+            <Search className="w-5 h-5" />
+          </div>
+          <Input
+            placeholder="Search packages, bills, payments or status..."
+            className="h-16 pl-16 pr-14 text-sm font-bold border-none bg-white shadow-xl focus:shadow-2xl focus:ring-4 focus:ring-indigo-500/5 transition-all text-slate-900 placeholder:text-slate-400 placeholder:font-medium rounded-[1.5rem]"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          {searchTerm && (
+            <button 
+              onClick={() => setSearchTerm('')}
+              className="absolute right-5 top-1/2 -translate-y-1/2 p-2 hover:bg-rose-50 rounded-xl text-slate-400 hover:text-rose-500 transition-all"
+            >
+              <XCircle className="w-5 h-5" />
+            </button>
+          )}
+        </div>
+
         {/* Urgent Status Banner for Suspended/Expired */}
         {(isSuspended || isExpired) && (
           <motion.div
@@ -167,7 +205,13 @@ export default function CustomerDashboard() {
                     <Shield className="h-4 w-4 text-indigo-600/40 group-hover:text-indigo-600 transition-colors" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-xl font-bold text-slate-900 uppercase">{profile.status || 'Verified'}</div>
+                    <div className="text-xl font-bold text-slate-900 uppercase">
+                      {searchTerm && (profile.status || '').toLowerCase().includes(searchTerm.toLowerCase()) ? (
+                         <span className="bg-yellow-200">{profile.status || 'Verified'}</span>
+                      ) : (
+                        profile.status || 'Verified'
+                      )}
+                    </div>
                     <div className="mt-4 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className={cn("w-1.5 h-1.5 rounded-full", profile.status === 'active' ? "bg-emerald-500" : "bg-indigo-600")} />
@@ -207,15 +251,6 @@ export default function CustomerDashboard() {
                       <p className="text-xs font-bold text-slate-700">{profile.phone || 'N/A'}</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:bg-slate-50 transition-colors">
-                    <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
-                      <MapPin className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Service Area</p>
-                      <p className="text-xs font-bold text-slate-700">Lahore District, Sector Z</p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </DialogContent>
@@ -229,16 +264,21 @@ export default function CustomerDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-xl font-bold text-slate-900 truncate">
-                  {profile.packageName || assignedPackage?.name || 'No package assigned yet'}
+                  {profile.packageName || assignedPackage?.name || (
+                    <span className="text-rose-500 font-bold text-xs uppercase tracking-widest">No plan assigned yet.</span>
+                  )}
                 </div>
-                {profile.packagePrice && (
-                  <p className="text-[11px] font-bold text-emerald-600 uppercase mt-1">Rs. {profile.packagePrice} / Monthly</p>
+                {!profile.packageName && !assignedPackage?.name && (
+                   <p className="text-[9px] text-slate-400 font-bold uppercase mt-1">Please contact admin for plan activation.</p>
+                )}
+                {(profile.packagePrice || assignedPackage?.price) && (
+                  <p className="text-[11px] font-bold text-emerald-600 uppercase mt-1">Rs. {profile.packagePrice || assignedPackage?.price} / Monthly</p>
                 )}
                 <div className="mt-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className={cn("w-1.5 h-1.5 rounded-full", profile.status === 'active' ? "bg-emerald-500" : "bg-rose-500")} />
                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                      {profile.packageSpeed || assignedPackage?.speed || `Status: ${profile.status}`}
+                      {profile.packageSpeed || assignedPackage?.speed || (profile.status ? `Status: ${profile.status}` : 'Pending assignment')}
                     </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-transform" />
@@ -314,8 +354,12 @@ export default function CustomerDashboard() {
             <Card className="bg-white border-slate-100 shadow-sm rounded-3xl overflow-hidden min-h-[400px]">
               <CardHeader className="p-8 border-b border-slate-50 flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle className="text-xl font-extrabold text-slate-900 tracking-tight">Billing History</CardTitle>
-                  <CardDescription className="text-[10px] uppercase font-bold tracking-widest mt-1 text-slate-400">Chronological transaction history</CardDescription>
+                  <CardTitle className="text-xl font-extrabold text-slate-900 tracking-tight">
+                    {searchTerm ? 'Search Results' : 'Billing History'}
+                  </CardTitle>
+                  <CardDescription className="text-[10px] uppercase font-bold tracking-widest mt-1 text-slate-400">
+                    {searchTerm ? `Matching results for "${searchTerm}"` : 'Chronological transaction history'}
+                  </CardDescription>
                 </div>
                 <Button 
                   variant="ghost" 
@@ -327,9 +371,9 @@ export default function CustomerDashboard() {
                 </Button>
               </CardHeader>
               <CardContent className={cn("p-0 transition-all", isSuspended && "opacity-40 blur-[2px] pointer-events-none")}>
-                {userBills.length > 0 ? (
+                {filteredBills.length > 0 ? (
                   <div className="divide-y divide-slate-50">
-                    {userBills.map((bill) => (
+                    {filteredBills.map((bill) => (
                       <div key={bill.id} className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all group">
                         <div className="flex items-center gap-5">
                           <div className={cn(
@@ -383,11 +427,15 @@ export default function CustomerDashboard() {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-24 px-8 text-center">
                     <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                      <History className="w-10 h-10 text-slate-200" />
+                      {searchTerm ? <Search className="w-10 h-10 text-slate-200" /> : <History className="w-10 h-10 text-slate-200" />}
                     </div>
-                    <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.2em]">Transaction Registry Empty</h3>
+                    <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.2em]">
+                      {searchTerm ? 'No matches found' : 'Transaction Registry Empty'}
+                    </h3>
                     <p className="text-xs text-slate-400 max-w-[240px] mx-auto mt-4 font-medium">
-                      Your billing history will appear here once your account has activity.
+                      {searchTerm 
+                        ? "Try searching with a different keyword like 'unpaid', 'month', or 'package name'." 
+                        : "Your billing history will appear here once your account has activity."}
                     </p>
                   </div>
                 )}

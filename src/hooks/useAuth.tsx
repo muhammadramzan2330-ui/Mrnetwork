@@ -79,18 +79,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Query Firestore "user" collection where uid == current user UID
         const currentUserUid = firebaseUser.uid.trim();
-        console.log("Current Auth UID:", currentUserUid);
+        console.log("AUTH_DEBUG: Current User UID:", currentUserUid);
         
         const userRef = doc(db, 'user', currentUserUid);
 
         unsubscribeProfile = onSnapshot(userRef, async (snapshot) => {
           if (snapshot.exists()) {
             const userData = snapshot.data() as UserProfile;
+            console.log("AUTH_DEBUG: Profile Found:", {
+              uid: currentUserUid,
+              role: userData.role,
+              status: userData.status,
+              email: userData.email
+            });
             setProfile({ ...userData, id: snapshot.id } as any);
             setError(null);
             setLoading(false);
           } else {
-            console.warn("No profile found for UID:", currentUserUid);
+            console.warn("AUTH_DEBUG: No profile found in 'user' collection for UID:", currentUserUid);
             // AUTO-ADAPT: Auto-create profile for ALL authenticated users if missing
             try {
               const { setDoc, doc, serverTimestamp } = await import('firebase/firestore');

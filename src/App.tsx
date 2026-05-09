@@ -115,8 +115,17 @@ function AppRoutes() {
     );
   }
 
+  console.log("AUTH_ROUTING_DEBUG:", {
+    uid: user?.uid,
+    role: profile?.role,
+    status: profile?.status,
+    isAdmin,
+    isCustomer
+  });
+
   // Handle pending or rejected status
-  if (profile?.status === 'pending' || profile?.status === 'rejected') {
+  // Admin with 'active' status should definitely bypass this
+  if ((profile?.status === 'pending' || profile?.status === 'rejected') && !isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#F8FAFC] p-6 text-center">
         <motion.div 
@@ -170,6 +179,78 @@ function AppRoutes() {
             <p className="text-[9px] text-slate-300 font-bold uppercase tracking-[0.2em] mt-4 font-sans">
               M & Network // Billing Portal
             </p>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Handle suspended status
+  if (profile?.status === 'suspended' && !isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-rose-50 p-6 text-center">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-rose-100"
+        >
+          <div className="w-20 h-20 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-600 mx-auto mb-6">
+            <ShieldOff className="w-10 h-10" />
+          </div>
+          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Service Suspended</h1>
+          <p className="text-slate-500 font-medium mb-8">
+            Your internet service has been suspended by the administrator. Please contact support to reactivate your connection.
+          </p>
+          <div className="space-y-3">
+            <Button 
+              className="w-full bg-slate-900 hover:bg-slate-800 h-12 rounded-xl font-bold uppercase tracking-widest text-xs"
+              onClick={() => window.open('https://wa.me/923000000000', '_blank')}
+            >
+              Contact Support
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full h-12 rounded-xl font-bold uppercase tracking-widest text-xs border-slate-200"
+              onClick={() => logout()}
+            >
+              Sign Out
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Handle expired status
+  if (profile?.status === 'expired' && !isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-amber-50 p-6 text-center">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-amber-100"
+        >
+          <div className="w-20 h-20 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 mx-auto mb-6">
+            <AlertCircle className="w-10 h-10" />
+          </div>
+          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Plan Expired</h1>
+          <p className="text-slate-500 font-medium mb-8">
+            Your subscription has expired or you have an unpaid bill. Please make a payment to continue enjoying our services.
+          </p>
+          <div className="space-y-3">
+            <Button 
+              className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold uppercase tracking-widest text-xs"
+              onClick={() => window.location.href = '/payments'}
+            >
+              Pay Now
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full h-12 rounded-xl font-bold uppercase tracking-widest text-xs border-slate-200"
+              onClick={() => logout()}
+            >
+              Sign Out
+            </Button>
           </div>
         </motion.div>
       </div>
