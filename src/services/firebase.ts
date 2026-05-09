@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import { toast } from 'sonner';
 import { 
   getAuth, 
   GoogleAuthProvider, 
@@ -86,6 +87,22 @@ export const signInWithGoogle = async () => {
       domain: window.location.hostname
     }));
     
+    if (error.code === 'auth/unauthorized-domain') {
+      const currentHost = window.location.hostname;
+      console.error("CRITICAL: Unauthorized Domain detected.");
+      console.error("Please add the following domain to your Firebase Project's 'Authorized Domains' list:");
+      console.error("- " + currentHost);
+      console.error("Link: https://console.firebase.google.com/project/" + firebaseConfig.projectId + "/authentication/settings");
+      
+      const isIframe = window.self !== window.top;
+      if (isIframe) {
+        toast.error("Auth blocked in preview. Please 'Open in New Tab' to login or add this domain to Firebase Authorized Domains.", {
+          description: `Domain: ${currentHost}`,
+          duration: 10000
+        });
+      }
+    }
+    
     // Explicitly handle unauthorized domain by informing or trying redirect
     // Sometimes redirect works better with iframe/popup constraints
     const redirectCodes = [
@@ -95,7 +112,7 @@ export const signInWithGoogle = async () => {
       'auth/network-request-failed',
       'auth/popup-closed-by-user',
       'auth/web-storage-unsupported',
-      'auth/unauthorized-domain' // Adding it to trigger redirect fallback
+      'auth/unauthorized-domain'
     ];
     
     if (redirectCodes.includes(error.code)) {

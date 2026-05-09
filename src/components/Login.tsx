@@ -89,7 +89,9 @@ export default function Login() {
       } else if (error.code === 'auth/invalid-email') {
         message = "Please enter a valid email address.";
       } else if (error.code === 'auth/unauthorized-domain') {
-        message = `This domain (${window.location.hostname}) is not authorized in Firebase Console. Please add it to 'Authorized domains' in Authentication settings.`;
+        const hostname = window.location.hostname;
+        const isIframe = window.self !== window.top;
+        message = `Access Denied: The domain '${hostname}' is not authorized. ${isIframe ? 'Since you are in a preview, please click "Open in New Tab" at the top right to login.' : 'Please add it to Firebase Console > Authentication > Settings > Authorized Domains.'}`;
       } else if (error.code === 'auth/api-key-not-valid') {
         message = "Verification failed: The API Key is restricted. Please go to Google Cloud Console > Credentials and allow your Vercel domain.";
       }
@@ -205,12 +207,24 @@ export default function Login() {
             </Button>
 
             <div className="mt-8 text-center bg-slate-50 py-4 -mx-6 sm:-mx-10 border-t border-slate-100">
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-none">
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-none mb-3">
                 Don't have an account?{' '}
                 <Link to="/signup" className="text-indigo-600 hover:underline font-extrabold ml-1 uppercase">
                   Create Account
                 </Link>
               </p>
+              <button 
+                type="button"
+                onClick={() => {
+                  toast.info("Authentication Diagnostics", {
+                    description: `Current Domain: ${window.location.hostname}\nEnsure this is in Firebase > Auth > Settings > Authorized Domains`,
+                    duration: 10000
+                  });
+                }}
+                className="text-[9px] text-slate-300 hover:text-slate-500 font-bold uppercase tracking-[0.2em] transition-colors"
+              >
+                Troubleshoot Connection
+              </button>
             </div>
           </CardContent>
         </Card>

@@ -147,9 +147,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setProfile(null);
         setError(null);
         setLoading(false);
-        // Force clear local storage on clear logout
-        localStorage.clear();
-        sessionStorage.clear();
       }
     });
 
