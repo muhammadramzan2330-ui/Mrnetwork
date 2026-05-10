@@ -25,6 +25,7 @@ import { updateDocument, deleteDocument, secondaryAuth, createUserProfile } from
 import { createUserWithEmailAndPassword, signOut as secondarySignOut } from 'firebase/auth';
 import { toast } from 'sonner';
 import { cn, formatDate } from '@/lib/utils';
+import { generateInvoicePDF } from '@/services/pdfService';
 
 export default function Users() {
   const { users, packages, subdealers, settings, recordPayment, bills, markBillAsPaid, payments, generateManualBill } = useSystem();
@@ -519,7 +520,7 @@ export default function Users() {
                             className="gap-2 text-[10px] font-bold py-3 rounded-lg cursor-pointer uppercase tracking-wider text-slate-600"
                           >
                             {user.status === 'active' ? <Ban className="w-4 h-4 text-orange-500" /> : <CheckCircle2 className="w-4 h-4 text-emerald-500" />} 
-                            {user.status === 'active' ? 'Suspend' : 'Activate'}
+                            {user.status === 'active' ? 'Suspend' : 'Reactivate'}
                           </DropdownMenuItem>
                           <div className="h-px bg-slate-50 my-1" />
                           <DropdownMenuItem 
@@ -571,28 +572,38 @@ export default function Users() {
                       </div>
                     </div>
 
-                    <div className="mt-auto p-4 bg-slate-50/50 border-t border-slate-50 flex items-center justify-between gap-4">
+                    <div className="mt-auto p-4 bg-slate-50/50 border-t border-slate-50 flex items-center justify-between gap-2">
                       <div className="flex gap-2">
                         <Badge className={cn(
-                          "rounded-lg font-bold text-[8px] px-3 py-1 border-none uppercase tracking-widest transition-colors",
+                          "rounded-lg font-bold text-[8px] px-2 py-1 border-none uppercase tracking-widest transition-colors",
                           user.status === 'active' ? "bg-emerald-500 text-white shadow-lg shadow-emerald-200" : 
                           user.status === 'suspended' ? "bg-rose-600 text-white shadow-lg shadow-rose-200" : 
                           "bg-orange-500 text-white shadow-lg shadow-orange-200"
                         )}>
                           {user.status}
                         </Badge>
-                        {user.billingStatus === 'unpaid' && (
-                          <Badge className="rounded-lg font-black text-[8px] px-3 py-1 border-none bg-rose-100 text-rose-600 uppercase tracking-widest border border-rose-200">
-                            UNPAID
-                          </Badge>
-                        )}
                       </div>
-                      <Button 
-                        onClick={() => { setRenewTarget(user); setIsRenewOpen(true); }}
-                        className="h-9 px-4 rounded-lg bg-white hover:bg-primary hover:text-white text-primary border border-primary/20 text-[9px] font-bold uppercase tracking-widest shadow-sm transition-all"
-                      >
-                        Renew
-                      </Button>
+                      <div className="flex gap-1.5 ml-auto">
+                        <Button 
+                          onClick={() => toggleStatus(user)}
+                          variant="ghost"
+                          className={cn(
+                            "h-9 px-3 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all gap-1.5",
+                            user.status === 'active' 
+                              ? "bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white" 
+                              : "bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white"
+                          )}
+                        >
+                          {user.status === 'active' ? <Ban className="w-3 h-3" /> : <RefreshCw className="w-3 h-3" />}
+                          {user.status === 'active' ? 'Suspend' : 'Reactivate'}
+                        </Button>
+                        <Button 
+                          onClick={() => { setRenewTarget(user); setIsRenewOpen(true); }}
+                          className="h-9 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[8px] font-black uppercase tracking-widest shadow-sm transition-all shadow-indigo-100"
+                        >
+                          Renew
+                        </Button>
+                      </div>
                     </div>
                   </Card>
                 </motion.div>
@@ -960,12 +971,36 @@ export default function Users() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className={cn(
-                            "text-sm font-black tracking-tight",
-                            item.ledgerType === 'bill' ? "text-slate-900" : "text-primary"
-                          )}>
-                            {item.ledgerType === 'bill' ? '-' : '+'} RS.{item.amount?.toLocaleString()}
-                          </p>
+                          <div className="flex items-center justify-end gap-2">
+                            {item.ledgerType === 'bill' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 text-slate-400 hover:text-indigo-600 hover:bg-white rounded-lg transition-all"
+                                onClick={() => {
+                                  generateInvoicePDF({
+                                    invoiceNumber: item.id.slice(-8).toUpperCase(),
+                                    customerName: ledgerUser.name,
+                                    phone: ledgerUser.phone || 'N/A',
+                                    packageName: item.packageName,
+                                    speed: ledgerUser.packageSpeed || 'N/A',
+                                    amount: item.amount,
+                                    dueDate: formatDate(item.dueDate),
+                                    status: item.status,
+                                    createdDate: formatDate(item.createdAt)
+                                  });
+                                }}
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                              </Button>
+                            )}
+                            <p className={cn(
+                              "text-sm font-black tracking-tight",
+                              item.ledgerType === 'bill' ? "text-slate-900" : "text-primary"
+                            )}>
+                              {item.ledgerType === 'bill' ? '-' : '+'} RS.{item.amount?.toLocaleString()}
+                            </p>
+                          </div>
                           {item.ledgerType === 'bill' && (
                             <Badge className={cn(
                               "text-[8px] font-black uppercase tracking-widest h-4 px-1.5 mt-1",

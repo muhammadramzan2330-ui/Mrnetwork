@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   LogOut,
   MessageSquare,
+  MessageCircle,
   Shield,
   Smartphone,
   MapPin,
@@ -36,22 +37,32 @@ import { toast } from 'sonner';
 
 export default function CustomerDashboard() {
   const { profile } = useAuth();
-  const { bills, settings, packages, addLog, payments } = useSystem();
+  const { bills, settings, packages, addLog, payments, addTicket, tickets } = useSystem();
   const [searchTerm, setSearchTerm] = useState('');
+  const [ticketMessage, setTicketMessage] = useState('');
+  const [ticketType, setTicketType] = useState('Technical Issue');
+  const [ticketPriority, setTicketPriority] = useState('medium');
+  const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
   const navigate = useNavigate();
 
   if (!profile) return null;
 
   const userBills = bills.filter(b => b.userId === profile.id);
+  const userTickets = tickets.filter(t => t.userId === profile.id);
+  const now = new Date();
   
   // Search filter logic
   const filteredBills = userBills.filter(bill => {
+    const isOverdue = bill.status === 'unpaid' && new Date(bill.dueDate) < now;
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
+    const isOverdueMatch = isOverdue && 'overdue'.includes(searchLower);
+    
     return (
       (bill.packageName || '').toLowerCase().includes(searchLower) ||
       (bill.month || '').toLowerCase().includes(searchLower) ||
       (bill.status || '').toLowerCase().includes(searchLower) ||
+      isOverdueMatch ||
       bill.amount.toString().includes(searchLower) ||
       formatDate(bill.dueDate).toLowerCase().includes(searchLower)
     );
@@ -73,13 +84,46 @@ export default function CustomerDashboard() {
     }
   };
 
+  const handleCreateTicket = async () => {
+    if (!ticketMessage.trim()) {
+      toast.error("Please enter a message");
+      return;
+    }
+    
+    setIsSubmittingTicket(true);
+    try {
+      await addTicket({
+        userId: profile.id,
+        userName: profile.name,
+        issueType: ticketType,
+        message: ticketMessage,
+        priority: ticketPriority,
+      });
+      setTicketMessage('');
+      if (addLog) addLog('Ticket Submitted', profile.name, 'customer', `Issue: ${ticketType}`);
+    } catch (e) {
+      toast.error("Failed to submit ticket");
+    } finally {
+      setIsSubmittingTicket(false);
+    }
+  };
+
   const supportNumber = settings?.easypaisaNumber || "03001234567"; // Fallback to settings or default
 
   const isSuspended = profile.status === 'suspended';
   const isExpired = profile.status === 'expired';
 
+  const hasOverdueBills = userBills.some(b => b.status === 'unpaid' && new Date(b.dueDate) < now);
+
   return (
     <div className="flex flex-col min-h-full bg-[#F8FAFC]">
+      {hasOverdueBills && !isSuspended && (
+        <div className="bg-rose-600 text-white py-3 px-4 text-center font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-4 animate-pulse sticky top-0 z-[60] shadow-xl">
+          <AlertCircle className="w-4 h-4 text-white" />
+          Attention: You have overdue bills. Please clear your balance to avoid service interruption.
+          <AlertCircle className="w-4 h-4 text-white" />
+        </div>
+      )}
       {/* Premium Gradient Header */}
       <div className={cn(
         "header-gradient pt-8 pb-32 px-4 sm:px-8 text-white relative overflow-hidden md:rounded-b-[2.5rem] transition-all",
@@ -319,11 +363,13 @@ export default function CustomerDashboard() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
             <Card className={cn(
               "shadow-lg rounded-2xl overflow-hidden hover:opacity-95 transition-all text-white border-none h-full cursor-pointer",
+              currentBill?.status === 'unpaid' && new Date(currentBill.dueDate) < now ? "bg-rose-600 shadow-rose-600/20" :
               currentBill?.status === 'unpaid' ? "bg-rose-500 shadow-rose-500/20" : "bg-indigo-600 shadow-indigo-600/20"
             )} onClick={() => navigate('/payments')}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-[11px] font-bold text-white/60 uppercase tracking-widest">
-                  {currentBill?.status === 'unpaid' ? 'Pending Balance' : 'Payment Status'}
+                  {currentBill?.status === 'unpaid' && new Date(currentBill.dueDate) < now ? 'OVERDUE BALANCE' : 
+                   currentBill?.status === 'unpaid' ? 'Pending Balance' : 'Payment Status'}
                 </CardTitle>
                 <CreditCard className="h-4 w-4 text-white/40" />
               </CardHeader>
@@ -335,7 +381,10 @@ export default function CustomerDashboard() {
                   {currentBill?.status === 'unpaid' ? (
                     <div className="flex items-center gap-2 bg-white/10 px-2.5 py-1 rounded inline-flex">
                       <AlertCircle className="w-3 h-3 text-white" />
-                      <p className="text-[11px] text-white font-black uppercase tracking-widest">DUE: {formatDate(currentBill.dueDate)}</p>
+                      <p className="text-[11px] text-white font-black uppercase tracking-widest">
+                        {new Date(currentBill.dueDate) < now ? 'OVERDUE SINCE: ' : 'DUE: '}
+                        {formatDate(currentBill.dueDate)}
+                      </p>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2 bg-emerald-400/10 px-2.5 py-1 rounded inline-flex">
@@ -373,56 +422,72 @@ export default function CustomerDashboard() {
               <CardContent className={cn("p-0 transition-all", isSuspended && "opacity-40 blur-[2px] pointer-events-none")}>
                 {filteredBills.length > 0 ? (
                   <div className="divide-y divide-slate-50">
-                    {filteredBills.map((bill) => (
-                      <div key={bill.id} className="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all group">
-                        <div className="flex items-center gap-5">
-                          <div className={cn(
-                            "w-12 h-12 rounded-2xl flex items-center justify-center border transition-all",
-                            bill.status === 'paid' 
-                              ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
-                              : "bg-rose-50 text-rose-600 border-rose-100"
-                          )}>
-                            <CreditCard className="w-6 h-6" />
+                    {filteredBills.map((bill) => {
+                      const isOverdue = bill.status === 'unpaid' && new Date(bill.dueDate) < now;
+                      return (
+                        <div key={bill.id} className={cn(
+                          "p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all group",
+                          isOverdue && "bg-rose-50/30 hover:bg-rose-50/50"
+                        )}>
+                          <div className="flex items-center gap-5">
+                            <div className={cn(
+                              "w-12 h-12 rounded-2xl flex items-center justify-center border transition-all",
+                              bill.status === 'paid' 
+                                ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
+                                : isOverdue ? "bg-rose-600 text-white border-rose-500 shadow-lg shadow-rose-200" : "bg-rose-50 text-rose-600 border-rose-100"
+                            )}>
+                              <CreditCard className="w-6 h-6" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-extrabold text-slate-900">{bill.packageName || 'Monthly Bill'} - {bill.month}</p>
+                                {isOverdue && <Badge className="bg-rose-600 text-white border-none text-[8px] h-4 font-black">OVERDUE</Badge>}
+                              </div>
+                              <p className={cn(
+                                "text-[10px] font-bold uppercase tracking-widest mt-0.5",
+                                isOverdue ? "text-rose-500" : "text-slate-400"
+                              )}>Due: {formatDate(bill.dueDate)}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-sm font-extrabold text-slate-900">{bill.packageName || 'Monthly Bill'} - {bill.month}</p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Due: {formatDate(bill.dueDate)}</p>
+                          <div className="text-right flex flex-col items-end gap-2">
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                                onClick={() => {
+                                  generateInvoicePDF({
+                                    invoiceNumber: bill.id.slice(-8).toUpperCase(),
+                                    customerName: profile.name,
+                                    phone: profile.phone || 'N/A',
+                                    packageName: bill.packageName || assignedPackage?.name || 'Service',
+                                    speed: profile.packageSpeed || assignedPackage?.speed || 'Standard',
+                                    amount: bill.amount,
+                                    dueDate: formatDate(bill.dueDate),
+                                    status: isOverdue ? 'overdue' : bill.status,
+                                    createdDate: formatDate(bill.createdAt || new Date())
+                                  });
+                                  if (addLog) addLog('Invoice Downloaded', profile.name, 'customer', `Invoice #${bill.id.slice(-8)}`);
+                                }}
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
+                              <p className={cn(
+                                "text-base font-black tracking-tight",
+                                isOverdue ? "text-rose-600" : "text-slate-900"
+                              )}>{formatCurrency(bill.amount)}</p>
+                            </div>
+                            <Badge className={cn(
+                              "px-3 py-1 font-bold text-[9px] uppercase tracking-widest rounded-lg border-none",
+                              bill.status === 'paid' ? "bg-emerald-100 text-emerald-700" : 
+                              isOverdue ? "bg-rose-600 text-white shadow-md animate-pulse" : "bg-rose-100 text-rose-700"
+                            )}>
+                              {isOverdue ? 'Overdue' : bill.status}
+                            </Badge>
                           </div>
                         </div>
-                        <div className="text-right flex flex-col items-end gap-2">
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
-                              onClick={() => {
-                                generateInvoicePDF({
-                                  invoiceNumber: bill.id.slice(-8).toUpperCase(),
-                                  customerName: profile.name,
-                                  phone: profile.phone || 'N/A',
-                                  packageName: bill.packageName || assignedPackage?.name || 'Service',
-                                  speed: profile.packageSpeed || assignedPackage?.speed || 'Standard',
-                                  amount: bill.amount,
-                                  dueDate: formatDate(bill.dueDate),
-                                  status: bill.status,
-                                  createdDate: formatDate(bill.date || new Date())
-                                });
-                                if (addLog) addLog('Invoice Downloaded', profile.name, 'customer', `Invoice #${bill.id.slice(-8)}`);
-                              }}
-                            >
-                              <Download className="w-4 h-4" />
-                            </Button>
-                            <p className="text-base font-black text-slate-900 tracking-tight">{formatCurrency(bill.amount)}</p>
-                          </div>
-                          <Badge className={cn(
-                            "px-3 py-1 font-bold text-[9px] uppercase tracking-widest rounded-lg border-none",
-                            bill.status === 'paid' ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-                          )}>
-                            {bill.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-24 px-8 text-center">
@@ -477,6 +542,110 @@ export default function CustomerDashboard() {
                     <span className="text-[10px] font-bold uppercase tracking-widest">Update Security</span>
                     <ChevronRight className="w-4 h-4" />
                   </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white border-slate-100 shadow-sm rounded-3xl overflow-hidden relative group">
+              <CardHeader className="bg-slate-50/50 py-8 px-8 relative overflow-hidden border-b border-slate-100">
+                <CardTitle className="text-sm font-bold text-slate-800 relative z-10 flex items-center justify-between text-indigo-600 uppercase tracking-widest text-[10px]">
+                  <div className="flex items-center gap-3">
+                    <MessageSquare className="w-4 h-4" />
+                    Support Tickets
+                  </div>
+                  <Badge className="bg-indigo-600 text-white border-none text-[8px] h-4 font-black">{userTickets.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="space-y-6">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="w-full bg-slate-900 hover:bg-indigo-600 text-white h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] gap-3 transition-all">
+                        <MessageCircle className="w-4 h-4" /> 
+                        New Complaint
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[480px] rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
+                       <div className="bg-slate-900 p-8 text-white">
+                         <h3 className="text-xl font-black uppercase tracking-tight mb-1">Submit Complaint</h3>
+                         <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-widest">Technical & Support Desk</p>
+                       </div>
+                       <div className="p-8 space-y-6">
+                         <div className="space-y-2">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Issue Category</label>
+                           <select 
+                            value={ticketType}
+                            onChange={(e) => setTicketType(e.target.value)}
+                            className="w-full h-14 px-5 bg-slate-50 border-slate-100 rounded-2xl font-bold text-sm focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none"
+                           >
+                             <option>Slow Internet</option>
+                             <option>Connection Outage</option>
+                             <option>Billing Issue</option>
+                             <option>Login/Router Issues</option>
+                             <option>Package Change Request</option>
+                             <option>Other</option>
+                           </select>
+                         </div>
+                         <div className="space-y-2">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Priority</label>
+                           <div className="flex gap-2">
+                              {['low', 'medium', 'high'].map(p => (
+                                <button
+                                  key={p}
+                                  onClick={() => setTicketPriority(p)}
+                                  className={cn(
+                                    "flex-1 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                    ticketPriority === p ? "bg-indigo-600 text-white shadow-lg" : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+                                  )}
+                                >
+                                  {p}
+                                </button>
+                              ))}
+                           </div>
+                         </div>
+                         <div className="space-y-2">
+                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Describe Message</label>
+                           <textarea
+                             value={ticketMessage}
+                             onChange={(e) => setTicketMessage(e.target.value)}
+                             placeholder="Provide details about your issue..."
+                             className="w-full h-32 p-5 bg-slate-50 border-slate-100 rounded-2xl font-bold text-sm focus:ring-4 focus:ring-indigo-500/5 transition-all outline-none resize-none"
+                           />
+                         </div>
+                         <Button 
+                           onClick={handleCreateTicket}
+                           disabled={isSubmittingTicket}
+                           className="w-full bg-slate-900 h-14 rounded-2xl font-black uppercase tracking-widest text-[10px]"
+                         >
+                           {isSubmittingTicket ? "Submitting..." : "Submit Support Ticket"}
+                         </Button>
+                       </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 no-scrollbar">
+                    {userTickets.length > 0 ? (
+                      userTickets.map((ticket) => (
+                        <div key={ticket.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-100 group/ticket hover:border-indigo-100 transition-all">
+                          <div className="flex justify-between items-start mb-2">
+                            <Badge className={cn(
+                              "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border-none",
+                              ticket.status === 'resolved' ? "bg-emerald-100 text-emerald-600" : "bg-indigo-100 text-indigo-600"
+                            )}>
+                              {ticket.status}
+                            </Badge>
+                            <span className="text-[9px] font-bold text-slate-400 uppercase">{formatDate(ticket.createdAt)}</span>
+                          </div>
+                          <p className="text-[11px] font-black text-slate-900 uppercase tracking-tight mb-1">{ticket.issueType}</p>
+                          <p className="text-[11px] font-medium text-slate-500 line-clamp-2 italic">"{ticket.message}"</p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">No ticket history</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

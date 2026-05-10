@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp } from 'lucide-react';
+import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -9,19 +9,28 @@ interface LayoutProps {
 }
 
 import { useAuth } from '../hooks/useAuth';
+import { useSystem } from '../contexts/SystemContext';
 
 export default function Layout({ children }: LayoutProps) {
   const { isAdmin } = useAuth();
+  const { tickets } = useSystem();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const openTicketsCount = tickets.filter(t => t.status === 'open').length;
   
   const navItems = [
     { icon: LayoutDashboard, label: 'Home', to: isAdmin ? '/admin' : '/dashboard', show: true },
     { icon: CreditCard, label: 'Payments', to: '/payments', show: true },
+    { icon: MessageSquare, label: 'Tickets', to: '/tickets', show: isAdmin, badge: openTicketsCount > 0 ? openTicketsCount : null },
+    { icon: FileText, label: 'Invoices', to: '/bills', show: isAdmin },
+    { icon: ShieldCheck, label: 'System', to: '/system-check', show: isAdmin },
+    { icon: Download, label: 'Exports', to: '/exports', show: isAdmin },
     { icon: Store, label: 'Dealers', to: '/subdealers', show: isAdmin },
     { icon: TrendingUp, label: 'Reports', to: '/reports', show: isAdmin },
     { icon: Castle, label: 'Ledger', to: '/treasury', show: isAdmin },
     { icon: Users, label: 'Subscribers', to: '/users', show: isAdmin },
     { icon: Package, label: 'Plans', to: '/packages', show: true },
+    { icon: Activity, label: 'Troubleshoot', to: '/status', show: isAdmin },
   ].filter(item => item.show);
 
   return (
@@ -84,7 +93,12 @@ export default function Layout({ children }: LayoutProps) {
                     )}
                   >
                     <item.icon className={cn("w-5 h-5", "group-hover:scale-110 transition-transform")} />
-                    <span className="font-bold text-[13px] uppercase tracking-wider">{item.label}</span>
+                    <span className="font-bold text-[13px] uppercase tracking-wider flex-1 text-left">{item.label}</span>
+                    {item.badge && (
+                      <span className="bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-md">
+                        {item.badge}
+                      </span>
+                    )}
                   </NavLink>
                 ))}
               </nav>
@@ -127,6 +141,11 @@ export default function Layout({ children }: LayoutProps) {
                 <span className="text-[9px] font-black tracking-tight uppercase leading-none">
                   {item.label}
                 </span>
+                {item.badge && (
+                  <span className="md:ml-1 bg-rose-500 text-white text-[8px] font-black px-1 py-0.5 rounded-sm">
+                    {item.badge}
+                  </span>
+                )}
                 <div className={cn(
                   "h-1 w-1 rounded-full bg-indigo-600 mt-1 md:hidden transition-all duration-300",
                   "active" // Using template literal to handle the NavLink's isActive context would be complex here, so we rely on the parent className

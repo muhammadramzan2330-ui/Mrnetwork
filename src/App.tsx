@@ -11,11 +11,16 @@ import Treasury from './components/Treasury';
 import AuditLogs from './components/AuditLogs';
 import BillingSettings from './components/BillingSettings';
 import Reports from './components/Reports';
+import Status from './components/Status';
+import Bills from './components/Bills';
+import Tickets from './components/Tickets';
+import SystemCheck from './components/SystemCheck';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import ForgotPassword from './components/ForgotPassword';
 import CustomerDashboard from './components/CustomerDashboard';
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import ExportData from './components/ExportData';
 import { SystemProvider } from './contexts/SystemContext';
 import { Toaster } from '@/components/ui/sonner';
 import { ShieldOff, Loader2, AlertCircle } from 'lucide-react';
@@ -290,6 +295,11 @@ function AppRoutes() {
               <Route path="/treasury" element={<Treasury />} />
               <Route path="/audit-logs" element={<AuditLogs />} />
               <Route path="/billing-settings" element={<BillingSettings />} />
+              <Route path="/bills" element={<Bills />} />
+              <Route path="/tickets" element={<Tickets />} />
+              <Route path="/system-check" element={<SystemCheck />} />
+              <Route path="/status" element={<Status />} />
+              <Route path="/exports" element={<ExportData />} />
               <Route path="/" element={<Navigate to="/admin" replace />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </>

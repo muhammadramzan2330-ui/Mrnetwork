@@ -20,6 +20,7 @@ import {
   History,
   Activity,
   AlertCircle,
+  ShieldCheck,
   LayoutDashboard,
   Search
 } from 'lucide-react';
@@ -45,7 +46,7 @@ import { useAuth } from '../hooks/useAuth';
 export default function Dashboard() {
   const navigate = useNavigate();
   const { profile, isAdmin, isCustomer } = useAuth();
-  const { users, subdealers, packages, requests, payments, bills, treasury, loading, checkExpiries, generateMonthlyBills } = useSystem();
+  const { users, subdealers, packages, requests, payments, bills, tickets, treasury, loading, checkExpiries, generateMonthlyBills } = useSystem();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -84,19 +85,21 @@ export default function Dashboard() {
   const unpaidBillsCount = bills.filter(b => b.status === 'unpaid').length;
   const paidBillsCount = bills.filter(b => b.status === 'paid').length;
   const overdueBillsCount = bills.filter(b => b.status === 'unpaid' && new Date(b.dueDate) < new Date()).length;
+  const openTicketsCount = tickets.filter(t => t.status === 'open').length;
 
   const stats = isAdmin ? [
     { label: 'Active', value: activeUsersCount.toString(), icon: UserCheck, color: 'bg-emerald-100 text-emerald-600' },
     { label: 'Suspended', value: suspendedUsersCount.toString(), icon: ShieldOff, color: 'bg-rose-100 text-rose-600' },
     { label: 'Expired', value: expiredUsersCount.toString(), icon: AlertCircle, color: 'bg-amber-100 text-amber-600' },
-    { label: 'Unpaid Bills', value: unpaidBillsCount.toString(), icon: CreditCard, color: 'bg-rose-100 text-rose-600' },
-    { label: 'Paid Bills', value: paidBillsCount.toString(), icon: CheckCircle2, color: 'bg-emerald-100 text-emerald-600' },
+    { label: 'Unpaid Bills', value: unpaidBillsCount.toString(), icon: CreditCard, color: 'bg-indigo-50 text-indigo-600' },
+    { label: 'Overdue Bills', value: overdueBillsCount.toString(), icon: AlertCircle, color: 'bg-rose-100 text-rose-600 animate-pulse' },
+    { label: 'Tickets', value: openTicketsCount.toString(), icon: MessageSquare, color: openTicketsCount > 0 ? 'bg-indigo-600 text-white animate-bounce' : 'bg-slate-100 text-slate-600' },
     { label: 'Invoiced', value: `Rs. ${totalIncome.toLocaleString()}`, icon: Wallet, color: 'bg-indigo-100 text-indigo-600' },
   ] : [
     { label: 'Active', value: activeUsersCount.toString(), icon: UserCheck, color: 'bg-emerald-100 text-emerald-600' },
-    { label: 'Dealers', value: subdealers.length.toString(), icon: Store, color: 'bg-indigo-100 text-indigo-600' },
-    { label: 'Plans', value: packages.length.toString(), icon: Package, color: 'bg-indigo-100 text-indigo-600' },
     { label: 'Pending', value: pendingRequests.length.toString(), icon: Activity, color: 'bg-amber-100 text-amber-600' },
+    { label: 'Overdue Bills', value: overdueBillsCount.toString(), icon: AlertCircle, color: 'bg-rose-100 text-rose-600' },
+    { label: 'Plans', value: packages.length.toString(), icon: Package, color: 'bg-indigo-100 text-indigo-600' },
   ];
 
   const handleLogout = async () => {
@@ -113,7 +116,8 @@ export default function Dashboard() {
   };
 
   const headerActions = [
-    { icon: RefreshCw, label: isSyncing ? 'Syncing...' : 'Sync Bills', action: handleSyncBills },
+    { icon: ShieldCheck, label: 'Health Status', path: '/system-check' },
+    { icon: RefreshCw, label: isSyncing ? 'Generating...' : 'Generate Bills', action: handleSyncBills },
     { icon: TrendingUp, label: 'Reports', path: '/reports' },
     { icon: History, label: 'System Logs', path: '/audit-logs' },
     { icon: SlidersHorizontal, label: 'Billing Settings', path: '/billing-settings' },

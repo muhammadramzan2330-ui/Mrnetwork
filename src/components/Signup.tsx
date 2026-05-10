@@ -180,12 +180,31 @@ export default function Signup() {
             </form>
 
             <div className="mt-8 text-center bg-slate-50 py-4 -mx-6 sm:-mx-10 border-t border-slate-100">
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-none">
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-none mb-3">
                 Already have an account?{' '}
                 <Link to="/" className="text-indigo-600 hover:underline font-extrabold ml-1 uppercase">
                   Back to Login
                 </Link>
               </p>
+              <button 
+                type="button"
+                onClick={() => {
+                  toast.info("Authentication Diagnostics", {
+                    description: `Current Domain: ${window.location.hostname}\nEnsure this is in Firebase > Auth > Settings > Authorized Domains`,
+                    duration: 10000,
+                    action: {
+                      label: "Copy Domain",
+                      onClick: () => {
+                        navigator.clipboard.writeText(window.location.hostname);
+                        toast.success("Domain copied!");
+                      }
+                    }
+                  });
+                }}
+                className="text-[10px] text-indigo-500 hover:text-indigo-700 font-bold uppercase tracking-[0.1em] transition-colors bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 mt-1 inline-block"
+              >
+                Troubleshoot Auth Connection
+              </button>
             </div>
           </CardContent>
         </Card>

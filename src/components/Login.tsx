@@ -228,12 +228,19 @@ export default function Login() {
                 onClick={() => {
                   toast.info("Authentication Diagnostics", {
                     description: `Current Domain: ${window.location.hostname}\nEnsure this is in Firebase > Auth > Settings > Authorized Domains`,
-                    duration: 10000
+                    duration: 10000,
+                    action: {
+                      label: "Copy Domain",
+                      onClick: () => {
+                        navigator.clipboard.writeText(window.location.hostname);
+                        toast.success("Domain copied!");
+                      }
+                    }
                   });
                 }}
-                className="text-[9px] text-slate-300 hover:text-slate-500 font-bold uppercase tracking-[0.2em] transition-colors"
+                className="text-[10px] text-indigo-500 hover:text-indigo-700 font-bold uppercase tracking-[0.1em] transition-colors bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 mt-2 inline-block"
               >
-                Troubleshoot Connection
+                Troubleshoot Auth Connection
               </button>
             </div>
           </CardContent>

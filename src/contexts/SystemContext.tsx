@@ -22,6 +22,7 @@ interface SystemState {
   subdealers: any[];
   packages: any[];
   requests: any[];
+  tickets: any[];
   logs: any[];
   notifications: any[];
   settings: any;
@@ -43,6 +44,8 @@ interface SystemActions {
   sendSMS: (userId: string, phone: string, message: string, type: 'reminder' | 'expiry_alert' | 'payment_confirmation') => Promise<void>;
   checkExpiries: () => Promise<void>;
   updateSettings: (newSettings: any) => Promise<void>;
+  addTicket: (ticket: any) => Promise<void>;
+  updateTicketStatus: (ticketId: string, status: string) => Promise<void>;
 }
 
 const SystemContext = createContext<(SystemState & SystemActions) | undefined>(undefined);
@@ -55,6 +58,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
     subdealers: [],
     packages: [],
     requests: [],
+    tickets: [],
     logs: [],
     notifications: [],
     settings: null,
@@ -69,6 +73,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
     const unsubSubdealers = subscribeToCollection('subdealers', (data) => setState(prev => ({ ...prev, subdealers: data })));
     const unsubPackages = subscribeToCollection('packages', (data) => setState(prev => ({ ...prev, packages: data })));
     const unsubRequests = subscribeToCollection('requests', (data) => setState(prev => ({ ...prev, requests: data })), [orderBy('createdAt', 'desc')]);
+    const unsubTickets = subscribeToCollection('tickets', (data) => setState(prev => ({ ...prev, tickets: data })), [orderBy('createdAt', 'desc')]);
     const unsubLogs = subscribeToCollection('logs', (data) => setState(prev => ({ ...prev, logs: data })), [orderBy('date', 'desc')]);
     const unsubNotifs = subscribeToCollection('notifications', (data) => setState(prev => ({ ...prev, notifications: data })), [orderBy('date', 'desc')]);
     const unsubSettings = subscribeToCollection('settings', (data) => setState(prev => ({ ...prev, settings: data[0] })));
@@ -95,6 +100,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       unsubSubdealers();
       unsubPackages();
       unsubRequests();
+      unsubTickets();
       unsubLogs();
       unsubNotifs();
       unsubSettings();
@@ -590,6 +596,33 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const addTicket = async (ticket: any) => {
+    try {
+      await addDocument('tickets', {
+        ...ticket,
+        status: 'open',
+        createdAt: new Date().toISOString()
+      });
+      await addLog('Ticket Created', ticket.userName, 'support', `Issue: ${ticket.issueType}`);
+      toast.success('Support ticket submitted successfully');
+    } catch (e) {
+      toast.error('Failed to submit ticket');
+    }
+  };
+
+  const updateTicketStatus = async (ticketId: string, status: string) => {
+    try {
+      await updateDocument('tickets', ticketId, { 
+        status,
+        updatedAt: new Date().toISOString()
+      });
+      await addLog('Ticket Status Updated', ticketId, 'support', `New status: ${status}`);
+      toast.success(`Ticket status updated to ${status}`);
+    } catch (e) {
+      toast.error('Failed to update ticket status');
+    }
+  };
+
   return (
     <SystemContext.Provider value={{ 
       ...state, 
@@ -605,7 +638,9 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       markBillAsPaid,
       generateManualBill,
       generateMonthlyBills,
-      updateSettings
+      updateSettings,
+      addTicket,
+      updateTicketStatus
     }}>
       {children}
     </SystemContext.Provider>

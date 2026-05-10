@@ -17,8 +17,10 @@ import {
   FileSpreadsheet,
   CheckCircle2,
   XCircle,
-  Shapes
+  Shapes,
+  ArrowRight
 } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -61,34 +63,6 @@ export default function Reports() {
   const activeCustomers = users.filter(u => u.status === 'active').length;
   const pendingCustomers = users.filter(u => u.status === 'pending').length;
   const overdueBills = bills.filter(b => b.status === 'unpaid' && new Date(b.dueDate) < now).length;
-
-  const exportToCSV = () => {
-    const headers = ['Date', 'Customer', 'Amount', 'Method', 'Status', 'Reference'];
-    const rows = payments.map(p => [
-      formatDate(p.date),
-      p.userName || 'Unknown',
-      p.amount,
-      p.method,
-      p.status,
-      p.reference || '-'
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(e => e.join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `financial_report_${selectedMonth}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success('Report exported successfully');
-  };
 
   const handlePrint = () => {
     window.print();
@@ -159,12 +133,13 @@ export default function Reports() {
               >
                 <Printer className="w-4 h-4" /> Print
               </Button>
-              <Button 
-                onClick={exportToCSV}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2 h-11 text-[10px] font-black uppercase tracking-widest px-6 shadow-lg shadow-indigo-200 transition-all active:scale-95"
-              >
-                <FileSpreadsheet className="w-4 h-4" /> Export CSV
-              </Button>
+              <NavLink to="/exports">
+                <Button 
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-2 h-11 text-[10px] font-black uppercase tracking-widest px-6 shadow-lg shadow-indigo-200 transition-all active:scale-95"
+                >
+                  <Download className="w-4 h-4" /> Export Center
+                </Button>
+              </NavLink>
             </div>
           </div>
 
@@ -339,6 +314,19 @@ export default function Reports() {
                   </div>
                 </div>
               </div>
+
+              <NavLink 
+                to="/exports" 
+                className="mt-4 flex items-center justify-between p-5 bg-slate-900 rounded-2xl group hover:bg-slate-800 transition-all shadow-xl shadow-slate-200"
+              >
+                <div>
+                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-1">Tools</p>
+                  <p className="text-sm font-black text-white uppercase tracking-tight">Advanced Export Center</p>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white group-hover:translate-x-1 transition-transform">
+                  <ArrowRight className="w-5 h-5" />
+                </div>
+              </NavLink>
             </Card>
           </div>
         ) : (
