@@ -67,19 +67,27 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
-    const unsubUsers = subscribeToCollection('user', (data) => setState(prev => ({ ...prev, users: data })));
-    const unsubPayments = subscribeToCollection('payments', (data) => setState(prev => ({ ...prev, payments: data })), [orderBy('date', 'desc')]);
-    const unsubBills = subscribeToCollection('bills', (data) => setState(prev => ({ ...prev, bills: data })), [orderBy('dueDate', 'desc')]);
-    const unsubSubdealers = subscribeToCollection('subdealers', (data) => setState(prev => ({ ...prev, subdealers: data })));
-    const unsubPackages = subscribeToCollection('packages', (data) => setState(prev => ({ ...prev, packages: data })));
-    const unsubRequests = subscribeToCollection('requests', (data) => setState(prev => ({ ...prev, requests: data })), [orderBy('createdAt', 'desc')]);
-    const unsubTickets = subscribeToCollection('tickets', (data) => setState(prev => ({ ...prev, tickets: data })), [orderBy('createdAt', 'desc')]);
-    const unsubLogs = subscribeToCollection('logs', (data) => setState(prev => ({ ...prev, logs: data })), [orderBy('date', 'desc')]);
-    const unsubNotifs = subscribeToCollection('notifications', (data) => setState(prev => ({ ...prev, notifications: data })), [orderBy('date', 'desc')]);
-    const unsubSettings = subscribeToCollection('settings', (data) => setState(prev => ({ ...prev, settings: data[0] })));
+    const errorHandler = (collectionPath: string) => (error: any) => {
+      console.warn(`System subscription error [${collectionPath}]:`, error);
+      // Don't throw, just log and mark as loaded if it's the treasury collection
+      if (collectionPath === 'treasury') {
+        setState(prev => ({ ...prev, loading: false }));
+      }
+    };
+
+    const unsubUsers = subscribeToCollection('user', (data) => setState(prev => ({ ...prev, users: data })), [], errorHandler('user'));
+    const unsubPayments = subscribeToCollection('payments', (data) => setState(prev => ({ ...prev, payments: data })), [orderBy('date', 'desc')], errorHandler('payments'));
+    const unsubBills = subscribeToCollection('bills', (data) => setState(prev => ({ ...prev, bills: data })), [orderBy('dueDate', 'desc')], errorHandler('bills'));
+    const unsubSubdealers = subscribeToCollection('subdealers', (data) => setState(prev => ({ ...prev, subdealers: data })), [], errorHandler('subdealers'));
+    const unsubPackages = subscribeToCollection('packages', (data) => setState(prev => ({ ...prev, packages: data })), [], errorHandler('packages'));
+    const unsubRequests = subscribeToCollection('requests', (data) => setState(prev => ({ ...prev, requests: data })), [orderBy('createdAt', 'desc')], errorHandler('requests'));
+    const unsubTickets = subscribeToCollection('tickets', (data) => setState(prev => ({ ...prev, tickets: data })), [orderBy('createdAt', 'desc')], errorHandler('tickets'));
+    const unsubLogs = subscribeToCollection('logs', (data) => setState(prev => ({ ...prev, logs: data })), [orderBy('date', 'desc')], errorHandler('logs'));
+    const unsubNotifs = subscribeToCollection('notifications', (data) => setState(prev => ({ ...prev, notifications: data })), [orderBy('date', 'desc')], errorHandler('notifications'));
+    const unsubSettings = subscribeToCollection('settings', (data) => setState(prev => ({ ...prev, settings: data[0] })), [], errorHandler('settings'));
     const unsubTreasury = subscribeToCollection('treasury', (data) => {
       setState(prev => ({ ...prev, treasury: data[0] || null, loading: false }));
-    });
+    }, [], errorHandler('treasury'));
 
     // Fallback: If treasury isn't loading after 5 seconds, stop blocking
     const loadingTimeout = setTimeout(() => {

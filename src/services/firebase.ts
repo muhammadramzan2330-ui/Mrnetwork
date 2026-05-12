@@ -174,7 +174,8 @@ export const logout = () => {
 export const subscribeToCollection = <T extends { id: string }>(
   collectionPath: string, 
   callback: (data: T[]) => void,
-  queryConstraints: QueryConstraint[] = []
+  queryConstraints: QueryConstraint[] = [],
+  onError?: (error: any) => void
 ) => {
   if (!isFirebaseInitialized) return () => {};
   const q = query(collection(db, collectionPath), ...queryConstraints);
@@ -182,7 +183,11 @@ export const subscribeToCollection = <T extends { id: string }>(
     const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
     callback(data);
   }, (error) => {
-    handleFirestoreError(error, OperationType.LIST, collectionPath);
+    if (onError) {
+      onError(error);
+    } else {
+      handleFirestoreError(error, OperationType.LIST, collectionPath);
+    }
   });
 };
 

@@ -88,22 +88,22 @@ export default function Login() {
         message = "Email/Password login is currently disabled for this project.";
       } else if (error.code === 'auth/invalid-email') {
         message = "Please enter a valid email address.";
-      } else if (error.code === 'auth/unauthorized-domain') {
+      } else if (error.code === 'auth/unauthorized-domain' || error.message?.includes('unauthorized-domain')) {
         const hostname = window.location.hostname;
-        const isIframe = window.self !== window.top;
         message = `Access Denied: The domain '${hostname}' is not authorized.`;
         toast.error("Unauthorized Domain", {
-          description: `Please add '${hostname}' to your Firebase console > Authentication > Settings > Authorized domains.`,
+          description: `Please add '${hostname}' to your Firebase console > Authentication > Settings > Authorized domains. Or 'Open in New Tab' if in AI Studio.`,
+          duration: 15000,
           action: {
             label: "Copy Domain",
             onClick: () => {
               navigator.clipboard.writeText(hostname);
-              toast.success("Domain copied to clipboard!");
+              toast.success("Domain copied!");
             }
           }
         });
       } else if (error.code === 'auth/api-key-not-valid') {
-        message = "Verification failed: The API Key is restricted. Please go to Google Cloud Console > Credentials and allow your Vercel domain.";
+        message = "Verification failed: The API Key is restricted. Please go to Google Cloud Console > Credentials and allow your domain.";
       }
       
       toast.error(message, { 
@@ -226,21 +226,23 @@ export default function Login() {
               <button 
                 type="button"
                 onClick={() => {
+                  const hostname = window.location.hostname;
+                  const isIframe = window.self !== window.top;
                   toast.info("Authentication Diagnostics", {
-                    description: `Current Domain: ${window.location.hostname}\nEnsure this is in Firebase > Auth > Settings > Authorized Domains`,
-                    duration: 10000,
+                    description: `Domain: ${hostname}\nMode: ${isIframe ? 'Iframe (Preview)' : 'Standard'}\nProject: isp-billing-app-eda7c`,
+                    duration: 15000,
                     action: {
-                      label: "Copy Domain",
+                      label: "Copy Info",
                       onClick: () => {
-                        navigator.clipboard.writeText(window.location.hostname);
-                        toast.success("Domain copied!");
+                        navigator.clipboard.writeText(`Domain: ${hostname}\nProject: isp-billing-app-eda7c`);
+                        toast.success("Info copied!");
                       }
                     }
                   });
                 }}
-                className="text-[10px] text-indigo-500 hover:text-indigo-700 font-bold uppercase tracking-[0.1em] transition-colors bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 mt-2 inline-block"
+                className="text-[10px] text-indigo-500 hover:text-indigo-700 font-black uppercase tracking-[0.1em] transition-colors bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100 mt-3 inline-block"
               >
-                Troubleshoot Auth Connection
+                Troubleshoot Connection
               </button>
             </div>
           </CardContent>

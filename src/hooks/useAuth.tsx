@@ -77,50 +77,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           unsubscribeProfile = undefined;
         }
 
-        // Query Firestore "user" collection where uid == current user UID
         const currentUserUid = firebaseUser.uid.trim();
-        console.log("AUTH_DEBUG: Active Session Data:", {
+        console.log("AUTH_DEBUG: Session Active:", {
           email: firebaseUser.email,
-          uid: currentUserUid,
-          emailVerified: firebaseUser.emailVerified
+          uid: currentUserUid
         });
         
-        const q = query(collection(db, 'user'), where('uid', '==', currentUserUid));
+        // Use document reference instead of query for better reliability
+        const userDocRef = doc(db, 'user', currentUserUid);
 
-        unsubscribeProfile = onSnapshot(q, async (querySnapshot) => {
-          if (!querySnapshot.empty) {
-            const snapshot = querySnapshot.docs[0];
-            const userData = snapshot.data() as UserProfile;
-            console.log("AUTH_DEBUG: Profile Found in Firestore:", {
-              docId: snapshot.id,
-              uid: userData.uid,
-              role: userData.role,
-              status: userData.status
-            });
+        unsubscribeProfile = onSnapshot(userDocRef, async (docSnapshot) => {
+          if (docSnapshot.exists()) {
+            const userData = docSnapshot.data() as UserProfile;
+            console.log("AUTH_DEBUG: Profile Found:", userData.role);
 
             // Role Elevation for developer
             const isDev = firebaseUser.email?.toLowerCase() === 'muhammadramzan2330@gmail.com';
             if (isDev && (userData.role !== 'admin' || userData.status !== 'active')) {
-              console.log("AUTH_DEBUG: Detected matching developer email. Elevating profile to admin...");
+              console.log("AUTH_DEBUG: Elevating developer to admin...");
               const { updateDoc } = await import('firebase/firestore');
-              await updateDoc(snapshot.ref, { 
-                role: 'admin', 
-                status: 'active' 
-              });
+              try {
+                await updateDoc(docSnapshot.ref, { 
+                  role: 'admin', 
+                  status: 'active' 
+                });
+              } catch (err) {
+                console.error("Elevation failed (check rules):", err);
+              }
             }
 
-            setProfile({ ...userData, id: snapshot.id } as any);
+            setProfile({ ...userData, id: docSnapshot.id } as any);
             setError(null);
             setLoading(false);
           } else {
-            console.warn("AUTH_DEBUG: Result Empty. No Firestore profile matches UID:", currentUserUid);
-            // AUTO-ADAPT: Auto-create profile for ALL authenticated users if missing
+            console.warn("AUTH_DEBUG: No profile doc. Provisioning...");
             try {
-              const { setDoc, doc, serverTimestamp } = await import('firebase/firestore');
+              const { setDoc, serverTimestamp } = await import('firebase/firestore');
               const isDeveloper = firebaseUser.email?.toLowerCase() === 'muhammadramzan2330@gmail.com';
               
-              console.log("AUTH_DEBUG: Provisioning new profile. Default Role:", isDeveloper ? 'admin' : 'customer');
-              await setDoc(doc(db, 'user', currentUserUid), {
+              await setDoc(userDocRef, {
                 uid: currentUserUid,
                 name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Account',
                 email: firebaseUser.email,
@@ -132,20 +127,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
               });
-              console.log("Profile Auto-Provisioned for:", firebaseUser.email);
-              // We've initiated the creation, the snapshot listener will pick it up,
-              // but we set loading false now so the UI can proceed to the second-stage loader
               setLoading(false);
             } catch (err) {
-              console.error("Auto-provisioning failed:", err);
+              console.error("Provisioning failed:", err);
               setProfile(null);
               setLoading(false);
             }
           }
         }, (err) => {
-          console.error("AUTH_DEBUG: Snapshot error:", err);
-          handleFirestoreError(err, OperationType.GET, `user collection query: uid=${currentUserUid}`);
-          setError("Failed to load user profile");
+          console.error("AUTH_DEBUG: Profile Snapshot Error:", err);
+          setError("Identity verification service unavailable. Please check your connection.");
           setLoading(false);
         });
       } else {
