@@ -35,8 +35,8 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-600 overflow-x-hidden">
-      {/* Mobile Top Header */}
-      <header className="md:hidden sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 z-[110] px-6 py-4 flex items-center justify-between shadow-sm">
+      {/* Universal Top Header */}
+      <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 z-[110] px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs">M</div>
           <span className="font-extrabold text-sm tracking-tight text-slate-900">M & NETWORK</span>
@@ -58,14 +58,14 @@ export default function Layout({ children }: LayoutProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsDrawerOpen(false)}
-              className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[120] md:hidden"
+              className="fixed inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[120]"
             />
             <motion.aside
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 left-0 w-[280px] bg-white z-[130] md:hidden shadow-2xl flex flex-col"
+              className="fixed inset-y-0 left-0 w-[280px] bg-white z-[130] shadow-2xl flex flex-col"
             >
               <div className="p-6 border-b border-slate-50 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
@@ -110,50 +110,16 @@ export default function Layout({ children }: LayoutProps) {
         )}
       </AnimatePresence>
 
-      <div className="w-full flex-1 flex flex-col relative max-w-7xl mx-auto md:px-4">
+      <div className="w-full flex-1 flex flex-col relative max-w-7xl mx-auto px-0 md:px-4">
         <main className="flex-1 pb-12 pt-0 md:pt-6">
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white md:rounded-3xl min-h-[calc(100vh-180px)] shadow-sm md:border border-slate-200 overflow-hidden flex flex-col relative"
+            className="bg-white md:rounded-3xl min-h-[calc(100vh-120px)] shadow-sm md:border border-slate-200 overflow-hidden flex flex-col relative"
           >
             {children}
           </motion.div>
         </main>
-
-        {/* Global Desktop Navigation */}
-        <nav className="hidden md:flex sticky bottom-6 mx-auto bg-white/95 backdrop-blur-md border border-slate-200 p-2 z-[100] shadow-xl rounded-2xl md:mb-6 transform-gpu">
-          <div className="flex justify-center items-center gap-2">
-            {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  cn(
-                    "flex flex-col items-center gap-0.5 transition-all duration-300 py-1.5 px-0.5 rounded-xl flex-1 md:flex-initial md:px-6 md:py-2 md:flex-row md:gap-3",
-                    isActive 
-                      ? "text-indigo-600 bg-indigo-50/80 shadow-sm" 
-                      : "text-slate-500 hover:text-indigo-600 hover:bg-slate-50"
-                  )
-                }
-              >
-                <item.icon className={cn("w-4 h-4 transition-all")} />
-                <span className="text-[9px] font-black tracking-tight uppercase leading-none">
-                  {item.label}
-                </span>
-                {item.badge && (
-                  <span className="md:ml-1 bg-rose-500 text-white text-[8px] font-black px-1 py-0.5 rounded-sm">
-                    {item.badge}
-                  </span>
-                )}
-                <div className={cn(
-                  "h-1 w-1 rounded-full bg-indigo-600 mt-1 md:hidden transition-all duration-300",
-                  "active" // Using template literal to handle the NavLink's isActive context would be complex here, so we rely on the parent className
-                )} style={{ opacity: 0 }} />
-              </NavLink>
-            ))}
-          </div>
-        </nav>
       </div>
     </div>
   );
