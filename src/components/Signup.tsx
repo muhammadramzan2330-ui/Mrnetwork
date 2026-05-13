@@ -179,32 +179,38 @@ export default function Signup() {
               </Button>
             </form>
 
-            <div className="mt-8 text-center bg-slate-50 py-4 -mx-6 sm:-mx-10 border-t border-slate-100">
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-none mb-3">
+            <div className="mt-8 text-center bg-slate-50 py-6 -mx-6 sm:-mx-10 border-t border-slate-100 flex flex-col items-center gap-3">
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-none">
                 Already have an account?{' '}
                 <Link to="/" className="text-indigo-600 hover:underline font-extrabold ml-1 uppercase">
                   Back to Login
                 </Link>
               </p>
-              <button 
-                type="button"
-                onClick={() => {
-                  toast.info("Authentication Diagnostics", {
-                    description: `Current Domain: ${window.location.hostname}\nEnsure this is in Firebase > Auth > Settings > Authorized Domains`,
-                    duration: 10000,
-                    action: {
-                      label: "Copy Domain",
-                      onClick: () => {
-                        navigator.clipboard.writeText(window.location.hostname);
-                        toast.success("Domain copied!");
+              <div className="flex flex-col items-center gap-2 mt-2">
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Connection Issues?</p>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    const hostname = window.location.hostname;
+                    const isIframe = window.self !== window.top;
+                    toast.info("Authentication Diagnostics", {
+                      description: `Domain: ${hostname}\nMode: ${isIframe ? 'Iframe (Preview)' : 'Standard'}\nProject: isp-billing-app-eda7c`,
+                      duration: 15000,
+                      action: {
+                        label: "Copy Info",
+                        onClick: () => {
+                          navigator.clipboard.writeText(`Domain: ${hostname}\nProject: isp-billing-app-eda7c`);
+                          toast.success("Info copied!");
+                        }
                       }
-                    }
-                  });
-                }}
-                className="text-[10px] text-indigo-500 hover:text-indigo-700 font-bold uppercase tracking-[0.1em] transition-colors bg-indigo-50 px-3 py-1 rounded-full border border-indigo-100 mt-1 inline-block"
-              >
-                Troubleshoot Auth Connection
-              </button>
+                    });
+                  }}
+                  className="text-[10px] text-indigo-600 hover:text-indigo-700 font-black uppercase tracking-[0.1em] transition-colors bg-white px-5 py-2 rounded-xl border border-indigo-100 shadow-sm inline-flex items-center gap-2"
+                >
+                  <Shield className="w-3 h-3" />
+                  Troubleshoot Connection
+                </button>
+              </div>
             </div>
           </CardContent>
         </Card>

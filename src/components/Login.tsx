@@ -14,6 +14,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [unauthorizedDomain, setUnauthorizedDomain] = useState<string | null>(null);
 
   useEffect(() => {
     const handleRedirect = async () => {
@@ -48,6 +49,11 @@ export default function Login() {
       if (error.code !== 'auth/popup-closed-by-user' && 
           error.code !== 'auth/cancelled-popup-request' &&
           error.code !== 'auth/redirect-cancelled-by-user') {
+        
+        if (error.code === 'auth/unauthorized-domain' || error.message?.includes('unauthorized-domain')) {
+          setUnauthorizedDomain(window.location.hostname);
+        }
+        
         toast.error(`Login failed: ${error.message || 'Unknown error'}`);
       }
       setLoading(false);
@@ -90,6 +96,7 @@ export default function Login() {
         message = "Please enter a valid email address.";
       } else if (error.code === 'auth/unauthorized-domain' || error.message?.includes('unauthorized-domain')) {
         const hostname = window.location.hostname;
+        setUnauthorizedDomain(hostname);
         message = `Access Denied: The domain '${hostname}' is not authorized.`;
         toast.error("Unauthorized Domain", {
           description: `Please add '${hostname}' to your Firebase console > Authentication > Settings > Authorized domains. Or 'Open in New Tab' if in AI Studio.`,
@@ -122,6 +129,50 @@ export default function Login() {
         className="w-full max-w-sm"
       >
         <Card className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+          {unauthorizedDomain && (
+            <div className="bg-rose-50 border-b border-rose-100 p-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="bg-rose-100 p-2 rounded-lg text-rose-600">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-sm font-black text-rose-900 uppercase tracking-tight">Deployment Action Required</h3>
+                  <p className="text-[10px] font-bold text-rose-600 leading-relaxed uppercase tracking-wider">
+                    This domain (<span className="underline">{unauthorizedDomain}</span>) is not yet authorized in your Firebase security settings.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest bg-white/50 p-2 rounded-lg border border-rose-100">
+                  1. Go to Firebase Console &gt; Auth &gt; Settings<br/>
+                  2. Add "{unauthorizedDomain}" to Authorized Domains<br/>
+                  3. If on Vercel, also check your API Key restrictions in Google Cloud Console
+                </p>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="flex-1 h-9 rounded-xl text-[9px] font-black uppercase tracking-widest border-rose-200 text-rose-600 hover:bg-rose-600 hover:text-white"
+                    onClick={() => window.open(`https://console.firebase.google.com/project/isp-billing-app-eda7c/authentication/settings`, '_blank')}
+                  >
+                    Open Console
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="flex-1 h-9 rounded-xl text-[9px] font-black uppercase tracking-widest border-rose-200 text-rose-600"
+                    onClick={() => {
+                       navigator.clipboard.writeText(unauthorizedDomain);
+                       toast.success("Domain copied!");
+                    }}
+                  >
+                    Copy Domain
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="h-44 bg-gradient-to-br from-indigo-600 to-cyan-500 flex flex-col items-center justify-center p-6 text-white relative">
             <div className="relative z-10 p-4 bg-white/10 rounded-2xl backdrop-blur-md mb-3 border border-white/20 shadow-xl">
               <Shield className="w-10 h-10 text-white" />
@@ -216,34 +267,38 @@ export default function Login() {
               Sign In with Google
             </Button>
 
-            <div className="mt-8 text-center bg-slate-50 py-4 -mx-6 sm:-mx-10 border-t border-slate-100">
-              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-none mb-3">
+            <div className="mt-8 text-center bg-slate-50 py-6 -mx-6 sm:-mx-10 border-t border-slate-100 flex flex-col items-center gap-3">
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest leading-none">
                 Don't have an account?{' '}
                 <Link to="/signup" className="text-indigo-600 hover:underline font-extrabold ml-1 uppercase">
                   Create Account
                 </Link>
               </p>
-              <button 
-                type="button"
-                onClick={() => {
-                  const hostname = window.location.hostname;
-                  const isIframe = window.self !== window.top;
-                  toast.info("Authentication Diagnostics", {
-                    description: `Domain: ${hostname}\nMode: ${isIframe ? 'Iframe (Preview)' : 'Standard'}\nProject: isp-billing-app-eda7c`,
-                    duration: 15000,
-                    action: {
-                      label: "Copy Info",
-                      onClick: () => {
-                        navigator.clipboard.writeText(`Domain: ${hostname}\nProject: isp-billing-app-eda7c`);
-                        toast.success("Info copied!");
+              <div className="flex flex-col items-center gap-2 mt-2">
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Connection Issues?</p>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    const hostname = window.location.hostname;
+                    const isIframe = window.self !== window.top;
+                    toast.info("Authentication Diagnostics", {
+                      description: `Domain: ${hostname}\nMode: ${isIframe ? 'Iframe (Preview)' : 'Standard'}\nProject: isp-billing-app-eda7c`,
+                      duration: 15000,
+                      action: {
+                        label: "Copy Info",
+                        onClick: () => {
+                          navigator.clipboard.writeText(`Domain: ${hostname}\nProject: isp-billing-app-eda7c`);
+                          toast.success("Info copied!");
+                        }
                       }
-                    }
-                  });
-                }}
-                className="text-[10px] text-indigo-500 hover:text-indigo-700 font-black uppercase tracking-[0.1em] transition-colors bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100 mt-3 inline-block"
-              >
-                Troubleshoot Connection
-              </button>
+                    });
+                  }}
+                  className="text-[10px] text-indigo-600 hover:text-indigo-700 font-black uppercase tracking-[0.1em] transition-colors bg-white px-5 py-2 rounded-xl border border-indigo-100 shadow-sm inline-flex items-center gap-2"
+                >
+                  <Shield className="w-3 h-3" />
+                  Troubleshoot Connection
+                </button>
+              </div>
             </div>
           </CardContent>
         </Card>

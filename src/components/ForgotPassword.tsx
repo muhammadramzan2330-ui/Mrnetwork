@@ -87,11 +87,39 @@ export default function ForgotPassword() {
                   </Button>
                 </form>
 
-                <div className="text-center">
+                <div className="text-center mt-6">
                   <Link to="/" className="inline-flex items-center gap-2 text-indigo-600 font-bold text-[10px] uppercase tracking-widest hover:underline transition-all group">
                     <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
                     Back to Login
                   </Link>
+                </div>
+
+                <div className="mt-8 text-center bg-slate-50 py-6 -mx-6 sm:-mx-10 border-t border-slate-100 flex flex-col items-center gap-3">
+                  <div className="flex flex-col items-center gap-2">
+                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Connection Issues?</p>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        const hostname = window.location.hostname;
+                        const isIframe = window.self !== window.top;
+                        toast.info("Authentication Diagnostics", {
+                          description: `Domain: ${hostname}\nMode: ${isIframe ? 'Iframe (Preview)' : 'Standard'}\nProject: isp-billing-app-eda7c`,
+                          duration: 15000,
+                          action: {
+                            label: "Copy Info",
+                            onClick: () => {
+                              navigator.clipboard.writeText(`Domain: ${hostname}\nProject: isp-billing-app-eda7c`);
+                              toast.success("Info copied!");
+                            }
+                          }
+                        });
+                      }}
+                      className="text-[10px] text-indigo-600 hover:text-indigo-700 font-black uppercase tracking-[0.1em] transition-colors bg-white px-5 py-2 rounded-xl border border-indigo-100 shadow-sm inline-flex items-center gap-2"
+                    >
+                      <Shield className="w-3 h-3" />
+                      Troubleshoot Connection
+                    </button>
+                  </div>
                 </div>
               </CardContent>
             </>
