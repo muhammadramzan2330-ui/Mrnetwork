@@ -80,138 +80,163 @@ function AppRoutes() {
 
   const handleLogout = () => signOut(auth);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
   const isSignupPath = window.location.pathname === '/signup';
 
+  // If we have a user but profile is still loading, render layout with a nested loading indicator
+  // This ensures the header and menu (part of Layout) appear as soon as possible.
   return (
     <SystemProvider>
       <Layout>
-        <Routes>
-          {!user ? (
-            <>
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="*" element={<Login />} />
-            </>
-          ) : (profile?.status === 'pending' || profile?.status === 'rejected') && !isAdmin ? (
-            <Route path="*" element={
-              <div className="flex flex-col items-center justify-center p-6 text-center py-20">
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="bg-white p-8 sm:p-10 rounded-[2.5rem] shadow-xl border border-slate-100 max-w-md w-full"
-                >
-                  <div className={cn(
-                    "w-20 h-20 rounded-3xl flex items-center justify-center mb-6 border mx-auto relative",
-                    profile.status === 'pending' ? "bg-amber-50 text-amber-500 border-amber-100" : "bg-rose-50 text-rose-500 border-rose-100"
-                  )}>
-                    {profile.status === 'pending' ? <Loader2 className="w-10 h-10 animate-spin" /> : <ShieldOff className="w-10 h-10" />}
-                  </div>
-                  <h1 className="text-2xl font-black text-slate-900 tracking-tighter uppercase mb-3">
-                    {profile.status === 'pending' ? 'Verification Pending' : 'Registration Rejected'}
-                  </h1>
-                  <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8">
-                    {profile.status === 'pending' 
-                      ? 'Your account request is currently being reviewed by our administration team. This usually takes less than 24 hours.' 
-                      : 'Unfortunately, your registration request was not approved. Please contact our support team for clarification.'}
-                  </p>
-                  <Button 
-                    onClick={handleLogout}
-                    className="w-full h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold uppercase tracking-widest text-xs"
-                  >
-                    Sign Out
-                  </Button>
-                </motion.div>
-              </div>
-            } />
-          ) : profile?.status === 'suspended' && !isAdmin ? (
-            <Route path="*" element={
-              <div className="flex flex-col items-center justify-center p-6 text-center py-20">
-                <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-rose-100">
-                  <div className="w-20 h-20 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-600 mx-auto mb-6">
-                    <ShieldOff className="w-10 h-10" />
-                  </div>
-                  <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Service Suspended</h1>
-                  <p className="text-slate-500 font-medium mb-8">
-                    Access to your internet profile has been restricted. Please resolve pending issues or contact operations to restore service.
-                  </p>
-                  <div className="space-y-3">
-                    <Button 
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold uppercase tracking-widest text-xs"
-                      onClick={() => window.open('https://wa.me/923000000000', '_blank')}
-                    >
-                      Connect with HQ Support
-                    </Button>
-                    <Button variant="outline" className="w-full h-12 rounded-xl" onClick={handleLogout}>Logout</Button>
-                  </div>
-                </div>
-              </div>
-            } />
-          ) : profile?.status === 'expired' && !isAdmin ? (
-            <>
-              <Route path="/payments" element={<Payments />} />
-              <Route path="/profile" element={<Profile />} />
+        {loading && user ? (
+          <div className="flex flex-col items-center justify-center p-12 py-32 space-y-4">
+            <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] animate-pulse">Syncing Secure Profile...</p>
+          </div>
+        ) : (
+          <Routes>
+            {!user ? (
+              <>
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="*" element={<Login />} />
+              </>
+            ) : (profile?.status === 'pending' || profile?.status === 'rejected') && !isAdmin ? (
               <Route path="*" element={
                 <div className="flex flex-col items-center justify-center p-6 text-center py-20">
-                  <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-amber-100">
-                    <div className="w-20 h-20 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 mx-auto mb-6">
-                      <AlertCircle className="w-10 h-10" />
+                  <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white p-8 sm:p-10 rounded-[2.5rem] shadow-xl border border-slate-100 max-w-md w-full"
+                  >
+                    <div className={cn(
+                      "w-20 h-20 rounded-3xl flex items-center justify-center mb-6 border mx-auto relative",
+                      profile.status === 'pending' ? "bg-amber-50 text-amber-500 border-amber-100" : "bg-rose-50 text-rose-500 border-rose-100"
+                    )}>
+                      {profile.status === 'pending' ? <Loader2 className="w-10 h-10 animate-spin" /> : <ShieldOff className="w-10 h-10" />}
                     </div>
-                    <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Access Cycle Expired</h1>
-                    <p className="text-slate-500 font-medium mb-8">
-                      Your current billing cycle has concluded or payment is overdue. Please settle your dues to maintain active connectivity.
+                    <h1 className="text-2xl font-black text-slate-900 tracking-tighter uppercase mb-3">
+                      {profile.status === 'pending' ? 'Verification Pending' : 'Registration Rejected'}
+                    </h1>
+                    <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8">
+                      {profile.status === 'pending' 
+                        ? 'Your account request is currently being reviewed by our administration team. This usually takes less than 24 hours.' 
+                        : 'Unfortunately, your registration request was not approved. Please contact our support team for clarification.'}
                     </p>
                     <Button 
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold uppercase tracking-widest text-xs"
-                      onClick={() => window.location.href = '/payments'}
+                      onClick={handleLogout}
+                      className="w-full h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold uppercase tracking-widest text-xs"
                     >
-                      Quick Pay
+                      Sign Out
                     </Button>
+                  </motion.div>
+                </div>
+              } />
+            ) : profile?.status === 'suspended' && !isAdmin ? (
+              <Route path="*" element={
+                <div className="flex flex-col items-center justify-center p-6 text-center py-20">
+                  <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-rose-100">
+                    <div className="w-20 h-20 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-600 mx-auto mb-6">
+                      <ShieldOff className="w-10 h-10" />
+                    </div>
+                    <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Service Suspended</h1>
+                    <p className="text-slate-500 font-medium mb-8">
+                      Access to your internet profile has been restricted. Please resolve pending issues or contact operations to restore service.
+                    </p>
+                    <div className="space-y-3">
+                      <Button 
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold uppercase tracking-widest text-xs"
+                        onClick={() => window.open('https://wa.me/923000000000', '_blank')}
+                      >
+                        Connect with HQ Support
+                      </Button>
+                      <Button variant="outline" className="w-full h-12 rounded-xl" onClick={handleLogout}>Logout</Button>
+                    </div>
                   </div>
                 </div>
               } />
-            </>
-          ) : isAdmin ? (
-            <>
-              <Route path="/admin" element={<Dashboard />} />
-              <Route path="/payments" element={<Payments />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/requests" element={<Requests />} />
-              <Route path="/users" element={<Users />} />
-              <Route path="/packages" element={<Packages />} />
-              <Route path="/subdealers" element={<Subdealers />} />
-              <Route path="/treasury" element={<Treasury />} />
-              <Route path="/audit-logs" element={<AuditLogs />} />
-              <Route path="/billing-settings" element={<BillingSettings />} />
-              <Route path="/bills" element={<Bills />} />
-              <Route path="/tickets" element={<Tickets />} />
-              <Route path="/system-check" element={<SystemCheck />} />
-              <Route path="/status" element={<Status />} />
-              <Route path="/exports" element={<ExportData />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/" element={<Navigate to="/admin" replace />} />
-              <Route path="*" element={<Navigate to="/admin" replace />} />
-            </>
-          ) : isCustomer ? (
-            <>
-              <Route path="/dashboard" element={<CustomerDashboard />} />
-              <Route path="/payments" element={<Payments />} />
-              <Route path="/packages" element={<Packages />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </>
-          ) : (
-            <Route path="*" element={<Navigate to="/" replace />} />
-          )}
-        </Routes>
+            ) : profile?.status === 'expired' && !isAdmin ? (
+              <>
+                <Route path="/payments" element={<Payments />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="*" element={
+                  <div className="flex flex-col items-center justify-center p-6 text-center py-20">
+                    <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-amber-100">
+                      <div className="w-20 h-20 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 mx-auto mb-6">
+                        <AlertCircle className="w-10 h-10" />
+                      </div>
+                      <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Access Cycle Expired</h1>
+                      <p className="text-slate-500 font-medium mb-8">
+                        Your current billing cycle has concluded or payment is overdue. Please settle your dues to maintain active connectivity.
+                      </p>
+                      <Button 
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold uppercase tracking-widest text-xs"
+                        onClick={() => window.location.href = '/payments'}
+                      >
+                        Quick Pay
+                      </Button>
+                    </div>
+                  </div>
+                } />
+              </>
+            ) : isAdmin ? (
+              <>
+                <Route path="/admin" element={<Dashboard />} />
+                <Route path="/payments" element={<Payments />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/requests" element={<Requests />} />
+                <Route path="/users" element={<Users />} />
+                <Route path="/packages" element={<Packages />} />
+                <Route path="/subdealers" element={<Subdealers />} />
+                <Route path="/treasury" element={<Treasury />} />
+                <Route path="/audit-logs" element={<AuditLogs />} />
+                <Route path="/billing-settings" element={<BillingSettings />} />
+                <Route path="/bills" element={<Bills />} />
+                <Route path="/tickets" element={<Tickets />} />
+                <Route path="/system-check" element={<SystemCheck />} />
+                <Route path="/status" element={<Status />} />
+                <Route path="/exports" element={<ExportData />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/" element={<Navigate to="/admin" replace />} />
+                <Route path="*" element={<Navigate to="/admin" replace />} />
+              </>
+            ) : isCustomer ? (
+              <>
+                <Route path="/dashboard" element={<CustomerDashboard />} />
+                <Route path="/payments" element={<Payments />} />
+                <Route path="/packages" element={<Packages />} />
+                <Route path="/tickets" element={<Tickets />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              </>
+            ) : !profile ? (
+              <Route path="*" element={
+                <div className="flex flex-col items-center justify-center p-6 text-center py-20">
+                  <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-rose-100">
+                    <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 mx-auto mb-6">
+                      <AlertCircle className="w-8 h-8" />
+                    </div>
+                    <h1 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Profile Not Found</h1>
+                    <p className="text-slate-500 text-sm font-medium mb-8">
+                       There was an issue linking your account to our records. Please try refreshing or contact support if the issue persists.
+                    </p>
+                    <div className="space-y-3">
+                      <Button 
+                        className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold uppercase tracking-widest text-xs"
+                        onClick={() => window.location.reload()}
+                      >
+                         Refresh Sync
+                      </Button>
+                      <Button variant="outline" className="w-full h-12 rounded-xl" onClick={handleLogout}>Sign Out</Button>
+                    </div>
+                  </div>
+                </div>
+              } />
+            ) : (
+              <Route path="*" element={<Navigate to="/" replace />} />
+            )}
+          </Routes>
+        )}
       </Layout>
     </SystemProvider>
   );

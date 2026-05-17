@@ -112,12 +112,33 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       }, [], errorHandler('treasury'));
     } else {
       // For non-admins, subscribe to their OWN data
+      // Remove orderBy when using where to avoid 400 error (requires composite index)
+      // We will sort client-side by modifying the state update
       unsubUsers = subscribeToCollection('user', (data) => setState(prev => ({ ...prev, users: data })), [where('uid', '==', user.uid)], errorHandler('user'));
-      unsubPayments = subscribeToCollection('payments', (data) => setState(prev => ({ ...prev, payments: data })), [where('userId', '==', user.uid), orderBy('date', 'desc')], errorHandler('payments'));
-      unsubBills = subscribeToCollection('bills', (data) => setState(prev => ({ ...prev, bills: data })), [where('userId', '==', user.uid), orderBy('dueDate', 'desc')], errorHandler('bills'));
-      unsubRequests = subscribeToCollection('requests', (data) => setState(prev => ({ ...prev, requests: data })), [where('userId', '==', user.uid), orderBy('createdAt', 'desc')], errorHandler('requests'));
-      unsubTickets = subscribeToCollection('tickets', (data) => setState(prev => ({ ...prev, tickets: data })), [where('userId', '==', user.uid), orderBy('createdAt', 'desc')], errorHandler('tickets'));
-      unsubNotifs = subscribeToCollection('notifications', (data) => setState(prev => ({ ...prev, notifications: data })), [where('userId', '==', user.uid), orderBy('date', 'desc')], errorHandler('notifications'));
+      unsubPayments = subscribeToCollection('payments', (data: any[]) => setState(prev => ({ 
+        ...prev, 
+        payments: [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) 
+      })), [where('userId', '==', user.uid)], errorHandler('payments'));
+      
+      unsubBills = subscribeToCollection('bills', (data: any[]) => setState(prev => ({ 
+        ...prev, 
+        bills: [...data].sort((a, b) => new Date(b.dueDate).getTime() - new Date(a.dueDate).getTime()) 
+      })), [where('userId', '==', user.uid)], errorHandler('bills'));
+      
+      unsubRequests = subscribeToCollection('requests', (data: any[]) => setState(prev => ({ 
+        ...prev, 
+        requests: [...data].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) 
+      })), [where('userId', '==', user.uid)], errorHandler('requests'));
+      
+      unsubTickets = subscribeToCollection('tickets', (data: any[]) => setState(prev => ({ 
+        ...prev, 
+        tickets: [...data].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) 
+      })), [where('userId', '==', user.uid)], errorHandler('tickets'));
+      
+      unsubNotifs = subscribeToCollection('notifications', (data: any[]) => setState(prev => ({ 
+        ...prev, 
+        notifications: [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) 
+      })), [where('userId', '==', user.uid)], errorHandler('notifications'));
       
       // Treasury and Settings are not needed for customers but treasury loaded check should pass
       setState(prev => ({ ...prev, loading: false }));

@@ -23,9 +23,9 @@ export default function Layout({ children }: LayoutProps) {
     { icon: LayoutDashboard, label: 'Home', to: isAdmin ? '/admin' : '/dashboard', show: !!user },
     { icon: CreditCard, label: 'Payments', to: '/payments', show: !!user },
     { icon: Package, label: 'Plans', to: '/packages', show: !!user },
-    { icon: History, label: 'Billing History', to: '/payments', show: !!user && !isAdmin }, // Pointing to payments for now
+    { icon: History, label: 'Billing', to: '/payments', show: !!user && !isAdmin }, 
     { icon: MessageSquare, label: 'Support', to: '/tickets', show: !!user, badge: openTicketsCount > 0 ? openTicketsCount : null },
-    { icon: User, label: 'My Profile', to: '/profile', show: !!user },
+    { icon: User, label: 'Profile', to: '/profile', show: !!user },
     { icon: FileText, label: 'Invoices', to: '/bills', show: !!user && isAdmin },
     { icon: ShieldCheckIcon, label: 'System', to: '/system-check', show: !!user && isAdmin },
     { icon: Download, label: 'Exports', to: '/exports', show: !!user && isAdmin },
