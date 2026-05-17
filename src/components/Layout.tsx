@@ -36,12 +36,19 @@ export default function Layout({ children }: LayoutProps) {
     { icon: Activity, label: 'Troubleshoot', to: '/status', show: !!user && isAdmin },
   ].filter(item => item.show);
 
+  const handleLogout = async () => {
+    const { auth } = await import('../services/firebase');
+    const { signOut } = await import('firebase/auth');
+    await signOut(auth);
+    setIsDrawerOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-600 overflow-x-hidden">
       {/* Universal Top Fixed Header */}
       <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md border-b border-slate-100 z-[9999] px-4 sm:px-6 h-16 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
-          {user && (
+          {user && isAdmin && (
             <button 
               onClick={() => setIsDrawerOpen(true)}
               className="p-2 hover:bg-slate-100 rounded-xl transition-all active:scale-90 text-slate-600 border border-transparent hover:border-slate-200 flex items-center justify-center"
@@ -52,9 +59,40 @@ export default function Layout({ children }: LayoutProps) {
           )}
           <div className="flex items-center gap-2.5 ml-1 sm:ml-2">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-md shadow-indigo-200">M</div>
-            <span className="font-black text-[13px] sm:text-sm tracking-tighter text-slate-900 uppercase truncate max-w-[120px] sm:max-w-none hover:text-indigo-600 transition-colors cursor-default">M & NETWORK</span>
+            <span className="font-black text-[13px] sm:text-sm tracking-tighter text-slate-900 uppercase truncate max-w-[100px] sm:max-w-none hover:text-indigo-600 transition-colors cursor-default">M & NETWORK</span>
           </div>
         </div>
+
+        {/* Persistent Customer Navigation */}
+        {user && !isAdmin && (
+          <nav className="flex items-center gap-1 sm:gap-2 px-2 overflow-x-auto no-scrollbar max-w-[calc(100vw-180px)] sm:max-w-none">
+            {[
+              { label: 'Home', to: '/dashboard' },
+              { label: 'Payments', to: '/payments' },
+              { label: 'Plans', to: '/packages' },
+              { label: 'Support', to: '/tickets' },
+            ].map(item => (
+              <NavLink 
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => cn(
+                  "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
+                  isActive 
+                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100" 
+                    : "text-slate-500 hover:text-indigo-600 hover:bg-indigo-50"
+                )}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+            <button
+              onClick={handleLogout}
+              className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 transition-all whitespace-nowrap"
+            >
+              Logout
+            </button>
+          </nav>
+        )}
 
         <div className="flex items-center gap-2">
           {user && isAdmin && (
