@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, ShieldCheck, User, ShieldCheck as ShieldCheckIcon } from 'lucide-react';
+import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, ShieldCheck, User, History, ShieldCheck as ShieldCheckIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -21,9 +21,11 @@ export default function Layout({ children }: LayoutProps) {
   
   const navItems = [
     { icon: LayoutDashboard, label: 'Home', to: isAdmin ? '/admin' : '/dashboard', show: !!user },
-    { icon: User, label: 'My Profile', to: '/profile', show: !!user },
     { icon: CreditCard, label: 'Payments', to: '/payments', show: !!user },
-    { icon: MessageSquare, label: 'Tickets', to: '/tickets', show: !!user && isAdmin, badge: openTicketsCount > 0 ? openTicketsCount : null },
+    { icon: Package, label: 'Plans', to: '/packages', show: !!user },
+    { icon: History, label: 'Billing History', to: '/payments', show: !!user && !isAdmin }, // Pointing to payments for now
+    { icon: MessageSquare, label: 'Support', to: '/tickets', show: !!user, badge: openTicketsCount > 0 ? openTicketsCount : null },
+    { icon: User, label: 'My Profile', to: '/profile', show: !!user },
     { icon: FileText, label: 'Invoices', to: '/bills', show: !!user && isAdmin },
     { icon: ShieldCheckIcon, label: 'System', to: '/system-check', show: !!user && isAdmin },
     { icon: Download, label: 'Exports', to: '/exports', show: !!user && isAdmin },
@@ -31,7 +33,6 @@ export default function Layout({ children }: LayoutProps) {
     { icon: TrendingUp, label: 'Reports', to: '/reports', show: !!user && isAdmin },
     { icon: Castle, label: 'Ledger', to: '/treasury', show: !!user && isAdmin },
     { icon: Users, label: 'Subscribers', to: '/users', show: !!user && isAdmin },
-    { icon: Package, label: 'Plans', to: '/packages', show: !!user },
     { icon: Activity, label: 'Troubleshoot', to: '/status', show: !!user && isAdmin },
   ].filter(item => item.show);
 
@@ -201,11 +202,11 @@ export default function Layout({ children }: LayoutProps) {
       </AnimatePresence>
 
       <div className="w-full flex-1 flex flex-col relative max-w-7xl mx-auto px-0 md:px-4">
-        <main className="flex-1 pb-6 md:pb-12 pt-0 md:pt-6">
+        <main className="flex-1 pb-8 md:pb-12 pt-4 md:pt-8 w-full">
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white md:rounded-3xl min-h-[calc(100vh-80px)] shadow-sm md:border border-slate-200 overflow-hidden flex flex-col relative"
+            className="bg-white md:rounded-3xl min-h-[calc(100vh-120px)] shadow-sm md:border border-slate-200 overflow-hidden flex flex-col relative w-full"
           >
             {children}
           </motion.div>

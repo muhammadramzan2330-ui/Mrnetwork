@@ -2,5 +2,5 @@
   "name": "M & Network",
   "description": "M & Network ISP Billing Management system. A professional mobile-first dashboard for treasury, user management, and automated ISP billing.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

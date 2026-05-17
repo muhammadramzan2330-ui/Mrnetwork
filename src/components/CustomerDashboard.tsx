@@ -126,7 +126,7 @@ export default function CustomerDashboard() {
       )}
       {/* Premium Gradient Header */}
       <div className={cn(
-        "header-gradient pt-8 pb-32 px-4 sm:px-8 text-white relative overflow-hidden md:rounded-b-[2.5rem] transition-all",
+        "header-gradient pt-16 pb-32 px-4 sm:px-8 text-white relative overflow-hidden md:rounded-b-[2.5rem] transition-all",
         isSuspended && "from-rose-600 to-rose-800",
         isExpired && "from-amber-500 to-amber-700"
       )}>
@@ -162,13 +162,6 @@ export default function CustomerDashboard() {
                 </div>
               </div>
             </div>
-            <Button 
-              onClick={handleLogout}
-              variant="outline" 
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20 h-12 w-12 p-0 rounded-xl transition-all active:scale-95"
-            >
-              <LogOut className="w-5 h-5" />
-            </Button>
           </div>
         </div>
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl opacity-50" />
