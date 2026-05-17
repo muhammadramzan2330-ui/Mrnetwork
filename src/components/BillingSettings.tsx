@@ -72,7 +72,7 @@ export default function BillingSettings() {
   ];
 
   return (
-    <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-24 md:pb-8">
+    <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-8">
       {/* Header */}
       <div className="px-4 sm:px-8 py-6 flex flex-col items-start bg-white border-b border-slate-100">
         <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-none text-center sm:text-left">Billing Settings</h2>
@@ -151,7 +151,7 @@ export default function BillingSettings() {
           </motion.div>
         ))}
 
-        <div className="pt-4 pb-20">
+        <div className="pt-4 pb-8">
           <Button 
             onClick={handleSave}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-14 rounded-xl font-bold text-xs uppercase tracking-[0.2em] shadow-lg shadow-indigo-100 gap-3"

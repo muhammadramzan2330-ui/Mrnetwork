@@ -82,7 +82,7 @@ export default function Subdealers() {
   const withdrawalRequests = requests.filter(r => r.type === 'withdrawal');
 
   return (
-    <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-24 md:pb-8 text-slate-900">
+    <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-8 text-slate-900">
       {/* Sticky Top Header Section */}
       <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/60 pt-6 pb-4 shadow-sm transition-all duration-300">
         <div className="px-4 sm:px-8 space-y-4">
@@ -180,7 +180,7 @@ export default function Subdealers() {
         </div>
       </div>
 
-      <div className="px-4 sm:px-8 pb-20">
+      <div className="px-4 sm:px-8 pb-8">
         {!viewHistory ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredDealers.map((dealer, i) => {

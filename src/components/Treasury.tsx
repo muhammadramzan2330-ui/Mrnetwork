@@ -43,7 +43,7 @@ export default function Treasury() {
   );
 
   return (
-    <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-24 md:pb-8">
+    <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-8">
       {/* Header and Action */}
       <div className="px-4 sm:px-8 py-6 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
@@ -117,7 +117,7 @@ export default function Treasury() {
         </div>
       </div>
 
-      <div className="px-4 sm:px-8 space-y-6 pb-20">
+      <div className="px-4 sm:px-8 space-y-6 pb-8">
         {/* Main Balance Card */}
         <motion.div 
           initial={{ opacity: 0, scale: 0.98 }}

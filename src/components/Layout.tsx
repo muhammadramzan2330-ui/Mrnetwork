@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, ShieldCheck, User, History, ShieldCheck as ShieldCheckIcon } from 'lucide-react';
+import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, User, History, ShieldCheck as ShieldCheckIcon, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -38,13 +38,25 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-600 overflow-x-hidden">
-      {/* Universal Top Header */}
+      {/* Universal Top Fixed Header */}
       <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md border-b border-slate-100 z-[9999] px-4 sm:px-6 h-16 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-md shadow-indigo-200">M</div>
-          <span className="font-black text-[13px] sm:text-sm tracking-tighter text-slate-900 uppercase truncate max-w-[120px] sm:max-w-none hover:text-indigo-600 transition-colors cursor-default">M & NETWORK</span>
+        <div className="flex items-center gap-3">
+          {user && (
+            <button 
+              onClick={() => setIsDrawerOpen(true)}
+              className="p-2 hover:bg-slate-100 rounded-xl transition-all active:scale-90 text-slate-600 border border-transparent hover:border-slate-200 flex items-center justify-center"
+              aria-label="Open Navigation"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+          )}
+          <div className="flex items-center gap-2.5 ml-1 sm:ml-2">
+            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-md shadow-indigo-200">M</div>
+            <span className="font-black text-[13px] sm:text-sm tracking-tighter text-slate-900 uppercase truncate max-w-[120px] sm:max-w-none hover:text-indigo-600 transition-colors cursor-default">M & NETWORK</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1 sm:gap-2">
+
+        <div className="flex items-center gap-2">
           {user && isAdmin && (
             <div className="hidden lg:flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full border border-emerald-100 mr-2">
               <ShieldCheckIcon className="w-3 h-3" />
@@ -52,60 +64,50 @@ export default function Layout({ children }: LayoutProps) {
             </div>
           )}
           
-          <div className="flex items-center gap-1 sm:gap-2">
-            {user ? (
-              <NavLink 
-                to="/profile"
-                className={({ isActive }) => cn(
-                  "p-2 rounded-xl transition-all active:scale-90 border border-transparent flex items-center justify-center",
-                  isActive 
-                    ? "bg-indigo-50 text-indigo-600 border-indigo-100" 
-                    : "text-slate-600 hover:bg-slate-100 hover:border-slate-200"
-                )}
-              >
-                <User className="w-5 h-5" />
-              </NavLink>
-            ) : (
-               <NavLink 
-                to="/"
-                className="hidden sm:flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all mr-2"
-              >
-                <ShieldCheckIcon className="w-3 h-3" />
-                Registry Login
-              </NavLink>
-            )}
-            
-            <button 
-              onClick={() => setIsDrawerOpen(true)}
-              className="p-2 hover:bg-slate-100 rounded-xl transition-all active:scale-90 text-slate-600 border border-transparent hover:border-slate-200 flex items-center justify-center shadow-sm sm:shadow-none"
-              aria-label="Toggle Navigation Menu"
+          {user ? (
+            <NavLink 
+              to="/profile"
+              className={({ isActive }) => cn(
+                "p-2 rounded-xl transition-all active:scale-90 border border-transparent flex items-center justify-center",
+                isActive 
+                  ? "bg-indigo-50 text-indigo-600 border-indigo-100" 
+                  : "text-slate-600 hover:bg-slate-100 hover:border-slate-200"
+              )}
             >
-              <Menu className="w-6 h-6" />
-            </button>
-          </div>
+              <User className="w-5 h-5" />
+            </NavLink>
+          ) : (
+             <NavLink 
+              to="/"
+              className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all"
+            >
+              <ShieldCheckIcon className="w-3 h-3" />
+              Registry Login
+            </NavLink>
+          )}
         </div>
       </header>
 
       {/* Spacer for fixed header */}
       <div className="h-16 w-full shrink-0" />
 
-      {/* Side Drawer Overlay */}
+      {/* Side Drawer Component */}
       <AnimatePresence>
         {isDrawerOpen && (
-          <>
+          <div className="fixed inset-0 z-[10000]">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsDrawerOpen(false)}
-              className="fixed inset-0 bg-slate-900/60 backdrop-blur-[4px] z-[10000]"
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-[4px]"
             />
             <motion.aside
               initial={{ x: '-100%' }}
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed inset-y-0 left-0 w-[300px] bg-white z-[10001] shadow-[large] flex flex-col border-r border-slate-100"
+              className="absolute inset-y-0 left-0 w-[300px] bg-white shadow-2xl flex flex-col border-r border-slate-100"
             >
               <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
                 <div className="flex items-center gap-3">
@@ -143,14 +145,6 @@ export default function Layout({ children }: LayoutProps) {
                           {item.badge}
                         </span>
                       )}
-                      {/* Active indicator bar */}
-                      <motion.div 
-                        layoutId="active-indicator"
-                        className={cn(
-                          "absolute left-0 w-1 bg-white rounded-r-full",
-                          "h-6 opacity-0" // Hidden by default, shown by isActive condition
-                        )}
-                      />
                     </NavLink>
                   ))
                 ) : (
@@ -160,7 +154,7 @@ export default function Layout({ children }: LayoutProps) {
                     </div>
                     <div>
                       <p className="text-sm font-bold text-slate-900 uppercase tracking-tight">Access Restricted</p>
-                      <p className="text-[10px] text-slate-400 font-medium mt-1 leading-relaxed uppercase tracking-wider">Please authenticate to view the full management navigation suite.</p>
+                      <p className="text-[10px] text-slate-400 font-medium mt-1 leading-relaxed uppercase tracking-wider">Please authenticate to view the navigation.</p>
                     </div>
                     <Button 
                       className="w-full bg-slate-900 h-10 rounded-xl text-[10px] font-black uppercase tracking-widest"
@@ -169,7 +163,7 @@ export default function Layout({ children }: LayoutProps) {
                         setIsDrawerOpen(false);
                       }}
                     >
-                      Return to Secure Login
+                      Go to Login
                     </Button>
                   </div>
                 )}
@@ -186,7 +180,7 @@ export default function Layout({ children }: LayoutProps) {
                       }}
                       className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all text-rose-500 hover:bg-rose-50 group font-bold text-[13px] uppercase tracking-wider"
                     >
-                      <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                      <LogOut className="w-5 h-5 group-hover:rotate-90 transition-transform" />
                       <span>Sign Out</span>
                     </button>
                   </div>
@@ -197,7 +191,7 @@ export default function Layout({ children }: LayoutProps) {
                 <span className="opacity-50">ISP BILLING ECOSYSTEM</span>
               </div>
             </motion.aside>
-          </>
+          </div>
         )}
       </AnimatePresence>
 

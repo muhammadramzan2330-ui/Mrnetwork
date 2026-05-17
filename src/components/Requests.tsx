@@ -79,7 +79,7 @@ export default function Requests() {
   );
 
   return (
-    <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-24 md:pb-8">
+    <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-8">
       {/* Header and Action */}
       <div className="px-4 sm:px-8 py-6 space-y-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
@@ -163,7 +163,7 @@ export default function Requests() {
         </div>
       </div>
 
-      <div className="px-4 sm:px-8 pb-20">
+      <div className="px-4 sm:px-8 pb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {filteredRequests.map((req, i) => (
             <motion.div

@@ -113,7 +113,7 @@ export default function Reports() {
   ];
 
   return (
-    <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-24 md:pb-8 print:bg-white print:pb-0">
+    <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-8 print:bg-white print:pb-0">
       {/* Sticky Header */}
       <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/60 pt-6 pb-4 shadow-sm transition-all duration-300 print:relative print:top-0 print:shadow-none">
         <div className="px-4 sm:px-8 space-y-4">
@@ -400,7 +400,6 @@ export default function Reports() {
           .print\\:hidden { display: none !important; }
           body { background: white !important; }
           .min-h-full { min-height: 0 !important; }
-          .pb-24 { padding-bottom: 0 !important; }
         }
       `}} />
     </div>

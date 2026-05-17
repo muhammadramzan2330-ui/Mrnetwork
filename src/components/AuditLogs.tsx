@@ -42,7 +42,7 @@ export default function AuditLogs() {
   };
 
   return (
-    <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-24 md:pb-8">
+    <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-8">
       {/* Header */}
       <div className="px-4 sm:px-8 py-6 flex justify-between items-center bg-white border-b border-slate-100 sticky top-16 z-20">
         <div className="flex flex-col">
@@ -65,7 +65,7 @@ export default function AuditLogs() {
           />
         </div>
 
-        <div className="space-y-4 pb-20">
+        <div className="space-y-4 pb-8">
           <div className="flex justify-between items-center px-2">
             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Activity Feed</h3>
             <div className="flex items-center gap-2">
