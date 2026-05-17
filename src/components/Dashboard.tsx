@@ -135,7 +135,7 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col min-h-full bg-[#F8FAFC]">
       {/* Global Search & Actions Header */}
-      <div className="sticky top-[60px] md:top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/60 pt-6 pb-6 shadow-sm transition-all duration-300">
+      <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/60 pt-6 pb-6 shadow-sm transition-all duration-300">
         <div className="px-4 sm:px-8 max-w-7xl mx-auto w-full space-y-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex gap-4 items-center">

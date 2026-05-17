@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, ShieldCheck, User, ShieldCheck as ShieldCheckIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -20,10 +20,11 @@ export default function Layout({ children }: LayoutProps) {
   
   const navItems = [
     { icon: LayoutDashboard, label: 'Home', to: isAdmin ? '/admin' : '/dashboard', show: true },
+    { icon: User, label: 'My Profile', to: '/profile', show: true },
     { icon: CreditCard, label: 'Payments', to: '/payments', show: true },
     { icon: MessageSquare, label: 'Tickets', to: '/tickets', show: isAdmin, badge: openTicketsCount > 0 ? openTicketsCount : null },
     { icon: FileText, label: 'Invoices', to: '/bills', show: isAdmin },
-    { icon: ShieldCheck, label: 'System', to: '/system-check', show: isAdmin },
+    { icon: ShieldCheckIcon, label: 'System', to: '/system-check', show: isAdmin },
     { icon: Download, label: 'Exports', to: '/exports', show: isAdmin },
     { icon: Store, label: 'Dealers', to: '/subdealers', show: isAdmin },
     { icon: TrendingUp, label: 'Reports', to: '/reports', show: isAdmin },
@@ -36,17 +37,36 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-600 overflow-x-hidden">
       {/* Universal Top Header */}
-      <header className="sticky top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 z-[110] px-6 py-4 flex items-center justify-between shadow-sm">
+      <header className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-slate-100 z-[110] px-6 h-16 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs">M</div>
-          <span className="font-extrabold text-sm tracking-tight text-slate-900">M & NETWORK</span>
+          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-md shadow-indigo-200">M</div>
+          <span className="font-black text-sm tracking-tighter text-slate-900 uppercase">M & NETWORK</span>
         </div>
-        <button 
-          onClick={() => setIsDrawerOpen(true)}
-          className="p-2 hover:bg-slate-50 rounded-xl transition-all active:scale-95 text-slate-600"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <div className="hidden sm:flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full border border-emerald-100 mr-2">
+              <ShieldCheckIcon className="w-3 h-3" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Admin</span>
+            </div>
+          )}
+          <NavLink 
+            to="/profile"
+            className={({ isActive }) => cn(
+              "p-2 rounded-xl transition-all active:scale-90 border border-transparent",
+              isActive 
+                ? "bg-indigo-50 text-indigo-600 border-indigo-100" 
+                : "text-slate-600 hover:bg-slate-100 hover:border-slate-200"
+            )}
+          >
+            <User className="w-5 h-5" />
+          </NavLink>
+          <button 
+            onClick={() => setIsDrawerOpen(true)}
+            className="p-2 hover:bg-slate-100 rounded-xl transition-all active:scale-90 text-slate-600 border border-transparent hover:border-slate-200"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+        </div>
       </header>
 
       {/* Side Drawer Overlay */}
@@ -101,6 +121,22 @@ export default function Layout({ children }: LayoutProps) {
                     )}
                   </NavLink>
                 ))}
+                
+                {/* Logout Button in Drawer */}
+                <div className="pt-4 mt-4 border-t border-slate-50">
+                  <button
+                    onClick={async () => {
+                      const { auth } = await import('../services/firebase');
+                      const { signOut } = await import('firebase/auth');
+                      await signOut(auth);
+                      setIsDrawerOpen(false);
+                    }}
+                    className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all text-rose-500 hover:bg-rose-50 group font-bold text-[13px] uppercase tracking-wider"
+                  >
+                    <X className="w-5 h-5 group-hover:rotate-90 transition-transform" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
               </nav>
               <div className="p-6 bg-slate-50 border-t border-slate-100 italic text-[10px] font-bold text-slate-400 text-center tracking-widest uppercase">
                 v2.1.0 // ISP MANAGEMENT

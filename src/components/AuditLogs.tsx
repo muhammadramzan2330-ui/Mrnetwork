@@ -44,7 +44,7 @@ export default function AuditLogs() {
   return (
     <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-24 md:pb-8">
       {/* Header */}
-      <div className="px-4 sm:px-8 py-6 flex justify-between items-center bg-white border-b border-slate-100 sticky top-0 z-20">
+      <div className="px-4 sm:px-8 py-6 flex justify-between items-center bg-white border-b border-slate-100 sticky top-16 z-20">
         <div className="flex flex-col">
           <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-none">Security Logs</h2>
           <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-2 leading-none">System activity monitor</p>

@@ -118,7 +118,7 @@ export default function CustomerDashboard() {
   return (
     <div className="flex flex-col min-h-full bg-[#F8FAFC]">
       {hasOverdueBills && !isSuspended && (
-        <div className="bg-rose-600 text-white py-3 px-4 text-center font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-4 animate-pulse sticky top-0 z-[60] shadow-xl">
+        <div className="bg-rose-600 text-white py-3 px-4 text-center font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-4 animate-pulse sticky top-16 z-[60] shadow-xl">
           <AlertCircle className="w-4 h-4 text-white" />
           Attention: You have overdue bills. Please clear your balance to avoid service interruption.
           <AlertCircle className="w-4 h-4 text-white" />

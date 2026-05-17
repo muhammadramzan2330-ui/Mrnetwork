@@ -20,10 +20,11 @@ import Signup from './components/Signup';
 import ForgotPassword from './components/ForgotPassword';
 import CustomerDashboard from './components/CustomerDashboard';
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import Profile from './components/Profile';
 import ExportData from './components/ExportData';
 import { SystemProvider } from './contexts/SystemContext';
 import { Toaster } from '@/components/ui/sonner';
-import { ShieldOff, Loader2, AlertCircle } from 'lucide-react';
+import { ShieldOff, Loader2, AlertCircle, User } from 'lucide-react';
 import { motion } from 'motion/react';
 import { auth, isFirebaseInitialized, firebaseInitError } from '@/services/firebase';
 import { signOut } from 'firebase/auth';
@@ -300,6 +301,7 @@ function AppRoutes() {
               <Route path="/system-check" element={<SystemCheck />} />
               <Route path="/status" element={<Status />} />
               <Route path="/exports" element={<ExportData />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/" element={<Navigate to="/admin" replace />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </>
@@ -308,6 +310,7 @@ function AppRoutes() {
               <Route path="/dashboard" element={<CustomerDashboard />} />
               <Route path="/payments" element={<Payments />} />
               <Route path="/packages" element={<Packages />} />
+              <Route path="/profile" element={<Profile />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </>
