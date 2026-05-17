@@ -83,19 +83,18 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] p-4 sm:p-6">
+    <div className="flex items-center justify-center p-4 sm:p-6 pb-20">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="w-full max-w-md"
       >
         <Card className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-          <div className="h-40 bg-gradient-to-br from-indigo-600 to-cyan-500 flex flex-col items-center justify-center p-6 text-white relative">
-            <div className="relative z-10 p-4 bg-white/10 rounded-2xl backdrop-blur-md mb-2 border border-white/20 shadow-xl">
-              <Shield className="w-10 h-10 text-white" />
+          <div className="h-28 bg-gradient-to-br from-indigo-600 to-cyan-500 flex flex-col items-center justify-center p-6 text-white relative">
+            <div className="relative z-10 p-3 bg-white/10 rounded-xl backdrop-blur-md mb-2 border border-white/20 shadow-xl">
+              <Shield className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-black tracking-tight uppercase relative z-10">M & Network</h1>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80 relative z-10">ISP Billing Management</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 relative z-10 leading-none">New Account Registry</p>
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
           </div>
 

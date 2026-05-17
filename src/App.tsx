@@ -88,203 +88,97 @@ function AppRoutes() {
     );
   }
 
-  // Allow Signup page even if not logged in
   const isSignupPath = window.location.pathname === '/signup';
-
-  if (!user) {
-    return (
-      <Routes>
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="*" element={<Login />} />
-      </Routes>
-    );
-  }
-
-  const isProfileError = error?.startsWith("User profile not found");
-  
-  if (error && !isProfileError) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 p-6 text-center">
-        <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-4">
-          <ShieldOff className="w-8 h-8" />
-        </div>
-        <h1 className="text-xl font-bold text-slate-900 mb-2">{error}</h1>
-        <p className="text-sm text-slate-500 mb-6 max-w-xs">
-          An unexpected error occurred while loading your profile.
-        </p>
-        <button 
-          onClick={() => signOut(auth)}
-          className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold text-sm"
-        >
-          Sign Out
-        </button>
-      </div>
-    );
-  }
-
-  if (user && !profile && !isAdmin) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white p-6 text-center">
-        <div className="relative mb-8">
-          <div className="w-20 h-20 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-          <Loader2 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-indigo-600 animate-pulse" />
-        </div>
-        <h2 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Initializing Profile</h2>
-        <p className="text-xs text-slate-500 max-w-xs mx-auto font-medium">
-          Securely synchronizing your account credentials with our identity registry...
-        </p>
-      </div>
-    );
-  }
-
-  console.log("AUTH_ROUTING_DEBUG:", {
-    uid: user?.uid,
-    role: profile?.role,
-    status: profile?.status,
-    isAdmin,
-    isCustomer
-  });
-
-  // Handle pending or rejected status
-  // Admin with 'active' status should definitely bypass this
-  if ((profile?.status === 'pending' || profile?.status === 'rejected') && !isAdmin) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#F8FAFC] p-6 text-center">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-slate-200/60 border border-slate-100 max-w-md w-full"
-        >
-          <div className={cn(
-            "w-24 h-24 rounded-3xl flex items-center justify-center mb-8 border mx-auto relative",
-            profile.status === 'pending' ? "bg-amber-50 text-amber-500 border-amber-100" : "bg-rose-50 text-rose-500 border-rose-100"
-          )}>
-            {profile.status === 'pending' ? (
-              <>
-                <Loader2 className="w-12 h-12 animate-spin" />
-                <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-tighter shadow-lg">Pending</div>
-              </>
-            ) : (
-              <>
-                <ShieldOff className="w-12 h-12" />
-                <div className="absolute -top-2 -right-2 bg-rose-500 text-white text-[10px] font-black px-2 py-1 rounded-lg uppercase tracking-tighter shadow-lg">Rejected</div>
-              </>
-            )}
-          </div>
-
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter uppercase mb-3 px-4">
-            {profile.status === 'pending' ? 'Account Pending' : 'Access Denied'}
-          </h1>
-          
-          <div className="bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-8 text-left">
-            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1 opacity-60">Status Message:</p>
-            <p className="text-slate-700 text-sm font-medium leading-relaxed">
-              {profile.status === 'pending' 
-                ? `Account: ${user.email} is currently in the verification queue. An administrator will verify your details shortly.` 
-                : "Your account request has been declined. Please contact support for more details."}
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-4">
-            {profile.status === 'pending' && (
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest animate-pulse">
-                Auto-Refreshing when approved...
-              </p>
-            )}
-            <button 
-              onClick={() => signOut(auth)}
-              className="h-14 w-full bg-slate-900 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-xl shadow-slate-900/30 active:scale-[0.98] transition-all flex items-center justify-center gap-3 hover:bg-slate-800"
-            >
-              Sign Out
-            </button>
-            
-            <p className="text-[9px] text-slate-300 font-bold uppercase tracking-[0.2em] mt-4 font-sans">
-              M & Network // Billing Portal
-            </p>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // Handle suspended status
-  if (profile?.status === 'suspended' && !isAdmin) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-rose-50 p-6 text-center">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-rose-100"
-        >
-          <div className="w-20 h-20 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-600 mx-auto mb-6">
-            <ShieldOff className="w-10 h-10" />
-          </div>
-          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Service Suspended</h1>
-          <p className="text-slate-500 font-medium mb-8">
-            Your internet service has been suspended by the administrator. Please contact support to reactivate your connection.
-          </p>
-          <div className="space-y-3">
-            <Button 
-              className="w-full bg-slate-900 hover:bg-slate-800 h-12 rounded-xl font-bold uppercase tracking-widest text-xs"
-              onClick={() => window.open('https://wa.me/923000000000', '_blank')}
-            >
-              Contact Support
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full h-12 rounded-xl font-bold uppercase tracking-widest text-xs border-slate-200"
-              onClick={handleLogout}
-            >
-              Sign Out
-            </Button>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // Handle expired status
-  if (profile?.status === 'expired' && !isAdmin) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-amber-50 p-6 text-center">
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-amber-100"
-        >
-          <div className="w-20 h-20 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 mx-auto mb-6">
-            <AlertCircle className="w-10 h-10" />
-          </div>
-          <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Plan Expired</h1>
-          <p className="text-slate-500 font-medium mb-8">
-            Your subscription has expired or you have an unpaid bill. Please make a payment to continue enjoying our services.
-          </p>
-          <div className="space-y-3">
-            <Button 
-              className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold uppercase tracking-widest text-xs"
-              onClick={() => window.location.href = '/payments'}
-            >
-              Pay Now
-            </Button>
-            <Button 
-              variant="outline" 
-              className="w-full h-12 rounded-xl font-bold uppercase tracking-widest text-xs border-slate-200"
-              onClick={handleLogout}
-            >
-              Sign Out
-            </Button>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <SystemProvider>
       <Layout>
         <Routes>
-          {isAdmin ? (
+          {!user ? (
+            <>
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="*" element={<Login />} />
+            </>
+          ) : (profile?.status === 'pending' || profile?.status === 'rejected') && !isAdmin ? (
+            <Route path="*" element={
+              <div className="flex flex-col items-center justify-center p-6 text-center py-20">
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white p-8 sm:p-10 rounded-[2.5rem] shadow-xl border border-slate-100 max-w-md w-full"
+                >
+                  <div className={cn(
+                    "w-20 h-20 rounded-3xl flex items-center justify-center mb-6 border mx-auto relative",
+                    profile.status === 'pending' ? "bg-amber-50 text-amber-500 border-amber-100" : "bg-rose-50 text-rose-500 border-rose-100"
+                  )}>
+                    {profile.status === 'pending' ? <Loader2 className="w-10 h-10 animate-spin" /> : <ShieldOff className="w-10 h-10" />}
+                  </div>
+                  <h1 className="text-2xl font-black text-slate-900 tracking-tighter uppercase mb-3">
+                    {profile.status === 'pending' ? 'Verification Pending' : 'Registration Rejected'}
+                  </h1>
+                  <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8">
+                    {profile.status === 'pending' 
+                      ? 'Your account request is currently being reviewed by our administration team. This usually takes less than 24 hours.' 
+                      : 'Unfortunately, your registration request was not approved. Please contact our support team for clarification.'}
+                  </p>
+                  <Button 
+                    onClick={handleLogout}
+                    className="w-full h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold uppercase tracking-widest text-xs"
+                  >
+                    Sign Out
+                  </Button>
+                </motion.div>
+              </div>
+            } />
+          ) : profile?.status === 'suspended' && !isAdmin ? (
+            <Route path="*" element={
+              <div className="flex flex-col items-center justify-center p-6 text-center py-20">
+                <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-rose-100">
+                  <div className="w-20 h-20 bg-rose-100 rounded-2xl flex items-center justify-center text-rose-600 mx-auto mb-6">
+                    <ShieldOff className="w-10 h-10" />
+                  </div>
+                  <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Service Suspended</h1>
+                  <p className="text-slate-500 font-medium mb-8">
+                    Access to your internet profile has been restricted. Please resolve pending issues or contact operations to restore service.
+                  </p>
+                  <div className="space-y-3">
+                    <Button 
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold uppercase tracking-widest text-xs"
+                      onClick={() => window.open('https://wa.me/923000000000', '_blank')}
+                    >
+                      Connect with HQ Support
+                    </Button>
+                    <Button variant="outline" className="w-full h-12 rounded-xl" onClick={handleLogout}>Logout</Button>
+                  </div>
+                </div>
+              </div>
+            } />
+          ) : profile?.status === 'expired' && !isAdmin ? (
+            <>
+              <Route path="/payments" element={<Payments />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="*" element={
+                <div className="flex flex-col items-center justify-center p-6 text-center py-20">
+                  <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-amber-100">
+                    <div className="w-20 h-20 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 mx-auto mb-6">
+                      <AlertCircle className="w-10 h-10" />
+                    </div>
+                    <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Access Cycle Expired</h1>
+                    <p className="text-slate-500 font-medium mb-8">
+                      Your current billing cycle has concluded or payment is overdue. Please settle your dues to maintain active connectivity.
+                    </p>
+                    <Button 
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold uppercase tracking-widest text-xs"
+                      onClick={() => window.location.href = '/payments'}
+                    >
+                      Quick Pay
+                    </Button>
+                  </div>
+                </div>
+              } />
+            </>
+          ) : isAdmin ? (
             <>
               <Route path="/admin" element={<Dashboard />} />
               <Route path="/payments" element={<Payments />} />

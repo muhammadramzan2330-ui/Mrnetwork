@@ -12,66 +12,76 @@ import { useAuth } from '../hooks/useAuth';
 import { useSystem } from '../contexts/SystemContext';
 
 export default function Layout({ children }: LayoutProps) {
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
   const { tickets } = useSystem();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const openTicketsCount = tickets.filter(t => t.status === 'open').length;
   
   const navItems = [
-    { icon: LayoutDashboard, label: 'Home', to: isAdmin ? '/admin' : '/dashboard', show: true },
-    { icon: User, label: 'My Profile', to: '/profile', show: true },
-    { icon: CreditCard, label: 'Payments', to: '/payments', show: true },
-    { icon: MessageSquare, label: 'Tickets', to: '/tickets', show: isAdmin, badge: openTicketsCount > 0 ? openTicketsCount : null },
-    { icon: FileText, label: 'Invoices', to: '/bills', show: isAdmin },
-    { icon: ShieldCheckIcon, label: 'System', to: '/system-check', show: isAdmin },
-    { icon: Download, label: 'Exports', to: '/exports', show: isAdmin },
-    { icon: Store, label: 'Dealers', to: '/subdealers', show: isAdmin },
-    { icon: TrendingUp, label: 'Reports', to: '/reports', show: isAdmin },
-    { icon: Castle, label: 'Ledger', to: '/treasury', show: isAdmin },
-    { icon: Users, label: 'Subscribers', to: '/users', show: isAdmin },
-    { icon: Package, label: 'Plans', to: '/packages', show: true },
-    { icon: Activity, label: 'Troubleshoot', to: '/status', show: isAdmin },
+    { icon: LayoutDashboard, label: 'Home', to: isAdmin ? '/admin' : '/dashboard', show: !!user },
+    { icon: User, label: 'My Profile', to: '/profile', show: !!user },
+    { icon: CreditCard, label: 'Payments', to: '/payments', show: !!user },
+    { icon: MessageSquare, label: 'Tickets', to: '/tickets', show: !!user && isAdmin, badge: openTicketsCount > 0 ? openTicketsCount : null },
+    { icon: FileText, label: 'Invoices', to: '/bills', show: !!user && isAdmin },
+    { icon: ShieldCheckIcon, label: 'System', to: '/system-check', show: !!user && isAdmin },
+    { icon: Download, label: 'Exports', to: '/exports', show: !!user && isAdmin },
+    { icon: Store, label: 'Dealers', to: '/subdealers', show: !!user && isAdmin },
+    { icon: TrendingUp, label: 'Reports', to: '/reports', show: !!user && isAdmin },
+    { icon: Castle, label: 'Ledger', to: '/treasury', show: !!user && isAdmin },
+    { icon: Users, label: 'Subscribers', to: '/users', show: !!user && isAdmin },
+    { icon: Package, label: 'Plans', to: '/packages', show: !!user },
+    { icon: Activity, label: 'Troubleshoot', to: '/status', show: !!user && isAdmin },
   ].filter(item => item.show);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-600 overflow-x-hidden">
       {/* Universal Top Header */}
-      <header className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-slate-100 z-[110] px-6 h-16 flex items-center justify-between shadow-sm">
+      <header className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-slate-100 z-[110] px-4 sm:px-6 h-16 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-md shadow-indigo-200">M</div>
-          <span className="font-black text-sm tracking-tighter text-slate-900 uppercase">M & NETWORK</span>
+          <span className="font-black text-[13px] sm:text-sm tracking-tighter text-slate-900 uppercase truncate max-w-[120px] sm:max-w-none">M & NETWORK</span>
         </div>
-        <div className="flex items-center gap-2">
-          {isAdmin && (
+        <div className="flex items-center gap-1 sm:gap-2">
+          {user && isAdmin && (
             <div className="hidden sm:flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full border border-emerald-100 mr-2">
               <ShieldCheckIcon className="w-3 h-3" />
               <span className="text-[10px] font-black uppercase tracking-widest">Admin</span>
             </div>
           )}
-          <NavLink 
-            to="/profile"
-            className={({ isActive }) => cn(
-              "p-2 rounded-xl transition-all active:scale-90 border border-transparent",
-              isActive 
-                ? "bg-indigo-50 text-indigo-600 border-indigo-100" 
-                : "text-slate-600 hover:bg-slate-100 hover:border-slate-200"
-            )}
-          >
-            <User className="w-5 h-5" />
-          </NavLink>
-          <button 
-            onClick={() => setIsDrawerOpen(true)}
-            className="p-2 hover:bg-slate-100 rounded-xl transition-all active:scale-90 text-slate-600 border border-transparent hover:border-slate-200"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
+          
+          {user ? (
+            <>
+              <NavLink 
+                to="/profile"
+                className={({ isActive }) => cn(
+                  "p-2 rounded-xl transition-all active:scale-90 border border-transparent flex items-center justify-center",
+                  isActive 
+                    ? "bg-indigo-50 text-indigo-600 border-indigo-100" 
+                    : "text-slate-600 hover:bg-slate-100 hover:border-slate-200"
+                )}
+              >
+                <User className="w-5 h-5" />
+              </NavLink>
+              <button 
+                onClick={() => setIsDrawerOpen(true)}
+                className="p-2 hover:bg-slate-100 rounded-xl transition-all active:scale-90 text-slate-600 border border-transparent hover:border-slate-200 flex items-center justify-center"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+            </>
+          ) : (
+             <div className="flex items-center gap-2">
+                <p className="hidden sm:block text-[9px] font-black text-slate-400 uppercase tracking-widest">Billing Registry Access</p>
+                <ShieldCheckIcon className="w-4 h-4 text-slate-300" />
+             </div>
+          )}
         </div>
       </header>
 
       {/* Side Drawer Overlay */}
       <AnimatePresence>
-        {isDrawerOpen && (
+        {user && isDrawerOpen && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
@@ -99,7 +109,7 @@ export default function Layout({ children }: LayoutProps) {
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+              <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto custom-scrollbar">
                 {navItems.map((item) => (
                   <NavLink
                     key={item.to}
@@ -147,11 +157,11 @@ export default function Layout({ children }: LayoutProps) {
       </AnimatePresence>
 
       <div className="w-full flex-1 flex flex-col relative max-w-7xl mx-auto px-0 md:px-4">
-        <main className="flex-1 pb-12 pt-0 md:pt-6">
+        <main className="flex-1 pb-6 md:pb-12 pt-0 md:pt-6">
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white md:rounded-3xl min-h-[calc(100vh-120px)] shadow-sm md:border border-slate-200 overflow-hidden flex flex-col relative"
+            className="bg-white md:rounded-3xl min-h-[calc(100vh-80px)] shadow-sm md:border border-slate-200 overflow-hidden flex flex-col relative"
           >
             {children}
           </motion.div>
