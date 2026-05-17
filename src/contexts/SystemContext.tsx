@@ -11,9 +11,11 @@ import {
   runTransaction, 
   Timestamp,
   increment,
-  orderBy
+  orderBy,
+  where
 } from 'firebase/firestore';
 import { toast } from 'sonner';
+import { useAuth } from '../hooks/useAuth';
 
 interface SystemState {
   users: any[];
@@ -51,6 +53,7 @@ interface SystemActions {
 const SystemContext = createContext<(SystemState & SystemActions) | undefined>(undefined);
 
 export function SystemProvider({ children }: { children: React.ReactNode }) {
+  const { isAdmin, user } = useAuth();
   const [state, setState] = useState<SystemState>({
     users: [],
     payments: [],
@@ -67,27 +70,58 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
   });
 
   useEffect(() => {
+    if (!user) {
+      setState(prev => ({ ...prev, loading: false }));
+      return;
+    }
+
     const errorHandler = (collectionPath: string) => (error: any) => {
       console.warn(`System subscription error [${collectionPath}]:`, error);
-      // Don't throw, just log and mark as loaded if it's the treasury collection
       if (collectionPath === 'treasury') {
         setState(prev => ({ ...prev, loading: false }));
       }
     };
 
-    const unsubUsers = subscribeToCollection('user', (data) => setState(prev => ({ ...prev, users: data })), [], errorHandler('user'));
-    const unsubPayments = subscribeToCollection('payments', (data) => setState(prev => ({ ...prev, payments: data })), [orderBy('date', 'desc')], errorHandler('payments'));
-    const unsubBills = subscribeToCollection('bills', (data) => setState(prev => ({ ...prev, bills: data })), [orderBy('dueDate', 'desc')], errorHandler('bills'));
-    const unsubSubdealers = subscribeToCollection('subdealers', (data) => setState(prev => ({ ...prev, subdealers: data })), [], errorHandler('subdealers'));
+    // Subscriptions for internal ISP logic
     const unsubPackages = subscribeToCollection('packages', (data) => setState(prev => ({ ...prev, packages: data })), [], errorHandler('packages'));
-    const unsubRequests = subscribeToCollection('requests', (data) => setState(prev => ({ ...prev, requests: data })), [orderBy('createdAt', 'desc')], errorHandler('requests'));
-    const unsubTickets = subscribeToCollection('tickets', (data) => setState(prev => ({ ...prev, tickets: data })), [orderBy('createdAt', 'desc')], errorHandler('tickets'));
-    const unsubLogs = subscribeToCollection('logs', (data) => setState(prev => ({ ...prev, logs: data })), [orderBy('date', 'desc')], errorHandler('logs'));
-    const unsubNotifs = subscribeToCollection('notifications', (data) => setState(prev => ({ ...prev, notifications: data })), [orderBy('date', 'desc')], errorHandler('notifications'));
-    const unsubSettings = subscribeToCollection('settings', (data) => setState(prev => ({ ...prev, settings: data[0] })), [], errorHandler('settings'));
-    const unsubTreasury = subscribeToCollection('treasury', (data) => {
-      setState(prev => ({ ...prev, treasury: data[0] || null, loading: false }));
-    }, [], errorHandler('treasury'));
+    
+    // Admin-only global subscriptions
+    let unsubUsers = () => {};
+    let unsubPayments = () => {};
+    let unsubBills = () => {};
+    let unsubSubdealers = () => {};
+    let unsubRequests = () => {};
+    let unsubTickets = () => {};
+    let unsubLogs = () => {};
+    let unsubNotifs = () => {};
+    let unsubSettings = () => {};
+    let unsubTreasury = () => {};
+
+    if (isAdmin) {
+      unsubUsers = subscribeToCollection('user', (data) => setState(prev => ({ ...prev, users: data })), [], errorHandler('user'));
+      unsubPayments = subscribeToCollection('payments', (data) => setState(prev => ({ ...prev, payments: data })), [orderBy('date', 'desc')], errorHandler('payments'));
+      unsubBills = subscribeToCollection('bills', (data) => setState(prev => ({ ...prev, bills: data })), [orderBy('dueDate', 'desc')], errorHandler('bills'));
+      unsubSubdealers = subscribeToCollection('subdealers', (data) => setState(prev => ({ ...prev, subdealers: data })), [], errorHandler('subdealers'));
+      unsubRequests = subscribeToCollection('requests', (data) => setState(prev => ({ ...prev, requests: data })), [orderBy('createdAt', 'desc')], errorHandler('requests'));
+      unsubTickets = subscribeToCollection('tickets', (data) => setState(prev => ({ ...prev, tickets: data })), [orderBy('createdAt', 'desc')], errorHandler('tickets'));
+      unsubLogs = subscribeToCollection('logs', (data) => setState(prev => ({ ...prev, logs: data })), [orderBy('date', 'desc')], errorHandler('logs'));
+      unsubNotifs = subscribeToCollection('notifications', (data) => setState(prev => ({ ...prev, notifications: data })), [orderBy('date', 'desc')], errorHandler('notifications'));
+      unsubSettings = subscribeToCollection('settings', (data) => setState(prev => ({ ...prev, settings: data[0] })), [], errorHandler('settings'));
+      unsubTreasury = subscribeToCollection('treasury', (data) => {
+        setState(prev => ({ ...prev, treasury: data[0] || null, loading: false }));
+      }, [], errorHandler('treasury'));
+    } else {
+      // For non-admins, subscribe to their OWN data
+      unsubUsers = subscribeToCollection('user', (data) => setState(prev => ({ ...prev, users: data })), [where('uid', '==', user.uid)], errorHandler('user'));
+      unsubPayments = subscribeToCollection('payments', (data) => setState(prev => ({ ...prev, payments: data })), [where('userId', '==', user.uid), orderBy('date', 'desc')], errorHandler('payments'));
+      unsubBills = subscribeToCollection('bills', (data) => setState(prev => ({ ...prev, bills: data })), [where('userId', '==', user.uid), orderBy('dueDate', 'desc')], errorHandler('bills'));
+      unsubRequests = subscribeToCollection('requests', (data) => setState(prev => ({ ...prev, requests: data })), [where('userId', '==', user.uid), orderBy('createdAt', 'desc')], errorHandler('requests'));
+      unsubTickets = subscribeToCollection('tickets', (data) => setState(prev => ({ ...prev, tickets: data })), [where('userId', '==', user.uid), orderBy('createdAt', 'desc')], errorHandler('tickets'));
+      unsubNotifs = subscribeToCollection('notifications', (data) => setState(prev => ({ ...prev, notifications: data })), [where('userId', '==', user.uid), orderBy('date', 'desc')], errorHandler('notifications'));
+      
+      // Treasury and Settings are not needed for customers but treasury loaded check should pass
+      setState(prev => ({ ...prev, loading: false }));
+    }
 
     // Fallback: If treasury isn't loading after 5 seconds, stop blocking
     const loadingTimeout = setTimeout(() => {
@@ -114,14 +148,14 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       unsubSettings();
       unsubTreasury();
     };
-  }, []);
+  }, [user, isAdmin]);
 
   // Trigger monthly bill generation on mount once loading is complete
   useEffect(() => {
-    if (!state.loading && state.users.length > 0) {
+    if (isAdmin && !state.loading && state.users.length > 0) {
       generateMonthlyBills();
     }
-  }, [state.loading, state.users.length]);
+  }, [isAdmin, state.loading, state.users.length]);
 
   const addLog = async (action: string, target: string, type: string, details?: string) => {
     try {

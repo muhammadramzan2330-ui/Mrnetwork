@@ -46,8 +46,14 @@ service cloud.firestore {
     }
 
     function isValidUser(data) {
-      return data.name is string && data.name.size() <= 100 &&
-             data.uid is string && data.uid == request.auth.uid;
+      return data.uid is string && data.uid == request.auth.uid &&
+             data.name is string && data.name.size() <= 100 &&
+             data.role in ['admin', 'customer'];
+    }
+
+    function isValidTicket(data) {
+      return data.userId is string && data.userId == request.auth.uid &&
+             data.status in ['open', 'in-progress', 'closed'];
     }
 
     // Default Deny
@@ -59,16 +65,15 @@ service cloud.firestore {
 
     // 1. Users Profile
     match /user/{userId} {
-      allow get: if isSignedIn() && (isAdmin() || isOwner(userId));
-      allow list: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
-      allow create: if (isAdmin() || (isSignedIn() && isOwner(userId))) && isValidUser(incoming());
-      allow update: if isAdmin();
+      allow read: if isSignedIn() && (isAdmin() || isOwner(userId));
+      allow create: if isSignedIn() && isOwner(userId) && isValidUser(incoming());
+      allow update: if isAdmin() || (isSignedIn() && isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'phone', 'whatsapp', 'updatedAt']));
       allow delete: if isAdmin();
     }
 
     // 2. Bills
     match /bills/{billId} {
-      allow read: if isAdmin() || (isSignedIn() && isOwner(existing().userId));
+      allow get: if isAdmin() || (isSignedIn() && isOwner(existing().userId));
       allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow write: if isAdmin();
     }
@@ -104,20 +109,29 @@ service cloud.firestore {
     // 6. Logs
     match /logs/{logId} {
       allow read: if isAdmin();
-      allow create: if isSignedIn(); // Allow system logging from any authenticated user activity
+      allow create: if isSignedIn();
       allow update, delete: if isAdmin();
     }
 
-    // 7. Requests (Support Tickets / Withdrawals)
+    // 7. Requests (Withdrawals etc)
     match /requests/{requestId} {
       allow get: if isAdmin() || (isSignedIn() && isOwner(existing().userId));
       allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
       allow create: if isSignedIn() && (isAdmin() || isOwner(incoming().userId));
-      allow update: if isAdmin() || (isSignedIn() && isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'description']));
+      allow update: if isAdmin() || (isSignedIn() && isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'description', 'updatedAt']));
       allow delete: if isAdmin();
     }
 
-    // 8. Commissions
+    // 8. Tickets (Support)
+    match /tickets/{ticketId} {
+      allow get: if isAdmin() || (isSignedIn() && isOwner(existing().userId));
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && (isAdmin() || isOwner(incoming().userId));
+      allow update: if isAdmin() || (isSignedIn() && isOwner(existing().userId) && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'message', 'updatedAt']));
+      allow delete: if isAdmin();
+    }
+
+    // 9. Commissions
     match /commissions/{commissionId} {
       allow read: if isAdmin();
       allow write: if isAdmin();
@@ -132,13 +146,13 @@ service cloud.firestore {
     }
 
     // 10. Treasury
-    match /treasury/current {
+    match /treasury/{docId} {
       allow read: if isAdmin();
       allow write: if isAdmin();
     }
 
     // 11. Settings
-    match /settings/config {
+    match /settings/{docId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
