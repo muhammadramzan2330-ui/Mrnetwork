@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, User, History, ShieldCheck as ShieldCheckIcon, LogOut } from 'lucide-react';
+import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, User, History, ShieldCheck as ShieldCheckIcon, LogOut, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,12 @@ export default function Layout({ children }: LayoutProps) {
   const { isAdmin, user } = useAuth();
   const { tickets } = useSystem();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    if (isAdmin) {
+      console.log('NEW_ADMIN_LAYOUT_ACTIVE');
+    }
+  }, [isAdmin]);
 
   const openTicketsCount = tickets.filter(t => t.status === 'open').length;
   
@@ -36,6 +42,17 @@ export default function Layout({ children }: LayoutProps) {
     { icon: Activity, label: 'Troubleshoot', to: '/status', show: !!user && isAdmin },
   ].filter(item => item.show);
 
+  const adminNavItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', to: '/admin' },
+    { icon: Users, label: 'Customers', to: '/users' },
+    { icon: Package, label: 'Packages/Plans', to: '/packages' },
+    { icon: FileText, label: 'Bills', to: '/bills' },
+    { icon: CreditCard, label: 'Payments', to: '/payments' },
+    { icon: TrendingUp, label: 'Reports', to: '/reports' },
+    { icon: MessageSquare, label: 'Complaints/Tickets', to: '/tickets', badge: openTicketsCount > 0 ? openTicketsCount : null },
+    { icon: Settings, label: 'Settings', to: '/billing-settings' },
+  ];
+
   const handleLogout = async () => {
     const { auth } = await import('../services/firebase');
     const { signOut } = await import('firebase/auth');
@@ -48,15 +65,6 @@ export default function Layout({ children }: LayoutProps) {
       {/* Universal Top Fixed Header */}
       <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md border-b border-slate-100 z-[9999] px-4 sm:px-6 h-16 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
-          {user && isAdmin && (
-            <button 
-              onClick={() => setIsDrawerOpen(true)}
-              className="p-2 hover:bg-slate-100 rounded-xl transition-all active:scale-90 text-slate-600 border border-transparent hover:border-slate-200 flex items-center justify-center"
-              aria-label="Open Navigation"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
-          )}
           <div className="flex items-center gap-2.5 ml-1 sm:ml-2">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-md shadow-indigo-200">M</div>
             <span className="font-black text-[13px] sm:text-sm tracking-tighter text-slate-900 uppercase truncate max-w-[100px] sm:max-w-none hover:text-indigo-600 transition-colors cursor-default">M & NETWORK</span>
@@ -123,6 +131,16 @@ export default function Layout({ children }: LayoutProps) {
               Registry Login
             </NavLink>
           )}
+
+          {user && isAdmin && (
+            <button 
+              onClick={() => setIsDrawerOpen(true)}
+              className="p-2 hover:bg-slate-100 rounded-xl transition-all active:scale-90 text-slate-600 border border-transparent hover:border-slate-200 flex items-center justify-center ml-1"
+              aria-label="Open Navigation"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+          )}
         </div>
       </header>
 
@@ -163,7 +181,29 @@ export default function Layout({ children }: LayoutProps) {
                 </button>
               </div>
               <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto custom-scrollbar">
-                {navItems.length > 0 ? (
+                {isAdmin ? (
+                  adminNavItems.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setIsDrawerOpen(false)}
+                      className={({ isActive }) => cn(
+                        "flex items-center gap-4 px-4 py-3.5 rounded-xl transition-all group relative",
+                        isActive 
+                          ? "bg-indigo-600 text-white shadow-xl shadow-indigo-200" 
+                          : "text-slate-600 hover:bg-slate-50 hover:text-indigo-600 border border-transparent hover:border-slate-100"
+                      )}
+                    >
+                      <item.icon className={cn("w-5 h-5", "group-hover:scale-110 transition-transform")} />
+                      <span className="font-bold text-[13px] uppercase tracking-wider flex-1 text-left">{item.label}</span>
+                      {item.badge && (
+                        <span className="bg-rose-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-md shadow-sm">
+                          {item.badge}
+                        </span>
+                      )}
+                    </NavLink>
+                  ))
+                ) : navItems.length > 0 ? (
                   navItems.map((item) => (
                     <NavLink
                       key={item.to}
