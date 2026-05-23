@@ -170,8 +170,16 @@ export default function CustomerDashboard() {
       </div>
 
       <div className="px-4 sm:px-8 -mt-20 max-w-7xl mx-auto w-full relative z-20 space-y-8">
-        {/* Simple Quick Navigation Buttons */}
-        <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-[2rem] shadow-xl border border-slate-100/50">
+      <div className="flex items-center justify-between bg-white p-4 rounded-2xl shadow-xl">
+  <h2 className="text-xl font-bold">M & NETWORK</h2>
+
+  <button
+    onClick={() => alert('Menu Open')}
+    className="px-4 py-2 bg-indigo-600 text-white rounded-xl"
+  >
+    ☰ Menu
+  </button>
+</div>
           {[
             { label: 'Home', to: '/dashboard', icon: LayoutDashboard },
             { label: 'Payments', to: '/payments', icon: CreditCard },
