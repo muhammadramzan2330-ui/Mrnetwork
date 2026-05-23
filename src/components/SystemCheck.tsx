@@ -15,7 +15,10 @@ import {
   ChevronRight,
   Zap,
   Activity,
-  Server
+  Server,
+  Github,
+  GitBranch,
+  GitCommit
 } from 'lucide-react';
 import { useSystem } from '../contexts/SystemContext';
 import { useAuth } from '../hooks/useAuth';
@@ -217,6 +220,41 @@ export default function SystemCheck() {
           <div className="space-y-8">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Maintenance Controls</h3>
             <div className="grid grid-cols-1 gap-6">
+               <Card className="bg-white border-slate-100 rounded-[2.5rem] p-8 shadow-sm group hover:border-slate-800 transition-all">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Github className="w-7 h-7" />
+                    </div>
+                    <div className="flex-grow">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">GitHub Repository Sync</h4>
+                        <Badge className="bg-emerald-50 text-emerald-600 border-none uppercase text-[9px] font-black px-2.5 py-1">Synced</Badge>
+                      </div>
+                      <p className="text-xs font-semibold text-slate-400">Automated Version Deployment Pipeline</p>
+                    </div>
+                  </div>
+                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100/80 font-mono text-[10px] space-y-3 text-slate-600 text-left">
+                    <div className="flex justify-between border-b border-slate-200/50 pb-2">
+                      <span className="uppercase font-black text-slate-400">Branch:</span>
+                      <span className="font-bold text-slate-800 flex items-center gap-1"><GitBranch className="w-3.5 h-3.5 text-indigo-600" /> main</span>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-200/50 pb-2">
+                      <span className="uppercase font-black text-slate-400">Last Published:</span>
+                      <span className="font-bold text-indigo-600">Last week (7 days ago)</span>
+                    </div>
+                    <div className="flex flex-col gap-1.5 pt-1">
+                      <span className="uppercase font-black text-slate-400 mb-1">Changed Files:</span>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 font-bold text-slate-700">
+                        <span className="text-emerald-600">✓ App.tsx</span>
+                        <span className="text-emerald-600">✓ Layout.tsx</span>
+                        <span className="text-emerald-600">✓ Status.tsx</span>
+                        <span className="text-emerald-600">✓ SystemCheck.tsx</span>
+                        <span className="text-indigo-600">+ 10 other files changed</span>
+                      </div>
+                    </div>
+                  </div>
+               </Card>
+
                <Card className="bg-white border-slate-100 rounded-[2.5rem] p-8 shadow-sm group hover:border-indigo-200 transition-all">
                   <div className="flex items-center gap-4 mb-6">
                     <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">

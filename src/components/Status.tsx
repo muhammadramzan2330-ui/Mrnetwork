@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Globe, Database, UserCheck, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Globe, Database, UserCheck, AlertTriangle, Github, GitBranch, GitCommit } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useAuth } from '../hooks/useAuth';
 import { isFirebaseInitialized, firebaseInitError } from '@/services/firebase';
@@ -95,6 +95,34 @@ export default function Status() {
               <p>PING isp-billing-app-eda7c.firebaseapp.com ... [OK]</p>
               <p>AUTH_UPLINK ... [STABLE]</p>
               <p>FIRESTORE_SYNC ... [ACTIVE]</p>
+            </div>
+
+            <div className="p-5 bg-slate-50 border border-slate-200/60 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center shadow-sm">
+                  <Github className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <GitBranch className="w-3.5 h-3.5 text-indigo-600" />
+                    GitHub Repository
+                  </h4>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Published last week</p>
+                </div>
+              </div>
+              <div className="font-mono text-[10px] text-slate-500 space-y-1">
+                <p className="font-bold text-slate-700 flex items-center gap-1">
+                  <GitCommit className="w-3.5 h-3.5 text-emerald-500" /> Commit: "Production system build & billing engines configured"
+                </p>
+                <div className="uppercase text-[9px] text-slate-400 flex flex-wrap gap-x-2">
+                  <span className="font-bold text-slate-500">Changes (14 files):</span>
+                  <span className="text-emerald-600 font-black">App.tsx</span>
+                  <span className="text-emerald-600 font-black">Layout.tsx</span>
+                  <span className="text-emerald-600 font-black">Status.tsx</span>
+                  <span className="text-emerald-600 font-black">SystemCheck.tsx</span>
+                  <span className="text-indigo-600 font-black">+10 files</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
