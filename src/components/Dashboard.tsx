@@ -135,7 +135,7 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col min-h-full bg-[#F8FAFC]">
       {/* Global Search & Actions Header */}
-      <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/60 pt-6 pb-6 shadow-sm transition-all duration-300">
+      <div className="bg-white border-b border-slate-200/60 pt-6 pb-6 shadow-sm transition-all duration-300">
         <div className="px-4 sm:px-8 max-w-7xl mx-auto w-full space-y-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div className="flex gap-4 items-center">
@@ -170,7 +170,7 @@ export default function Dashboard() {
       </div>
 
       {/* Premium Header with Modern Gradient */}
-      <div className="header-gradient pt-8 pb-20 px-4 sm:px-8 text-white relative overflow-hidden md:rounded-b-3xl">
+      <div className="header-gradient pt-8 pb-12 px-4 sm:px-8 text-white relative overflow-hidden md:rounded-b-3xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center max-w-7xl mx-auto relative z-10 gap-6">
           <div>
             <p className="text-white/60 text-[11px] font-bold uppercase tracking-[0.3em] mb-1">M & Network // Admin</p>
@@ -199,7 +199,7 @@ export default function Dashboard() {
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-accent/20 rounded-full -ml-10 -mb-10 blur-3xl opacity-50" />
       </div>
 
-      <div className="px-4 sm:px-8 -mt-10 max-w-7xl mx-auto w-full relative z-20 space-y-6">
+      <div className="px-4 sm:px-8 pt-6 max-w-7xl mx-auto w-full relative z-20 space-y-6">
         {/* Main Stats Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
           {stats.map((stat, i) => (

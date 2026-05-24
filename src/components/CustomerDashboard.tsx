@@ -119,7 +119,7 @@ export default function CustomerDashboard() {
   return (
     <div className="flex flex-col min-h-full bg-[#F8FAFC]">
       {hasOverdueBills && !isSuspended && (
-        <div className="bg-rose-600 text-white py-3 px-4 text-center font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-4 animate-pulse sticky top-16 z-[60] shadow-xl">
+        <div className="bg-rose-600 text-white py-3 px-4 text-center font-black text-[10px] uppercase tracking-widest flex flex-wrap items-center justify-center gap-3 animate-pulse shadow-xl">
           <AlertCircle className="w-4 h-4 text-white" />
           Attention: You have overdue bills. Please clear your balance to avoid service interruption.
           <AlertCircle className="w-4 h-4 text-white" />
@@ -127,7 +127,7 @@ export default function CustomerDashboard() {
       )}
       {/* Premium Gradient Header */}
       <div className={cn(
-        "header-gradient pt-16 pb-32 px-4 sm:px-8 text-white relative overflow-hidden md:rounded-b-[2.5rem] transition-all",
+        "header-gradient pt-16 pb-16 px-4 sm:px-8 text-white relative overflow-hidden md:rounded-b-[2.5rem] transition-all",
         isSuspended && "from-rose-600 to-rose-800",
         isExpired && "from-amber-500 to-amber-700"
       )}>
@@ -169,7 +169,7 @@ export default function CustomerDashboard() {
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#F8FAFC] to-transparent opacity-50" />
       </div>
 
-      <div className="px-4 sm:px-8 -mt-20 max-w-7xl mx-auto w-full relative z-20 space-y-8">
+      <div className="px-4 sm:px-8 pt-6 max-w-7xl mx-auto w-full relative z-20 space-y-8">
         {/* Visible Search Bar */}
         <div className="relative group w-full mb-4">
           <div className="absolute left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-indigo-600 group-focus-within:bg-indigo-50 group-focus-within:border-indigo-100 transition-all shadow-sm">
