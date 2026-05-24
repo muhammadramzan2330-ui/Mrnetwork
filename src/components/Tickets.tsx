@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,12 +29,49 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDate, cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Tickets() {
-  const { tickets, updateTicketStatus } = useSystem();
+  const { tickets, updateTicketStatus, addTicket } = useSystem();
+  const { user, profile, isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'in progress' | 'resolved'>('all');
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
+  const [issueType, setIssueType] = useState('Slow Internet');
+  const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmitTicket = async () => {
+    if (!user || !profile) {
+      toast.error('Please login again before submitting a complaint');
+      return;
+    }
+
+    if (!message.trim()) {
+      toast.error('Please write your complaint details');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await addTicket({
+        userId: user.uid,
+        userName: profile.name || user.email || 'Customer',
+        issueType,
+        message: message.trim(),
+        priority,
+      });
+      setMessage('');
+      setPriority('medium');
+      setIssueType('Slow Internet');
+      toast.success('Complaint submitted successfully');
+    } catch (error) {
+      toast.error('Failed to submit complaint');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const filteredTickets = tickets.filter(ticket => {
     const searchLower = searchTerm.toLowerCase();
@@ -70,7 +108,9 @@ export default function Tickets() {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
             <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight mb-2">Support Tickets</h1>
-            <p className="text-slate-500 font-medium tracking-wide">Manage customer complaints and technical issues</p>
+            <p className="text-slate-500 font-medium tracking-wide">
+              {isAdmin ? 'Manage customer complaints and technical issues' : 'Submit complaints and track support progress'}
+            </p>
           </div>
           <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-slate-100 shadow-sm">
              <div className="px-4 py-2 text-center border-r border-slate-50">
@@ -83,6 +123,56 @@ export default function Tickets() {
              </div>
           </div>
         </header>
+
+        {!isAdmin && (
+          <Card className="bg-white border-slate-100 rounded-3xl shadow-sm p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[220px_160px_1fr_auto] gap-4 items-end">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Complaint Type</Label>
+                <select
+                  value={issueType}
+                  onChange={(event) => setIssueType(event.target.value)}
+                  className="input-modern h-12 w-full px-4 text-sm font-bold"
+                >
+                  <option>Slow Internet</option>
+                  <option>Connection Outage</option>
+                  <option>Billing Issue</option>
+                  <option>Login/Router Issues</option>
+                  <option>Package Change Request</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Priority</Label>
+                <select
+                  value={priority}
+                  onChange={(event) => setPriority(event.target.value as 'low' | 'medium' | 'high')}
+                  className="input-modern h-12 w-full px-4 text-sm font-bold"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Complaint Details</Label>
+                <Input
+                  value={message}
+                  onChange={(event) => setMessage(event.target.value)}
+                  placeholder="Write your issue, area, router problem, or billing complaint..."
+                  className="h-12 bg-white border-slate-200 rounded-xl font-medium"
+                />
+              </div>
+              <Button
+                onClick={handleSubmitTicket}
+                disabled={submitting}
+                className="h-12 bg-indigo-600 hover:bg-indigo-700 rounded-xl text-[10px] font-black uppercase tracking-widest px-6"
+              >
+                {submitting ? 'Submitting...' : 'Submit Complaint'}
+              </Button>
+            </div>
+          </Card>
+        )}
 
         <div className="flex flex-col md:flex-row gap-4 items-center">
           <div className="relative group flex-1 w-full">
@@ -144,33 +234,35 @@ export default function Tickets() {
                         </p>
                       </div>
                     </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:bg-slate-50 rounded-xl">
-                          <MoreVertical className="w-5 h-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="rounded-2xl border-slate-100 shadow-xl p-2 w-56">
-                        <DropdownMenuItem 
-                          className="gap-3 py-3 rounded-xl font-bold text-xs uppercase tracking-widest cursor-pointer text-indigo-600 hover:bg-indigo-50"
-                          onClick={() => updateTicketStatus(ticket.id, 'in progress')}
-                        >
-                          <Clock className="w-4 h-4" /> Set In Progress
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="gap-3 py-3 rounded-xl font-bold text-xs uppercase tracking-widest cursor-pointer text-emerald-600 hover:bg-emerald-50"
-                          onClick={() => updateTicketStatus(ticket.id, 'resolved')}
-                        >
-                          <CheckCircle2 className="w-4 h-4" /> Mark Resolved
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="gap-3 py-3 rounded-xl font-bold text-xs uppercase tracking-widest cursor-pointer text-rose-600 hover:bg-rose-50"
-                          onClick={() => updateTicketStatus(ticket.id, 'open')}
-                        >
-                          <AlertTriangle className="w-4 h-4" /> Re-open Ticket
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {isAdmin && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:bg-slate-50 rounded-xl">
+                            <MoreVertical className="w-5 h-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-2xl border-slate-100 shadow-xl p-2 w-56">
+                          <DropdownMenuItem 
+                            className="gap-3 py-3 rounded-xl font-bold text-xs uppercase tracking-widest cursor-pointer text-indigo-600 hover:bg-indigo-50"
+                            onClick={() => updateTicketStatus(ticket.id, 'in progress')}
+                          >
+                            <Clock className="w-4 h-4" /> Set In Progress
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="gap-3 py-3 rounded-xl font-bold text-xs uppercase tracking-widest cursor-pointer text-emerald-600 hover:bg-emerald-50"
+                            onClick={() => updateTicketStatus(ticket.id, 'resolved')}
+                          >
+                            <CheckCircle2 className="w-4 h-4" /> Mark Resolved
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="gap-3 py-3 rounded-xl font-bold text-xs uppercase tracking-widest cursor-pointer text-rose-600 hover:bg-rose-50"
+                            onClick={() => updateTicketStatus(ticket.id, 'open')}
+                          >
+                            <AlertTriangle className="w-4 h-4" /> Re-open Ticket
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
 
                   <div className="space-y-4">
@@ -204,21 +296,23 @@ export default function Tickets() {
                       </span>
                     </div>
 
-                    <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
-                       <Button 
-                         onClick={() => updateTicketStatus(ticket.id, 'resolved')}
-                         variant="ghost" 
-                         className="h-9 px-4 text-emerald-600 hover:bg-emerald-50 font-black text-[9px] uppercase tracking-widest rounded-xl gap-2"
-                       >
-                         Resolve <CheckCircle2 className="w-3.5 h-3.5" />
-                       </Button>
-                       <Button 
-                         variant="ghost" 
-                         className="h-9 w-9 p-0 text-indigo-600 hover:bg-indigo-50 rounded-xl"
-                       >
-                         <MessageCircle className="w-4 h-4" />
-                       </Button>
-                    </div>
+                    {isAdmin && (
+                      <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
+                         <Button 
+                           onClick={() => updateTicketStatus(ticket.id, 'resolved')}
+                           variant="ghost" 
+                           className="h-9 px-4 text-emerald-600 hover:bg-emerald-50 font-black text-[9px] uppercase tracking-widest rounded-xl gap-2"
+                         >
+                           Resolve <CheckCircle2 className="w-3.5 h-3.5" />
+                         </Button>
+                         <Button 
+                           variant="ghost" 
+                           className="h-9 w-9 p-0 text-indigo-600 hover:bg-indigo-50 rounded-xl"
+                         >
+                           <MessageCircle className="w-4 h-4" />
+                         </Button>
+                      </div>
+                    )}
                   </div>
 
                   {ticket.status === 'open' && (

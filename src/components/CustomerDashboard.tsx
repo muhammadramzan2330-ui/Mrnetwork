@@ -37,7 +37,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 export default function CustomerDashboard() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { bills, settings, packages, addLog, payments, addTicket, tickets } = useSystem();
   const [searchTerm, setSearchTerm] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
@@ -94,7 +94,7 @@ export default function CustomerDashboard() {
     setIsSubmittingTicket(true);
     try {
       await addTicket({
-        userId: profile.id,
+        userId: user?.uid || profile.uid || profile.id,
         userName: profile.name,
         issueType: ticketType,
         message: ticketMessage,
