@@ -170,35 +170,6 @@ export default function CustomerDashboard() {
       </div>
 
       <div className="px-4 sm:px-8 -mt-20 max-w-7xl mx-auto w-full relative z-20 space-y-8">
-        {/* Simple Quick Navigation Buttons */}
-        <div className="flex flex-wrap items-center gap-3 bg-white p-4 rounded-[2rem] shadow-xl border border-slate-100/50">
-          {[
-            { label: 'Home', to: '/dashboard', icon: LayoutDashboard },
-            { label: 'Payments', to: '/payments', icon: CreditCard },
-            { label: 'Plans', to: '/packages', icon: Package },
-            { label: 'Billing', to: '/payments', icon: History },
-            { label: 'Support', to: '/tickets', icon: MessageSquare },
-          ].map((item) => (
-            <Button
-              key={item.label}
-              onClick={() => navigate(item.to)}
-              variant="ghost"
-              className="h-12 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest gap-2 hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-transparent hover:border-indigo-100"
-            >
-              <item.icon className="w-4 h-4" />
-              {item.label}
-            </Button>
-          ))}
-          <Button
-            onClick={handleLogout}
-            variant="ghost"
-            className="h-12 px-5 rounded-xl text-[10px] font-black uppercase tracking-widest gap-2 text-rose-500 hover:bg-rose-50 hover:text-rose-600 transition-all border border-transparent hover:border-rose-100 ml-auto"
-          >
-            <LogOut className="w-4 h-4" />
-            Logout
-          </Button>
-        </div>
-
         {/* Visible Search Bar */}
         <div className="relative group w-full mb-4">
           <div className="absolute left-5 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-focus-within:text-indigo-600 group-focus-within:bg-indigo-50 group-focus-within:border-indigo-100 transition-all shadow-sm">
