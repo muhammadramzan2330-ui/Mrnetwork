@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User as FirebaseUser, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 import { auth, db, handleFirestoreError, OperationType, isFirebaseInitialized } from '@/services/firebase';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, doc, getDocs, limit } from 'firebase/firestore';
 import { toast } from 'sonner';
 
 interface UserProfile {
@@ -110,15 +110,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setError(null);
             setLoading(false);
           } else {
-            console.warn("AUTH_DEBUG: No profile doc. Provisioning...");
+            console.warn("AUTH_DEBUG: No profile doc. Checking for email-linked profile...");
             try {
               const { setDoc, serverTimestamp } = await import('firebase/firestore');
               const isDeveloper = firebaseUser.email?.toLowerCase() === 'muhammadramzan2330@gmail.com';
+              const email = firebaseUser.email?.toLowerCase() || '';
+
+              if (email) {
+                const existingProfileQuery = query(
+                  collection(db, 'user'),
+                  where('email', '==', email),
+                  limit(1)
+                );
+                const existingProfile = await getDocs(existingProfileQuery);
+
+                if (!existingProfile.empty) {
+                  const existingDoc = existingProfile.docs[0];
+                  const existingData = existingDoc.data() as UserProfile;
+
+                  console.log("AUTH_DEBUG: Email-linked profile found:", existingDoc.id);
+                  setProfile({ ...existingData, id: existingDoc.id } as any);
+                  setError(null);
+                  setLoading(false);
+                  return;
+                }
+              }
               
               await setDoc(userDocRef, {
                 uid: currentUserUid,
                 name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Account',
-                email: firebaseUser.email,
+                email,
                 phone: '', 
                 role: isDeveloper ? 'admin' : 'customer',
                 status: isDeveloper ? 'active' : 'pending',

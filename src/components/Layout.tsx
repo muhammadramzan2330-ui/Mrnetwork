@@ -71,42 +71,17 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </div>
 
-        {/* Persistent Customer Navigation */}
-        {user && !isAdmin && (
-          <nav className="flex items-center gap-1 sm:gap-2 px-2 overflow-x-auto no-scrollbar max-w-[calc(100vw-180px)] sm:max-w-none">
-            {[
-              { label: 'Home', to: '/dashboard' },
-              { label: 'Payments', to: '/payments' },
-              { label: 'Plans', to: '/packages' },
-              { label: 'Support', to: '/tickets' },
-            ].map(item => (
-              <NavLink 
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) => cn(
-                  "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap",
-                  isActive 
-                    ? "bg-indigo-600 text-white shadow-lg shadow-indigo-100" 
-                    : "text-slate-500 hover:text-indigo-600 hover:bg-indigo-50"
-                )}
-              >
-                {item.label}
-              </NavLink>
-            ))}
-            <button
-              onClick={handleLogout}
-              className="px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 transition-all whitespace-nowrap"
-            >
-              Logout
-            </button>
-          </nav>
-        )}
-
         <div className="flex items-center gap-2">
           {user && isAdmin && (
             <div className="hidden lg:flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full border border-emerald-100 mr-2">
               <ShieldCheckIcon className="w-3 h-3" />
               <span className="text-[10px] font-black uppercase tracking-widest">Admin Access</span>
+            </div>
+          )}
+          {user && !isAdmin && (
+            <div className="hidden lg:flex items-center gap-1.5 bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full border border-indigo-100 mr-2">
+              <ShieldCheckIcon className="w-3 h-3" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Customer Access</span>
             </div>
           )}
           
@@ -132,7 +107,7 @@ export default function Layout({ children }: LayoutProps) {
             </NavLink>
           )}
 
-          {user && isAdmin && (
+          {user && (
             <button 
               onClick={() => setIsDrawerOpen(true)}
               className="p-2 hover:bg-slate-100 rounded-xl transition-all active:scale-90 text-slate-600 border border-transparent hover:border-slate-200 flex items-center justify-center ml-1"
