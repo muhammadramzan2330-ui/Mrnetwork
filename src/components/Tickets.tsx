@@ -2,16 +2,11 @@ import React, { useState } from 'react';
 import { 
   MessageSquare, 
   Search, 
-  Filter, 
   Clock, 
   CheckCircle2, 
-  AlertCircle,
-  MoreVertical,
   User,
   Tag,
   AlertTriangle,
-  ArrowRight,
-  MessageCircle,
   Hash
 } from 'lucide-react';
 import { useSystem } from '../contexts/SystemContext';
@@ -20,12 +15,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { motion, AnimatePresence } from 'motion/react';
 import { formatDate, cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -235,33 +224,35 @@ export default function Tickets() {
                       </div>
                     </div>
                     {isAdmin && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:bg-slate-50 rounded-xl">
-                            <MoreVertical className="w-5 h-5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="rounded-2xl border-slate-100 shadow-xl p-2 w-56">
-                          <DropdownMenuItem 
-                            className="gap-3 py-3 rounded-xl font-bold text-xs uppercase tracking-widest cursor-pointer text-indigo-600 hover:bg-indigo-50"
-                            onClick={() => updateTicketStatus(ticket.id, 'in progress')}
-                          >
-                            <Clock className="w-4 h-4" /> Set In Progress
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="gap-3 py-3 rounded-xl font-bold text-xs uppercase tracking-widest cursor-pointer text-emerald-600 hover:bg-emerald-50"
-                            onClick={() => updateTicketStatus(ticket.id, 'resolved')}
-                          >
-                            <CheckCircle2 className="w-4 h-4" /> Mark Resolved
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="gap-3 py-3 rounded-xl font-bold text-xs uppercase tracking-widest cursor-pointer text-rose-600 hover:bg-rose-50"
-                            onClick={() => updateTicketStatus(ticket.id, 'open')}
-                          >
-                            <AlertTriangle className="w-4 h-4" /> Re-open Ticket
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Set in progress"
+                          onClick={() => updateTicketStatus(ticket.id, 'in progress')}
+                          className="h-9 w-9 rounded-xl text-indigo-600 hover:bg-indigo-50"
+                        >
+                          <Clock className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Mark resolved"
+                          onClick={() => updateTicketStatus(ticket.id, 'resolved')}
+                          className="h-9 w-9 rounded-xl text-emerald-600 hover:bg-emerald-50"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Re-open ticket"
+                          onClick={() => updateTicketStatus(ticket.id, 'open')}
+                          className="h-9 w-9 rounded-xl text-rose-600 hover:bg-rose-50"
+                        >
+                          <AlertTriangle className="w-4 h-4" />
+                        </Button>
+                      </div>
                     )}
                   </div>
 
@@ -297,20 +288,10 @@ export default function Tickets() {
                     </div>
 
                     {isAdmin && (
-                      <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
-                         <Button 
-                           onClick={() => updateTicketStatus(ticket.id, 'resolved')}
-                           variant="ghost" 
-                           className="h-9 px-4 text-emerald-600 hover:bg-emerald-50 font-black text-[9px] uppercase tracking-widest rounded-xl gap-2"
-                         >
-                           Resolve <CheckCircle2 className="w-3.5 h-3.5" />
-                         </Button>
-                         <Button 
-                           variant="ghost" 
-                           className="h-9 w-9 p-0 text-indigo-600 hover:bg-indigo-50 rounded-xl"
-                         >
-                           <MessageCircle className="w-4 h-4" />
-                         </Button>
+                      <div className="pt-4 border-t border-slate-50">
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                          Use the action icons above to update this ticket.
+                        </p>
                       </div>
                     )}
                   </div>
