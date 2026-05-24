@@ -97,8 +97,8 @@ export default function Packages() {
 
   return (
     <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-8">
-      {/* Sticky Top Header Section */}
-      <div className="sticky top-16 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/60 pt-6 pb-4 shadow-sm transition-all duration-300">
+      {/* Top Header Section */}
+      <div className="bg-white border-b border-slate-200/60 pt-6 pb-6 shadow-sm transition-all duration-300">
         <div className="px-4 sm:px-8 space-y-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
             <div className="flex flex-col">
@@ -199,7 +199,7 @@ export default function Packages() {
       </div>
 
       {/* Plans Feed */}
-      <div className="px-4 sm:px-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+      <div className="px-4 sm:px-8 pt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {filteredPackages.map((pkg, i) => (
           <motion.div
             key={pkg.id}
