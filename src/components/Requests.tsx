@@ -227,7 +227,7 @@ export default function Requests() {
                         Resolve
                       </Button>
                     )}
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg text-slate-300 hover:text-indigo-600 transition-all">
+                    <Button variant="ghost" size="sm" aria-label="View request" className="h-8 w-8 p-0 rounded-lg text-slate-300 hover:text-indigo-600 transition-all">
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                   </div>

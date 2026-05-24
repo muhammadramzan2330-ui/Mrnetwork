@@ -231,7 +231,7 @@ export default function Bills() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-10 w-10 text-slate-400 hover:bg-slate-50 rounded-xl">
+                          <Button variant="ghost" size="icon" aria-label="Bill actions" className="h-10 w-10 text-slate-400 hover:bg-slate-50 rounded-xl">
                             <MoreVertical className="w-5 h-5" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -322,6 +322,7 @@ export default function Bills() {
                              <Button 
                                onClick={() => handleWhatsAppReminder(bill, user)}
                                variant="ghost" 
+                               aria-label="WhatsApp reminder"
                                className="h-8 w-8 p-0 text-[#25D366] hover:bg-emerald-50 rounded-lg group/wa"
                              >
                                 <MessageCircle className="w-4 h-4 transition-transform group-hover/wa:scale-110" />

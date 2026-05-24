@@ -184,6 +184,7 @@ export default function CustomerDashboard() {
           {searchTerm && (
             <button 
               onClick={() => setSearchTerm('')}
+              aria-label="Clear search"
               className="absolute right-5 top-1/2 -translate-y-1/2 p-2 hover:bg-rose-50 rounded-xl text-slate-400 hover:text-rose-500 transition-all"
             >
               <XCircle className="w-5 h-5" />
@@ -448,6 +449,7 @@ export default function CustomerDashboard() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                aria-label="Download invoice"
                                 className="h-8 w-8 p-0 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
                                 onClick={() => {
                                   generateInvoicePDF({

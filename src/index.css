@@ -90,3 +90,60 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(99, 102, 241, 0.2);
 }
+
+button[aria-label],
+a[aria-label],
+button[title],
+a[title] {
+  position: relative;
+}
+
+button[aria-label]::after,
+a[aria-label]::after,
+button[title]::after,
+a[title]::after {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  z-index: 100000;
+  width: max-content;
+  max-width: 180px;
+  transform: translateX(-50%) translateY(4px);
+  border-radius: 10px;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 6px 9px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+button[aria-label]::after,
+a[aria-label]::after {
+  content: attr(aria-label);
+}
+
+button[title]::after,
+a[title]::after {
+  content: attr(title);
+}
+
+button[aria-label]:hover::after,
+button[aria-label]:focus-visible::after,
+a[aria-label]:hover::after,
+a[aria-label]:focus-visible::after,
+button[title]:hover::after,
+button[title]:focus-visible::after,
+a[title]:hover::after,
+a[title]:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

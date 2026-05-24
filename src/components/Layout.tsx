@@ -88,6 +88,7 @@ export default function Layout({ children }: LayoutProps) {
           {user ? (
             <NavLink 
               to="/profile"
+              aria-label="Profile"
               className={({ isActive }) => cn(
                 "p-2 rounded-xl transition-all active:scale-90 border border-transparent flex items-center justify-center",
                 isActive 
@@ -150,6 +151,7 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
                 <button 
                   onClick={() => setIsDrawerOpen(false)}
+                  aria-label="Close Navigation"
                   className="p-2.5 hover:bg-rose-50 text-rose-500 rounded-xl transition-all border border-transparent hover:border-rose-100"
                 >
                   <X className="w-5 h-5" />

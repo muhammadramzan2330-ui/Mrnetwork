@@ -205,7 +205,7 @@ export default function Tickets() {
                 key={ticket.id}
               >
                 <Card className={cn(
-                  "bg-white rounded-[2.5rem] p-6 border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative",
+                  "bg-white rounded-[2.5rem] p-6 border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-visible relative",
                   ticket.status === 'open' && "border-l-4 border-l-rose-500"
                 )}>
                   <div className="flex justify-between items-start mb-6">
@@ -224,11 +224,11 @@ export default function Tickets() {
                       </div>
                     </div>
                     {isAdmin && (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 relative z-20">
                         <Button
                           variant="ghost"
                           size="icon"
-                          title="Set in progress"
+                          aria-label="Set in progress"
                           onClick={() => updateTicketStatus(ticket.id, 'in progress')}
                           className="h-9 w-9 rounded-xl text-indigo-600 hover:bg-indigo-50"
                         >
@@ -237,7 +237,7 @@ export default function Tickets() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          title="Mark resolved"
+                          aria-label="Mark resolved"
                           onClick={() => updateTicketStatus(ticket.id, 'resolved')}
                           className="h-9 w-9 rounded-xl text-emerald-600 hover:bg-emerald-50"
                         >
@@ -246,7 +246,7 @@ export default function Tickets() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          title="Re-open ticket"
+                          aria-label="Re-open ticket"
                           onClick={() => updateTicketStatus(ticket.id, 'open')}
                           className="h-9 w-9 rounded-xl text-rose-600 hover:bg-rose-50"
                         >

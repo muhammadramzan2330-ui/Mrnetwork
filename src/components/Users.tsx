@@ -396,6 +396,7 @@ export default function Users() {
                 {searchTerm && (
                   <button 
                     onClick={() => setSearchTerm('')}
+                    aria-label="Clear search"
                     className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-rose-50 rounded-xl text-slate-400 hover:text-rose-500 transition-all"
                   >
                     <XCircle className="w-5 h-5" />
@@ -467,7 +468,7 @@ export default function Users() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:bg-slate-50 rounded-lg">
+                          <Button variant="ghost" size="icon" aria-label="Customer actions" className="h-8 w-8 text-slate-400 hover:bg-slate-50 rounded-lg">
                             <MoreVertical className="w-5 h-5" />
                           </Button>
                         </DropdownMenuTrigger>

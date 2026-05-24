@@ -440,7 +440,8 @@ export default function Payments() {
                       </div>
                     )}                     <div className="mt-6 flex justify-between items-center pt-4 border-t border-slate-50">
                        <div className="flex gap-2">
-                        <button 
+                        <button
+                          aria-label={viewMode === 'dues' ? 'Print invoice' : 'Print receipt'}
                           onClick={() => {
                             const user = users.find(u => u.id === item.userId);
                             if (viewMode === 'dues') {
@@ -479,7 +480,8 @@ export default function Payments() {
                         >
                           <Printer className="w-4 h-4" />
                         </button>
-                        <button 
+                        <button
+                          aria-label={viewMode === 'dues' ? 'Download invoice' : 'Download receipt'}
                           onClick={() => {
                             const user = users.find(u => u.id === item.userId);
                             if (viewMode === 'dues') {

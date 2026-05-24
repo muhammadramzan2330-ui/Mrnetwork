@@ -182,6 +182,7 @@ export default function Packages() {
               {searchTerm && (
                 <button 
                   onClick={() => setSearchTerm('')}
+                  aria-label="Clear search"
                   className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-rose-50 rounded-xl text-slate-400 hover:text-rose-500 transition-all"
                 >
                   <XCircle className="w-5 h-5" />
@@ -225,12 +226,14 @@ export default function Packages() {
                   <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Button 
                       onClick={() => togglePackage(pkg.id, pkg.enabled)}
+                      aria-label={pkg.enabled ? 'Disable package' : 'Enable package'}
                       variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-slate-100"
                     >
                       <Power className={cn("w-3.5 h-3.5", pkg.enabled ? "text-emerald-500" : "text-slate-400")} />
                     </Button>
                     <Button 
                       onClick={() => handleDelete(pkg.id)}
+                      aria-label="Delete package"
                       variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-rose-50 text-rose-500"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

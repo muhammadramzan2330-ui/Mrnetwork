@@ -163,6 +163,7 @@ export default function Subdealers() {
                 {searchTerm && (
                   <button 
                     onClick={() => setSearchTerm('')}
+                    aria-label="Clear search"
                     className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-rose-50 rounded-xl text-slate-400 hover:text-rose-500 transition-all"
                   >
                     <XCircle className="w-5 h-5" />
@@ -208,7 +209,7 @@ export default function Subdealers() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-600 rounded-lg">
+                          <Button variant="ghost" size="icon" aria-label="Dealer actions" className="h-8 w-8 text-slate-400 hover:text-indigo-600 rounded-lg">
                             <MoreVertical className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>

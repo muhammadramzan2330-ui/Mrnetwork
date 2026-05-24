@@ -241,10 +241,10 @@ export default function Treasury() {
                       {item.type === 'in' ? '+' : '-'} Rs. {item.amount.toLocaleString()}
                     </p>
                     <div className="flex gap-1.5 shrink-0">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-indigo-600 transition-all">
+                      <Button variant="ghost" size="icon" aria-label="View receipt" className="h-8 w-8 text-slate-300 hover:text-indigo-600 transition-all">
                         <Receipt className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 hover:text-indigo-600 transition-all">
+                      <Button variant="ghost" size="icon" aria-label="View document" className="h-8 w-8 text-slate-300 hover:text-indigo-600 transition-all">
                         <FileText className="w-4 h-4" />
                       </Button>
                     </div>
