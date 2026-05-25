@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, MessageSquare, Clock, CheckCircle2, AlertCircle, User, Wrench, ChevronRight, XCircle } from 'lucide-react';
+import { Plus, Search, MessageSquare, Clock, CheckCircle2, AlertCircle, User, Wrench, ChevronRight, XCircle, RotateCcw } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 
 export default function Requests() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'assigned' | 'resolved' | 'rejected'>('all');
   const [isOpen, setIsOpen] = useState(false);
   const [requests, setRequests] = useState([
     { id: '1', user: 'Muhammad Ramzan', type: 'speed_issue', status: 'pending', date: '2026-04-14 10:30 AM', description: 'Internet is very slow since morning.' },
@@ -73,10 +74,30 @@ export default function Requests() {
     return type.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
-  const filteredRequests = requests.filter(r => 
-    r.user.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    r.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const statusTabs = [
+    { key: 'all', label: 'All' },
+    { key: 'pending', label: 'Pending' },
+    { key: 'assigned', label: 'Assigned' },
+    { key: 'resolved', label: 'Resolved' },
+    { key: 'rejected', label: 'Rejected' },
+  ] as const;
+
+  const searchLower = searchTerm.trim().toLowerCase();
+  const filteredRequests = requests.filter(r => {
+    const searchable = [
+      r.user,
+      r.description,
+      r.status,
+      r.date,
+      'technician' in r ? r.technician || '' : '',
+      getRequestTypeLabel(r.type),
+      r.type,
+    ].join(' ').toLowerCase();
+
+    const matchesSearch = !searchLower || searchable.includes(searchLower);
+    const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-8">
@@ -152,14 +173,40 @@ export default function Requests() {
           </Dialog>
         </div>
 
-        <div className="relative group">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-colors group-focus-within:text-indigo-600" />
-          <Input
-            placeholder="Search tickets by name or description..."
-            className="input-modern h-12 pl-12 pr-4 shadow-sm"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="space-y-3">
+          <div className="relative group">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-colors group-focus-within:text-indigo-600" />
+            <Input
+              placeholder="Search tickets by name, type, status, date..."
+              className="input-modern h-12 pl-12 pr-4 shadow-sm"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {statusTabs.map((tab) => {
+              const isActive = statusFilter === tab.key;
+              const count = tab.key === 'all'
+                ? requests.length
+                : requests.filter((req) => req.status === tab.key).length;
+
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setStatusFilter(tab.key)}
+                  className={`h-9 rounded-xl px-4 text-[10px] font-black uppercase tracking-widest transition-all ${
+                    isActive
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'
+                      : 'bg-white text-slate-500 border border-slate-200 hover:border-indigo-200 hover:text-indigo-600'
+                  }`}
+                >
+                  {tab.label} <span className={isActive ? 'text-white/70' : 'text-slate-400'}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -230,6 +277,26 @@ export default function Requests() {
                         className="h-8 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[9px] shadow-sm transition-all active:scale-95 uppercase tracking-wider"
                       >
                         Resolve
+                      </Button>
+                    )}
+                    {req.status === 'resolved' && (
+                      <Button
+                        onClick={() => handleStatusChange(req.id, 'assigned')}
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-3 rounded-lg text-indigo-600 font-bold text-[9px] hover:bg-indigo-50 uppercase tracking-wider gap-1.5"
+                      >
+                        <RotateCcw className="w-3 h-3" /> Reopen
+                      </Button>
+                    )}
+                    {req.status === 'rejected' && (
+                      <Button
+                        onClick={() => handleStatusChange(req.id, 'pending')}
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 px-3 rounded-lg text-amber-600 font-bold text-[9px] hover:bg-amber-50 uppercase tracking-wider gap-1.5"
+                      >
+                        Restore
                       </Button>
                     )}
                     <Button variant="ghost" size="sm" aria-label="View request" className="h-8 w-8 p-0 rounded-lg text-slate-300 hover:text-indigo-600 transition-all">
