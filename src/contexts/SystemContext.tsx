@@ -43,7 +43,7 @@ interface SystemActions {
   generateManualBill: (userId: string) => Promise<void>;
   generateMonthlyBills: () => Promise<void>;
   addLog: (action: string, target: string, type: string, details?: string) => Promise<void>;
-  sendSMS: (userId: string, phone: string, message: string, type: 'reminder' | 'expiry_alert' | 'payment_confirmation') => Promise<void>;
+  sendSMS: (userId: string, phone: string, message: string, type: 'reminder' | 'expiry_alert' | 'payment_confirmation', meta?: any) => Promise<void>;
   checkExpiries: () => Promise<void>;
   updateSettings: (newSettings: any) => Promise<void>;
   addTicket: (ticket: any) => Promise<void>;
@@ -202,18 +202,69 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const sendSMS = async (userId: string, phone: string, message: string, type: any) => {
+  const sendSMS = async (userId: string, phone: string, message: string, type: any, meta: any = {}) => {
     try {
+      const cleanPhone = (phone || '').toString().trim();
+      if (!cleanPhone) {
+        await addDocument('notifications', {
+          userId,
+          phone: '',
+          message,
+          type,
+          status: 'failed',
+          error: 'Customer phone number is missing',
+          ...meta,
+          date: new Date().toISOString()
+        });
+        console.warn(`[SMS FAILED] Missing phone for user ${userId}: ${message}`);
+        return;
+      }
+
+      let gatewayResult: any = {
+        sent: false,
+        status: 'client_only'
+      };
+
+      try {
+        const response = await fetch('/api/send-sms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: cleanPhone,
+            message,
+            type,
+            userId
+          })
+        });
+        gatewayResult = await response.json().catch(() => ({
+          sent: false,
+          status: response.ok ? 'unknown_response' : 'gateway_error'
+        }));
+      } catch (error: any) {
+        gatewayResult = {
+          sent: false,
+          status: 'api_unavailable',
+          error: error?.message || 'SMS API unavailable'
+        };
+      }
+
       await addDocument('notifications', {
         userId,
-        phone,
+        phone: cleanPhone,
         message,
         type,
-        status: 'sent',
+        status: gatewayResult.sent ? 'sent' : 'queued',
+        gatewayStatus: gatewayResult.status,
+        gatewayError: gatewayResult.error || '',
+        ...meta,
         date: new Date().toISOString()
       });
-      // In a real app, integrate with an SMS gateway like Twilio or Nexmo here
-      console.log(`[SMS MOCK] To: ${phone} | ${message}`);
+
+      if (gatewayResult.sent) {
+        console.log(`[SMS SENT] To: ${cleanPhone} | ${message}`);
+      } else {
+        console.warn(`[SMS QUEUED] To: ${cleanPhone} | ${message} | ${gatewayResult.status}`);
+      }
     } catch (e) {
       console.error('Notification failed', e);
     }
@@ -221,6 +272,45 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
 
   const checkExpiries = async () => {
     const now = new Date();
+    const smsReminderEnabled = state.settings?.smsReminder !== false;
+    const reminderDays = Math.max(0, Number(state.settings?.reminderDays ?? 3));
+    const todayKey = now.toISOString().slice(0, 10);
+
+    if (smsReminderEnabled && reminderDays > 0) {
+      const reminderUsers = state.users.filter(u => {
+        if (u.status !== 'active' || !u.expiryDate) return false;
+
+        const expiryDate = new Date(u.expiryDate);
+        if (Number.isNaN(expiryDate.getTime())) return false;
+
+        const daysUntilExpiry = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysUntilExpiry < 0 || daysUntilExpiry > reminderDays) return false;
+
+        const alreadySentToday = state.notifications.some(n =>
+          n.userId === u.id &&
+          n.type === 'reminder' &&
+          n.reminderFor === todayKey
+        );
+
+        return !alreadySentToday;
+      });
+
+      for (const user of reminderUsers) {
+        const expiryDate = new Date(user.expiryDate);
+        const daysUntilExpiry = Math.max(0, Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+        const phone = user.whatsapp || user.phone;
+        const message = daysUntilExpiry === 0
+          ? `M & NETWORK: Your internet package expires today. Please pay/recharge to keep your service active.`
+          : `M & NETWORK: Your internet package will expire in ${daysUntilExpiry} day${daysUntilExpiry === 1 ? '' : 's'}. Please pay/recharge on time.`;
+
+        await sendSMS(user.id, phone, message, 'reminder', {
+          reminderFor: todayKey,
+          expiryDate: user.expiryDate,
+          daysUntilExpiry
+        });
+        await addLog('SMS Reminder Sent', user.name, 'notification', `Expiry reminder: ${daysUntilExpiry} day(s) remaining`);
+      }
+    }
     
     // 1. Check for expired plans based on expiryDate
     const expiredUsersByDate = state.users.filter(u => u.status === 'active' && new Date(u.expiryDate) <= now);
