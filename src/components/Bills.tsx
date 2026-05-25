@@ -31,7 +31,7 @@ import { generateInvoicePDF } from '@/services/pdfService';
 import { toast } from 'sonner';
 
 export default function Bills() {
-  const { bills, users, markBillAsPaid, generateMonthlyBills } = useSystem();
+  const { bills, users, markBillAsPaid, generateMonthlyBills, sendSMS } = useSystem();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'paid' | 'unpaid' | 'overdue'>('all');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -57,18 +57,20 @@ export default function Bills() {
 
   const overdueBillsCount = bills.filter(b => b.status === 'unpaid' && new Date(b.dueDate) < now).length;
 
-  const handleWhatsAppReminder = (bill: any, user: any) => {
+  const handleSMSReminder = async (bill: any, user: any) => {
     if (!user || (!user.phone && !user.whatsapp)) {
       toast.error("Customer contact number not found");
       return;
     }
 
     const phone = user.whatsapp || user.phone;
-    const cleanPhone = phone.replace(/\D/g, '');
-    const message = `Hello *${bill.userName}*,\n\nThis is a reminder from *M & NETWORK* regarding your internet subscription.\n\n*Invoice Details:*\n- Plan: ${bill.packageName}\n- Amount: RS. ${bill.amount}\n- Due Date: ${formatDate(bill.dueDate)}\n- Status: *UNPAID*\n\nPlease pay your bill to avoid service suspension. Thank you!`;
-    
-    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    const message = `M & NETWORK: Dear ${bill.userName}, your internet bill is unpaid. Plan: ${bill.packageName}. Amount: Rs. ${bill.amount}. Due date: ${formatDate(bill.dueDate)}. Please pay to avoid suspension.`;
+
+    await sendSMS(bill.userId, phone, message, 'reminder', {
+      billId: bill.id,
+      reminderFor: `bill-${bill.id}`
+    });
+    toast.success("SMS reminder sent/queued");
   };
 
   const handleGenerateBills = async () => {
@@ -263,10 +265,10 @@ export default function Bills() {
                             <DropdownMenuItem 
                               className="gap-3 py-3 rounded-xl font-bold text-xs uppercase tracking-widest cursor-pointer text-emerald-600 hover:bg-emerald-50"
                               onClick={() => {
-                                handleWhatsAppReminder(bill, user);
+                                handleSMSReminder(bill, user);
                               }}
                             >
-                              <MessageCircle className="w-4 h-4 text-[#25D366]" /> WhatsApp Reminder
+                              <MessageCircle className="w-4 h-4 text-indigo-600" /> SMS Reminder
                             </DropdownMenuItem>
                           )}
 
@@ -320,10 +322,10 @@ export default function Bills() {
                         {bill.status === 'unpaid' && (
                            <div className="flex items-center gap-1">
                              <Button 
-                               onClick={() => handleWhatsAppReminder(bill, user)}
+                               onClick={() => handleSMSReminder(bill, user)}
                                variant="ghost" 
-                               aria-label="WhatsApp reminder"
-                               className="h-8 w-8 p-0 text-[#25D366] hover:bg-emerald-50 rounded-lg group/wa"
+                               aria-label="SMS reminder"
+                               className="h-8 w-8 p-0 text-indigo-600 hover:bg-indigo-50 rounded-lg group/wa"
                              >
                                 <MessageCircle className="w-4 h-4 transition-transform group-hover/wa:scale-110" />
                              </Button>

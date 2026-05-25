@@ -28,7 +28,7 @@ import { cn, formatDate } from '@/lib/utils';
 import { generateInvoicePDF } from '@/services/pdfService';
 
 export default function Users() {
-  const { users, packages, subdealers, settings, recordPayment, bills, markBillAsPaid, payments, generateManualBill } = useSystem();
+  const { users, packages, subdealers, settings, recordPayment, bills, markBillAsPaid, payments, generateManualBill, sendSMS } = useSystem();
   const [searchTerm, setSearchTerm] = useState('');
   const [billingFilter, setBillingFilter] = useState<'all' | 'paid' | 'unpaid'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended' | 'expired'>('all');
@@ -231,19 +231,23 @@ export default function Users() {
     }
   };
 
-  const sendWhatsAppReminder = (user: any) => {
-    const phone = user.phone || '';
+  const sendSMSReminder = async (user: any) => {
+    const phone = user.whatsapp || user.phone || '';
     if (!phone) {
       toast.error('No phone number found for this user');
       return;
     }
-    
-    // Clean phone number (remove non-digits)
-    const cleanPhone = phone.replace(/\D/g, '');
-    const message = encodeURIComponent(`Dear ${user.name}, your internet bill is due. Please pay on time. Total Due: Rs. ${user.balance || 0}`);
-    const whatsappUrl = `https://wa.me/${cleanPhone.startsWith('92') ? cleanPhone : '92' + cleanPhone}?text=${message}`;
-    
-    window.open(whatsappUrl, '_blank');
+
+    const unpaidBill = bills.find(b => b.userId === user.id && b.status === 'unpaid');
+    const amount = unpaidBill?.amount || user.balance || user.packagePrice || 0;
+    const dueDate = unpaidBill?.dueDate ? ` Due date: ${formatDate(unpaidBill.dueDate)}.` : '';
+    const message = `M & NETWORK: Dear ${user.name}, your internet bill is due. Amount: Rs. ${amount}.${dueDate} Please pay on time to avoid service suspension.`;
+
+    await sendSMS(user.id, phone, message, 'reminder', {
+      billId: unpaidBill?.id || '',
+      reminderFor: unpaidBill?.id ? `bill-${unpaidBill.id}` : `user-${user.id}`
+    });
+    toast.success('SMS reminder sent/queued');
   };
 
   return (
@@ -485,10 +489,10 @@ export default function Users() {
                                 <DollarSign className="w-4 h-4" /> Resolve Bill
                               </DropdownMenuItem>
                               <DropdownMenuItem 
-                                onClick={() => sendWhatsAppReminder(user)}
-                                className="gap-2 text-xs font-black py-3 rounded-lg cursor-pointer uppercase tracking-wider text-green-600 hover:bg-green-50"
+                                onClick={() => sendSMSReminder(user)}
+                                className="gap-2 text-xs font-black py-3 rounded-lg cursor-pointer uppercase tracking-wider text-indigo-600 hover:bg-indigo-50"
                               >
-                                <MessageSquare className="w-4 h-4" /> WhatsApp Reminder
+                                <MessageSquare className="w-4 h-4" /> SMS Reminder
                               </DropdownMenuItem>
                             </>
                           )}
