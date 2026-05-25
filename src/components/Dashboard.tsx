@@ -22,7 +22,8 @@ import {
   AlertCircle,
   ShieldCheck,
   LayoutDashboard,
-  Search
+  Search,
+  X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +50,8 @@ export default function Dashboard() {
   const { users, subdealers, packages, requests, payments, bills, tickets, treasury, loading, checkExpiries, generateMonthlyBills } = useSystem();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -124,6 +127,62 @@ export default function Dashboard() {
     { icon: LogOut, label: 'Logout', action: () => setShowLogoutConfirm(true) },
   ];
 
+  const globalSearchItems = [
+    { title: 'Customers', subtitle: 'Subscriber list, status, packages', path: '/users', type: 'Function' },
+    { title: 'Payments', subtitle: 'Payment approvals and receipts', path: '/payments', type: 'Function' },
+    { title: 'Bills', subtitle: 'Invoices, unpaid and paid bills', path: '/bills', type: 'Function' },
+    { title: 'Packages / Plans', subtitle: 'Internet plans and pricing', path: '/packages', type: 'Function' },
+    { title: 'Support Tickets', subtitle: 'Customer complaints and issues', path: '/tickets', type: 'Function' },
+    { title: 'Reports', subtitle: 'Analytics and summaries', path: '/reports', type: 'Function' },
+    { title: 'Ledger / Treasury', subtitle: 'Cash in, cash out, balance', path: '/treasury', type: 'Function' },
+    { title: 'Dealers', subtitle: 'Subdealer and partner management', path: '/subdealers', type: 'Function' },
+    { title: 'Billing Settings', subtitle: 'Payment info and automation', path: '/billing-settings', type: 'Function' },
+    { title: 'System Logs', subtitle: 'Audit history and activity', path: '/audit-logs', type: 'Function' },
+    ...users.map((u) => ({
+      title: u.name || 'Customer',
+      subtitle: [u.phone, u.email, u.packageName, u.status].filter(Boolean).join(' • '),
+      path: '/users',
+      type: 'Customer',
+    })),
+    ...packages.map((p) => ({
+      title: p.name || p.speed || 'Package',
+      subtitle: [p.speed, p.code, `Rs. ${p.price || 0}`].filter(Boolean).join(' • '),
+      path: '/packages',
+      type: 'Plan',
+    })),
+    ...bills.map((b) => ({
+      title: b.userName || 'Bill',
+      subtitle: [b.month, b.status, `Rs. ${b.amount || 0}`].filter(Boolean).join(' • '),
+      path: '/bills',
+      type: 'Bill',
+    })),
+    ...payments.map((p) => ({
+      title: p.userName || 'Payment',
+      subtitle: [p.method, p.status, `Rs. ${p.amount || 0}`, p.reference].filter(Boolean).join(' • '),
+      path: '/payments',
+      type: 'Payment',
+    })),
+    ...tickets.map((t) => ({
+      title: t.userName || 'Ticket',
+      subtitle: [t.issueType, t.status, t.message].filter(Boolean).join(' • '),
+      path: '/tickets',
+      type: 'Ticket',
+    })),
+  ];
+
+  const globalSearchLower = globalSearch.trim().toLowerCase();
+  const globalSearchResults = globalSearchLower
+    ? globalSearchItems
+        .filter((item) => `${item.title} ${item.subtitle} ${item.type}`.toLowerCase().includes(globalSearchLower))
+        .slice(0, 8)
+    : globalSearchItems.slice(0, 6);
+
+  const openSearchResult = (path: string) => {
+    navigate(path);
+    setGlobalSearch('');
+    setIsSearchOpen(false);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -157,12 +216,67 @@ export default function Dashboard() {
                   <Search className="w-4 h-4" />
                 </div>
                 <Input
-                  placeholder="Global Search (Customers, Bills, Reports)..."
-                  className="input-modern pl-14 h-14 text-sm font-bold border-slate-200 bg-white shadow-md focus:shadow-lg focus:ring-4 focus:ring-indigo-500/5 transition-all text-slate-900 placeholder:text-slate-400 placeholder:font-medium rounded-2xl cursor-pointer"
-                  onClick={() => navigate('/users')} // Redirect to users for search by default
-                  readOnly
+                  placeholder="Search app, customers, bills, payments..."
+                  className="input-modern pl-14 pr-20 h-14 text-sm font-bold border-slate-200 bg-white shadow-md focus:shadow-lg focus:ring-4 focus:ring-indigo-500/5 transition-all text-slate-900 placeholder:text-slate-400 placeholder:font-medium rounded-2xl"
+                  value={globalSearch}
+                  onChange={(e) => {
+                    setGlobalSearch(e.target.value);
+                    setIsSearchOpen(true);
+                  }}
+                  onFocus={() => setIsSearchOpen(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && globalSearchResults[0]) {
+                      openSearchResult(globalSearchResults[0].path);
+                    }
+                    if (e.key === 'Escape') {
+                      setIsSearchOpen(false);
+                    }
+                  }}
                 />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 px-2 py-1 bg-slate-100 text-[9px] font-black text-slate-400 rounded-md border border-slate-200 uppercase tracking-tighter">Enter</div>
+                {globalSearch ? (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={() => setGlobalSearch('')}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg bg-slate-100 text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all flex items-center justify-center"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 px-2 py-1 bg-slate-100 text-[9px] font-black text-slate-400 rounded-md border border-slate-200 uppercase tracking-tighter">Enter</div>
+                )}
+                {isSearchOpen && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-[1000] rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
+                    <div className="max-h-80 overflow-y-auto custom-scrollbar p-2">
+                      {globalSearchResults.length > 0 ? (
+                        globalSearchResults.map((item, index) => (
+                          <button
+                            key={`${item.type}-${item.title}-${index}`}
+                            type="button"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => openSearchResult(item.path)}
+                            className="w-full flex items-center justify-between gap-4 rounded-xl px-4 py-3 text-left hover:bg-indigo-50 transition-all group/item"
+                          >
+                            <div className="min-w-0">
+                              <p className="text-sm font-black text-slate-900 uppercase tracking-tight truncate">{item.title}</p>
+                              <p className="text-[10px] font-bold text-slate-400 truncate mt-1">{item.subtitle}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="rounded-full bg-slate-100 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-slate-500 group-hover/item:bg-indigo-100 group-hover/item:text-indigo-600">
+                                {item.type}
+                              </span>
+                              <ChevronRight className="w-4 h-4 text-slate-300 group-hover/item:text-indigo-600" />
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-4 py-8 text-center">
+                          <p className="text-xs font-black uppercase tracking-widest text-slate-400">No results found</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
