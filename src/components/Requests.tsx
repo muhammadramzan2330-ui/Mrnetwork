@@ -61,11 +61,11 @@ export default function Requests() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending': return <Badge className="bg-[#FEF3C7] text-[#92400E] border-none gap-1 text-[9px] font-bold"><Clock className="w-3 h-3" /> PENDING</Badge>;
-      case 'assigned': return <Badge className="bg-[#DBEAFE] text-[#1E40AF] border-none gap-1 text-[9px] font-bold"><User className="w-3 h-3" /> ASSIGNED</Badge>;
-      case 'resolved': return <Badge className="bg-emerald-100 text-emerald-700 border-none gap-1 text-[9px] font-bold"><CheckCircle2 className="w-3 h-3" /> RESOLVED</Badge>;
-      case 'rejected': return <Badge className="bg-rose-100 text-rose-700 border-none gap-1 text-[9px] font-bold"><XCircle className="w-3 h-3" /> REJECTED</Badge>;
-      default: return <Badge className="bg-slate-100 text-slate-700 border-none text-[9px] font-bold">{status.toUpperCase()}</Badge>;
+      case 'pending': return <Badge className="h-6 rounded-full bg-[#FEF3C7] text-[#92400E] border-none gap-1 px-2 text-[9px] font-bold whitespace-nowrap"><Clock className="w-3 h-3" /> PENDING</Badge>;
+      case 'assigned': return <Badge className="h-6 rounded-full bg-[#DBEAFE] text-[#1E40AF] border-none gap-1 px-2 text-[9px] font-bold whitespace-nowrap"><User className="w-3 h-3" /> ASSIGNED</Badge>;
+      case 'resolved': return <Badge className="h-6 rounded-full bg-emerald-100 text-emerald-700 border-none gap-1 px-2 text-[9px] font-bold whitespace-nowrap"><CheckCircle2 className="w-3 h-3" /> RESOLVED</Badge>;
+      case 'rejected': return <Badge className="h-6 rounded-full bg-rose-100 text-rose-700 border-none gap-1 px-2 text-[9px] font-bold whitespace-nowrap"><XCircle className="w-3 h-3" /> REJECTED</Badge>;
+      default: return <Badge className="h-6 rounded-full bg-slate-100 text-slate-700 border-none px-2 text-[9px] font-bold whitespace-nowrap">{status.toUpperCase()}</Badge>;
     }
   };
 
@@ -152,11 +152,11 @@ export default function Requests() {
           </Dialog>
         </div>
 
-        <div className="relative group pt-2">
+        <div className="relative group">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-colors group-focus-within:text-indigo-600" />
           <Input
             placeholder="Search tickets by name or description..."
-            className="input-modern pl-12 h-12 shadow-sm px-4"
+            className="input-modern h-12 pl-12 pr-4 shadow-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -173,20 +173,25 @@ export default function Requests() {
               transition={{ delay: i * 0.02 }}
             >
               <Card className="bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-all group h-full flex flex-col p-6">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="flex gap-4 items-center min-w-0">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="flex gap-4 items-start min-w-0 flex-1">
                     <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0 transition-all group-hover:bg-indigo-600 group-hover:text-white border border-indigo-100">
                       <MessageSquare className="w-6 h-6" />
                     </div>
-                    <div className="min-w-0">
-                      <h4 className="font-bold text-slate-900 truncate tracking-tight uppercase text-sm leading-none mt-1">{req.user}</h4>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-col items-start gap-2">
+                        <h4
+                          className="font-bold text-slate-900 tracking-tight uppercase text-sm leading-tight break-words"
+                          title={req.user}
+                        >
+                          {req.user}
+                        </h4>
+                        {getStatusBadge(req.status)}
+                      </div>
                       <p className="text-indigo-600 text-[9px] font-bold uppercase tracking-widest mt-2">
                         {getRequestTypeLabel(req.type)}
                       </p>
                     </div>
-                  </div>
-                  <div className="shrink-0">
-                    {getStatusBadge(req.status)}
                   </div>
                 </div>
 
