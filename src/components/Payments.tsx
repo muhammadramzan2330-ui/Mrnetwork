@@ -44,14 +44,37 @@ export default function Payments() {
     reference: ''
   });
 
+  const selectedPaymentUserId = isAdmin ? newPayment.userId : profile?.id;
+  const selectedPaymentUser = users.find(u => u.id === selectedPaymentUserId || u.uid === selectedPaymentUserId);
+  const selectedUnpaidBill = bills
+    .filter(b => b.userId === selectedPaymentUser?.id && b.status === 'unpaid')
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
+  const secureAmount = selectedUnpaidBill?.amount || selectedPaymentUser?.packagePrice || '';
+  const requiresReference = newPayment.method !== 'cash';
+  const canSubmitPayment = Boolean(
+    (isAdmin ? newPayment.userId : profile?.id) &&
+    Number(newPayment.amount) > 0 &&
+    (!requiresReference || newPayment.reference.trim().replace(/\s+/g, '').length >= 6)
+  );
+
   const handleAddPayment = async () => {
     if ((isAdmin && !newPayment.userId) || !newPayment.amount) return;
+    if (requiresReference && newPayment.reference.trim().replace(/\s+/g, '').length < 6) {
+      toast.error("Secure transaction reference is required");
+      return;
+    }
+
+    if (!isAdmin && selectedUnpaidBill && Number(newPayment.amount) !== Number(selectedUnpaidBill.amount || 0)) {
+      toast.error(`Amount must match your unpaid bill: Rs. ${Number(selectedUnpaidBill.amount || 0).toLocaleString()}`);
+      return;
+    }
 
     await recordPayment({
       ...newPayment,
       userId: isAdmin ? newPayment.userId : profile?.id,
       userName: isAdmin ? newPayment.userName : profile?.name,
       amount: Number(newPayment.amount),
+      billId: selectedUnpaidBill?.id || '',
     });
 
     setNewPayment({ userId: profile?.id || '', userName: profile?.name || '', amount: '', method: 'cash', reference: '' });
@@ -178,7 +201,15 @@ export default function Payments() {
                               value={newPayment.userId} 
                               onValueChange={(val) => {
                                 const user = users.find(u => u.id === val);
-                                setNewPayment({ ...newPayment, userId: val, userName: user?.name || '' });
+                                const unpaidBill = bills
+                                  .filter(b => b.userId === val && b.status === 'unpaid')
+                                  .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
+                                setNewPayment({
+                                  ...newPayment,
+                                  userId: val,
+                                  userName: user?.name || '',
+                                  amount: unpaidBill?.amount ? String(unpaidBill.amount) : ''
+                                });
                               }}
                             >
                               <SelectTrigger className="input-modern w-full px-4 h-12">
@@ -200,11 +231,16 @@ export default function Payments() {
                             <Label className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">Amount (Rs)</Label>
                             <Input 
                               type="number" 
-                              placeholder="0.00" 
+                              placeholder={secureAmount ? String(secureAmount) : "0.00"} 
                               className="input-modern font-bold text-lg px-4 h-12"
                               value={newPayment.amount}
                               onChange={(e) => setNewPayment({ ...newPayment, amount: e.target.value })}
                             />
+                            {selectedUnpaidBill && (
+                              <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest ml-1">
+                                Secure due amount: Rs. {Number(selectedUnpaidBill.amount || 0).toLocaleString()}
+                              </p>
+                            )}
                           </div>
                           <div className="space-y-2">
                             <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Payment Method</Label>
@@ -225,14 +261,24 @@ export default function Payments() {
                         <div className="space-y-2">
                           <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Transaction Reference</Label>
                           <Input 
-                            placeholder="e.g. TXN-10293847" 
+                            placeholder={requiresReference ? "Required: TXN-10293847" : "Optional for cash payment"} 
                             className="input-modern px-4 h-12"
                             value={newPayment.reference}
-                            onChange={(e) => setNewPayment({ ...newPayment, reference: e.target.value })}
+                            onChange={(e) => setNewPayment({ ...newPayment, reference: e.target.value.toUpperCase() })}
                           />
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest ml-1">
+                            Duplicate transaction IDs are blocked before approval.
+                          </p>
+                        </div>
+                        <div className="rounded-2xl bg-indigo-50 border border-indigo-100 p-4">
+                          <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Secure Payment Flow</p>
+                          <p className="text-[10px] font-bold text-indigo-500 mt-1 leading-relaxed">
+                            Payment stays pending until admin approval. After approval, subdealer commission goes to subdealer wallet and remaining amount goes to treasury.
+                          </p>
                         </div>
                         <Button 
                           onClick={handleAddPayment}
+                          disabled={!canSubmitPayment}
                           className="w-full mt-4 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-indigo-100"
                         >
                           {isAdmin ? 'Record Payment' : 'Submit Payment Request'}

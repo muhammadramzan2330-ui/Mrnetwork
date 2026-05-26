@@ -51,17 +51,26 @@ export default function Subdealers() {
   const [newDealer, setNewDealer] = useState({
     name: '',
     area: '',
+    phone: '',
+    payoutMethod: 'easypaisa',
+    payoutAccount: '',
     commissionType: 'percentage',
-    commissionValue: '',
+    commissionValue: '40',
   });
 
   const handleAddDealer = async () => {
-    if (!newDealer.name || !newDealer.commissionValue) return;
+    if (!newDealer.name || !newDealer.commissionValue || !newDealer.payoutAccount) {
+      toast.error('Dealer name, commission and payout account are required');
+      return;
+    }
 
     try {
       await addDocument('subdealers', {
         ...newDealer,
         commissionValue: Number(newDealer.commissionValue),
+        payoutAccount: newDealer.payoutAccount.trim(),
+        payoutMethod: newDealer.payoutMethod,
+        phone: newDealer.phone,
         walletBalance: 0,
         totalEarnings: 0,
         status: 'active',
@@ -133,6 +142,60 @@ export default function Subdealers() {
                             value={newDealer.area}
                             onChange={(e) => setNewDealer({ ...newDealer, area: e.target.value })}
                           />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Commission (%)</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              placeholder="40"
+                              className="input-modern px-4 h-12"
+                              value={newDealer.commissionValue}
+                              onChange={(e) => setNewDealer({ ...newDealer, commissionValue: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Phone</Label>
+                            <Input
+                              placeholder="+92 3XX XXXXXXX"
+                              className="input-modern px-4 h-12"
+                              value={newDealer.phone}
+                              onChange={(e) => setNewDealer({ ...newDealer, phone: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Payout Method</Label>
+                            <Select value={newDealer.payoutMethod} onValueChange={(val) => setNewDealer({ ...newDealer, payoutMethod: val })}>
+                              <SelectTrigger className="input-modern w-full px-4 h-12">
+                                <SelectValue placeholder="Select payout method" />
+                              </SelectTrigger>
+                              <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
+                                <SelectItem value="easypaisa" className="font-bold py-3 text-[10px] tracking-widest">Easypaisa</SelectItem>
+                                <SelectItem value="jazzcash" className="font-bold py-3 text-[10px] tracking-widest">JazzCash</SelectItem>
+                                <SelectItem value="bank" className="font-bold py-3 text-[10px] tracking-widest">Bank</SelectItem>
+                                <SelectItem value="cash" className="font-bold py-3 text-[10px] tracking-widest">Cash</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Payout Account</Label>
+                            <Input
+                              placeholder="Account / mobile number"
+                              className="input-modern px-4 h-12"
+                              value={newDealer.payoutAccount}
+                              onChange={(e) => setNewDealer({ ...newDealer, payoutAccount: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                        <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4">
+                          <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Auto Commission</p>
+                          <p className="text-[10px] font-bold text-emerald-600 mt-1 leading-relaxed">
+                            Customer payment approve hote hi subdealer share wallet me credit hoga. Payout request isi account detail par process hogi.
+                          </p>
                         </div>
                         <Button 
                           onClick={handleAddDealer}
@@ -288,6 +351,15 @@ export default function Subdealers() {
                       <div>
                         <p className="text-slate-400 text-[8px] font-bold uppercase tracking-widest mb-1.5">Earnings</p>
                         <p className="font-extrabold text-emerald-600 text-sm tracking-tight">Rs. {dealer.totalEarnings?.toLocaleString()}</p>
+                      </div>
+                    </div>
+
+                    <div className="px-6 pt-4">
+                      <div className="bg-slate-50 rounded-xl border border-slate-100 px-4 py-3">
+                        <p className="text-slate-400 text-[8px] font-bold uppercase tracking-widest mb-1">Payout Account</p>
+                        <p className="text-[10px] font-black text-slate-700 uppercase tracking-wider truncate">
+                          {dealer.payoutMethod || 'N/A'} {dealer.payoutAccount ? `- ${dealer.payoutAccount}` : ''}
+                        </p>
                       </div>
                     </div>
 

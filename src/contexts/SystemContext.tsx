@@ -202,6 +202,77 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const normalizeReference = (reference: string = '') => reference.trim().replace(/\s+/g, '').toUpperCase();
+
+  const getRevenueSplit = (amount: number, customer: any, pkg: any) => {
+    const hasSubdealer = !!customer?.subdealerId && customer.subdealerId !== 'admin';
+
+    if (!hasSubdealer || !pkg || amount <= 0) {
+      return {
+        subdealerId: null,
+        subdealerShare: 0,
+        adminShare: amount,
+      };
+    }
+
+    const dealer = state.subdealers.find(d => d.id === customer.subdealerId);
+    const packagePrice = Number(pkg.price || customer.packagePrice || amount);
+    const configuredSubdealerShare = Number(pkg.subdealerShare || 0);
+    const dealerRatio = dealer?.commissionType === 'percentage' && Number(dealer.commissionValue) > 0
+      ? Number(dealer.commissionValue) / 100
+      : 0;
+    const ratio = dealerRatio || (
+      packagePrice > 0 && configuredSubdealerShare > 0
+        ? configuredSubdealerShare / packagePrice
+        : 0.4
+    );
+    const subdealerShare = Math.min(amount, Math.round(amount * ratio));
+
+    return {
+      subdealerId: customer.subdealerId,
+      subdealerShare,
+      adminShare: amount - subdealerShare,
+    };
+  };
+
+  const applyRevenueSplit = (
+    transaction: any,
+    customer: any,
+    pkg: any,
+    amount: number,
+    paymentId: string,
+    source: string
+  ) => {
+    const split = getRevenueSplit(amount, customer, pkg);
+
+    if (split.subdealerId && split.subdealerShare > 0) {
+      transaction.update(doc(db, 'subdealers', split.subdealerId), {
+        walletBalance: increment(split.subdealerShare),
+        totalEarnings: increment(split.subdealerShare),
+        updatedAt: Timestamp.now()
+      });
+
+      const commissionRef = doc(collection(db, 'commissions'));
+      transaction.set(commissionRef, {
+        paymentId,
+        userId: customer.id,
+        userName: customer.name,
+        subdealerId: split.subdealerId,
+        amount: split.subdealerShare,
+        source,
+        status: 'credited',
+        date: Timestamp.now()
+      });
+    }
+
+    transaction.update(doc(db, 'treasury', 'current'), {
+      balance: increment(split.adminShare),
+      todayIn: increment(split.adminShare)
+    });
+
+    return split;
+  };
+
   const sendSMS = async (userId: string, phone: string, message: string, type: any, meta: any = {}) => {
     try {
       const cleanPhone = (phone || '').toString().trim();
@@ -357,23 +428,8 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
               });
             }
 
-            // Shares logic (Default to 60/40 or user specified)
-            const subdealerShare = pkg.subdealerShare || (pkg.price * 0.4);
-            const adminShare = pkg.price - subdealerShare;
-
-            if (user.subdealerId) {
-              transaction.update(doc(db, 'subdealers', user.subdealerId), {
-                walletBalance: increment(subdealerShare),
-                totalEarnings: increment(subdealerShare)
-              });
-            }
-
-            transaction.update(treasuryRef, {
-              balance: increment(adminShare),
-              todayIn: increment(adminShare)
-            });
-
             const payRef = doc(collection(db, 'payments'));
+            const split = getRevenueSplit(pkg.price, user, pkg);
             transaction.set(payRef, {
               userId: user.id,
               userName: user.name,
@@ -382,8 +438,14 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
               status: 'approved',
               type: 'in',
               category: 'subscription',
+              verificationStatus: 'auto_verified',
+              subdealerId: split.subdealerId || '',
+              subdealerShare: split.subdealerShare,
+              adminShare: split.adminShare,
               date: Timestamp.now()
             });
+
+            applyRevenueSplit(transaction, user, pkg, pkg.price, payRef.id, 'auto_renewal');
           });
           await addLog('Auto-Renewal/Payment', user.name, 'system', `Balance deducted: Rs. ${pkg.price} due to billing/expiry`);
           await sendSMS(user.id, user.whatsapp || user.phone, `Your service has been automatically renewed. Enjoy!`, 'payment_confirmation');
@@ -401,9 +463,35 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
 
   const recordPayment = async (paymentData: any) => {
     try {
+      const payerUserId = paymentData.userId || profile?.id || user?.uid;
+      const customer = state.users.find(u => u.id === payerUserId || u.uid === payerUserId);
+      const method = (paymentData.method || '').toLowerCase();
+      const amount = Number(paymentData.amount || 0);
+      const reference = normalizeReference(paymentData.reference || '');
+
+      if (!customer) {
+        toast.error("Customer profile not found for this payment");
+        return;
+      }
+
+      if (!isAdmin && customer.id !== profile?.id && customer.uid !== user?.uid) {
+        toast.error("Security check failed: payment owner mismatch");
+        return;
+      }
+
+      if (!isAdmin && method === 'cash') {
+        toast.error("Cash payment can only be recorded by admin");
+        return;
+      }
+
+      if (method !== 'cash' && reference.length < 6) {
+        toast.error("Transaction reference is required for secure verification");
+        return;
+      }
+
       // 1. Prevent duplicate Transaction IDs
-      if (paymentData.reference) {
-        const isDuplicate = state.payments.some(p => p.reference === paymentData.reference && p.status !== 'rejected');
+      if (reference) {
+        const isDuplicate = state.payments.some(p => normalizeReference(p.reference || '') === reference && p.status !== 'rejected');
         if (isDuplicate) {
           toast.error("Duplicate Transaction ID detected. Payment rejected.");
           return;
@@ -411,13 +499,30 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       }
 
       // 2. Validate amount
-      if (paymentData.amount <= 0) {
+      if (amount <= 0) {
         toast.error("Invalid payment amount");
+        return;
+      }
+
+      const unpaidBill = state.bills
+        .filter(b => b.userId === customer.id && b.status === 'unpaid')
+        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
+
+      if (!isAdmin && unpaidBill && amount !== Number(unpaidBill.amount || 0)) {
+        toast.error(`Secure payment amount must match unpaid bill: Rs. ${Number(unpaidBill.amount || 0).toLocaleString()}`);
         return;
       }
 
       await addDocument('payments', {
         ...paymentData,
+        userId: customer.id,
+        userName: customer.name,
+        amount,
+        method,
+        reference,
+        billId: unpaidBill?.id || paymentData.billId || '',
+        verificationStatus: method === 'cash' ? 'admin_recorded' : 'awaiting_admin_verification',
+        securityHash: `${customer.id}-${amount}-${reference || Date.now()}`,
         status: 'pending',
         date: new Date().toISOString(),
         type: 'in',
@@ -441,28 +546,20 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
         const userDoc = await transaction.get(doc(db, 'user', payment.userId));
         if (!userDoc.exists()) throw new Error("User missing");
         const user = userDoc.data();
+        const customer = { id: payment.userId, ...user };
 
         const pkg = state.packages.find(p => p.id === user.packageId);
-        
-        // Split logic from requirement: subdealer 590, admin 910 for 1500 (or ratio)
-        let subdealerShare = 0;
-        let adminShare = payment.amount;
-
-        if (pkg && pkg.price > 0) {
-          if (pkg.subdealerShare && pkg.adminShare) {
-            subdealerShare = pkg.subdealerShare;
-            adminShare = pkg.adminShare;
-          } else {
-            // Default 40/60 if not specified
-            subdealerShare = payment.amount * 0.4;
-            adminShare = payment.amount - subdealerShare;
-          }
-        }
+        const split = getRevenueSplit(payment.amount, customer, pkg);
 
         // Update balances
         transaction.update(doc(db, 'payments', paymentId), {
           status: 'approved',
-          approvedAt: Timestamp.now()
+          approvedAt: Timestamp.now(),
+          verifiedBy: user?.email || 'admin',
+          verificationStatus: 'verified',
+          subdealerId: split.subdealerId || '',
+          subdealerShare: split.subdealerShare,
+          adminShare: split.adminShare
         });
 
         transaction.update(doc(db, 'user', payment.userId), {
@@ -470,27 +567,16 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
           updatedAt: Timestamp.now()
         });
 
-        if (user.subdealerId && user.subdealerId !== 'admin') {
-          transaction.update(doc(db, 'subdealers', user.subdealerId), {
-            walletBalance: increment(subdealerShare),
-            totalEarnings: increment(subdealerShare)
-          });
-          
-          const commissionRef = doc(collection(db, 'commissions'));
-          transaction.set(commissionRef, {
-            paymentId,
-            subdealerId: user.subdealerId,
-            amount: subdealerShare,
-            date: Timestamp.now()
-          });
-        } else {
-          adminShare = payment.amount; // No subdealer, admin takes all
-        }
+        applyRevenueSplit(transaction, customer, pkg, payment.amount, paymentId, 'payment_approval');
 
-        transaction.update(doc(db, 'treasury', 'current'), {
-          balance: increment(adminShare),
-          todayIn: increment(adminShare)
-        });
+        if (payment.billId) {
+          transaction.update(doc(db, 'bills', payment.billId), {
+            status: 'paid',
+            paidAt: Timestamp.now(),
+            paymentId,
+            updatedAt: Timestamp.now()
+          });
+        }
       });
 
       await addLog('Payment Approved', paymentId, 'payment');
@@ -619,8 +705,12 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       await runTransaction(db, async (transaction) => {
         const billRef = doc(db, 'bills', billId);
         const userRef = doc(db, 'user', bill.userId);
-        const treasuryRef = doc(db, 'treasury', 'current');
         const paymentRef = doc(collection(db, 'payments'));
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists()) throw new Error("User missing");
+        const customer = { id: bill.userId, ...userDoc.data() };
+        const pkg = state.packages.find(p => p.id === customer.packageId);
+        const split = getRevenueSplit(bill.amount, customer, pkg);
 
         transaction.update(billRef, { status: 'paid', updatedAt: Timestamp.now() });
         transaction.update(userRef, { billingStatus: 'paid', lastPaymentDate: Timestamp.now() });
@@ -635,13 +725,14 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
           category: 'subscription',
           status: 'approved',
           billId: billId,
-          reference: `BILL-${billId.slice(-6).toUpperCase()}`
+          reference: `BILL-${billId.slice(-6).toUpperCase()}`,
+          verificationStatus: 'admin_verified',
+          subdealerId: split.subdealerId || '',
+          subdealerShare: split.subdealerShare,
+          adminShare: split.adminShare
         });
 
-        transaction.update(treasuryRef, {
-          balance: increment(bill.amount),
-          todayIn: increment(bill.amount)
-        });
+        applyRevenueSplit(transaction, customer, pkg, bill.amount, paymentRef.id, 'bill_paid');
       });
 
       await addLog('Bill Paid', bill.userName, 'payment', `Amount: Rs. ${bill.amount} | Month: ${bill.month}`);
