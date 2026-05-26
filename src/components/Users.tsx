@@ -490,6 +490,7 @@ export default function Users() {
                         </div>
                         <div className="min-w-0">
                           <h4 className="font-bold text-slate-900 truncate tracking-tight">{user.name}</h4>
+                          <p className="text-indigo-600 text-[10px] font-black uppercase tracking-widest truncate mt-0.5">{user.phone || 'No number'}</p>
                           <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest truncate mt-0.5">@{user.pppoeUsername}</p>
                         </div>
                       </div>

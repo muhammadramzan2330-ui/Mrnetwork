@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Tickets() {
-  const { tickets, updateTicketStatus, addTicket } = useSystem();
+  const { tickets, users, updateTicketStatus, addTicket } = useSystem();
   const { user, profile, isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'in progress' | 'resolved'>('all');
@@ -218,6 +218,12 @@ export default function Tickets() {
                       </div>
                       <div>
                         <h3 className="font-black text-slate-900 uppercase tracking-tight leading-none">{ticket.userName}</h3>
+                        {(() => {
+                          const ticketUser = users.find(u => u.id === ticket.userId || u.uid === ticket.userId);
+                          return ticketUser?.phone ? (
+                            <p className="text-indigo-600 text-[10px] font-black uppercase tracking-widest mt-1.5">{ticketUser.phone}</p>
+                          ) : null;
+                        })()}
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 flex items-center gap-1">
                           <Hash className="w-3 h-3" /> {ticket.id.slice(-6).toUpperCase()}
                         </p>

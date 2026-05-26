@@ -433,6 +433,12 @@ export default function Payments() {
                       </div>
                       <div className="min-w-0">
                         <h4 className="font-bold text-slate-900 truncate tracking-tight text-sm uppercase">{item.userName}</h4>
+                        {(() => {
+                          const itemUser = users.find(u => u.id === item.userId);
+                          return itemUser?.phone ? (
+                            <p className="text-indigo-600 text-[10px] font-black uppercase tracking-widest truncate mt-1">{itemUser.phone}</p>
+                          ) : null;
+                        })()}
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{formatDate(item.date || item.dueDate, { month: 'short', day: 'numeric' })}</span>
                           <span className="w-1 h-1 rounded-full bg-slate-200" />

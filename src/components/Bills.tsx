@@ -221,6 +221,7 @@ export default function Bills() {
                         </div>
                         <div>
                           <h3 className="font-black text-slate-900 uppercase tracking-tight leading-none">{bill.userName}</h3>
+                          <p className="text-indigo-600 text-[10px] font-black uppercase tracking-widest mt-1.5">{user?.phone || 'No number'}</p>
                           <div className="flex items-center gap-3">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 flex items-center gap-1">
                               <Calendar className="w-3 h-3" /> {bill.month}

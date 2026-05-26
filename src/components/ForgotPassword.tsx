@@ -17,20 +17,29 @@ export default function ForgotPassword() {
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || loading) return;
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || loading) return;
 
     setLoading(true);
     try {
-      await resetPassword(email);
+      await resetPassword(cleanEmail);
       setSubmitted(true);
-      toast.success("Reset link sent!");
+      toast.success("Password reset email sent", {
+        description: "Please check your inbox and spam folder.",
+      });
     } catch (error: any) {
       console.error('Reset password error:', error);
-      let message = "Failed to send reset link.";
-      if (error.code === 'auth/user-not-found') {
-        message = "No account found with this email.";
-      } else if (error.code === 'auth/invalid-email') {
+      let message = "If this email is registered, a reset link will be sent.";
+      if (error.code === 'auth/invalid-email') {
         message = "Invalid email format.";
+      } else if (error.code === 'auth/too-many-requests') {
+        message = "Too many reset requests. Please try again later.";
+      } else if (error.code === 'auth/user-not-found') {
+        setSubmitted(true);
+        toast.success("Password reset email sent", {
+          description: "If this email is registered, you will receive a reset link.",
+        });
+        return;
       }
       toast.error(message);
     } finally {
@@ -46,7 +55,7 @@ export default function ForgotPassword() {
         className="w-full max-w-sm"
       >
         <Card className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-          <div className="h-44 bg-gradient-to-br from-indigo-600 to-cyan-500 flex flex-col items-center justify-center p-6 text-white relative">
+          <div className="h-44 header-gradient flex flex-col items-center justify-center p-6 text-white relative">
             <div className="relative z-10 p-4 bg-white/10 rounded-2xl backdrop-blur-md mb-3 border border-white/20 shadow-xl">
               <Shield className="w-10 h-10 text-white" />
             </div>
@@ -59,7 +68,7 @@ export default function ForgotPassword() {
             <>
               <CardHeader className="text-center pt-8 pb-4 px-6 sm:px-10">
                 <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">Forgot Password</CardTitle>
-                <CardDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2 leading-none">Recover your account access</CardDescription>
+                <CardDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2 leading-relaxed">Enter your registered email to receive a secure reset link</CardDescription>
               </CardHeader>
               <CardContent className="px-6 sm:px-10 pb-8 pt-0">
                 <form onSubmit={handleResetPassword} className="space-y-6 mb-8">
@@ -74,6 +83,7 @@ export default function ForgotPassword() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="input-modern pl-11 h-12 border-slate-200 focus:border-indigo-600"
+                        autoComplete="email"
                         required
                       />
                     </div>
@@ -131,6 +141,7 @@ export default function ForgotPassword() {
               <h3 className="text-xl font-extrabold text-slate-900 mb-2 tracking-tight uppercase">Email Sent</h3>
               <p className="text-slate-400 mb-8 text-[10px] font-bold uppercase tracking-widest leading-relaxed px-4">
                 We've sent a password reset link to your email address.
+                Please check inbox and spam folder.
               </p>
               <Button 
                 onClick={() => navigate('/')} 
