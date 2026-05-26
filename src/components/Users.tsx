@@ -26,6 +26,7 @@ import { createUserWithEmailAndPassword, signOut as secondarySignOut } from 'fir
 import { toast } from 'sonner';
 import { cn, formatDate } from '@/lib/utils';
 import { generateInvoicePDF } from '@/services/pdfService';
+import { getPasswordChecks, validateStrongPassword } from '@/lib/security';
 
 export default function Users() {
   const { users, packages, subdealers, settings, recordPayment, bills, markBillAsPaid, payments, generateManualBill, sendSMS } = useSystem();
@@ -47,6 +48,7 @@ export default function Users() {
   const [paymentMethod, setPaymentMethod] = useState('easypaisa');
   const [showPasswords, setShowPasswords] = useState<{ [key: string]: boolean }>({});
   const [creating, setCreating] = useState(false);
+  const newUserPasswordChecks = getPasswordChecks(newUser.password);
 
   const [newUser, setNewUser] = useState({
     name: '',
@@ -62,6 +64,14 @@ export default function Users() {
   const handleAddUser = async () => {
     if (!newUser.name || !newUser.email || !newUser.password) {
       toast.error('Name, Email and Password are required');
+      return;
+    }
+
+    const passwordResult = validateStrongPassword(newUser.password);
+    if (!passwordResult.isStrong) {
+      toast.error('Use a stronger customer password', {
+        description: 'Password needs 12+ characters with uppercase, lowercase, number and symbol.',
+      });
       return;
     }
     
@@ -313,6 +323,19 @@ export default function Users() {
                               value={newUser.password}
                               onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                             />
+                            <div className="grid grid-cols-1 gap-1">
+                              {newUserPasswordChecks.map((check) => (
+                                <span
+                                  key={check.label}
+                                  className={cn(
+                                    "text-[8px] font-black uppercase tracking-wider",
+                                    check.passed ? "text-emerald-500" : "text-slate-300"
+                                  )}
+                                >
+                                  {check.label}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         </div>
                         <div className="space-y-2">
@@ -373,7 +396,7 @@ export default function Users() {
                         </div>
                         <Button 
                           onClick={handleAddUser}
-                          disabled={creating}
+                          disabled={creating || !validateStrongPassword(newUser.password).isStrong}
                           className="w-full mt-4 h-14 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm uppercase tracking-widest shadow-xl shadow-indigo-100"
                         >
                           {creating ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Account'}

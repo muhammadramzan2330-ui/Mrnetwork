@@ -8,6 +8,7 @@ import { UserPlus, Shield, Loader2, Mail, Lock, User, Phone } from 'lucide-react
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
+import { getPasswordChecks, validateStrongPassword } from '@/lib/security';
 
 export default function Signup() {
   const [loading, setLoading] = useState(false);
@@ -16,13 +17,17 @@ export default function Signup() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const navigate = useNavigate();
+  const passwordChecks = getPasswordChecks(password);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password || !name || loading) return;
 
-    if (password.length < 6) {
-      toast.error("Password must be at least 6 characters long.");
+    const passwordResult = validateStrongPassword(password);
+    if (!passwordResult.isStrong) {
+      toast.error("Use a stronger password", {
+        description: "Password needs 12+ characters with uppercase, lowercase, number and symbol.",
+      });
       return;
     }
 
@@ -31,25 +36,18 @@ export default function Signup() {
       const result = await registerWithEmail(email.trim(), password);
       
       if (result.user) {
-        // Auto-admin for the developer or first users to avoid getting "stuck"
-        const isDeveloper = email.trim().toLowerCase() === 'muhammadramzan2330@gmail.com';
-        
         // Create customer profile with explicit fields as requested
         await createUserProfile(result.user.uid, {
           name,
           email: result.user.email,
           phone,
-          role: isDeveloper ? 'admin' : 'customer',
-          status: isDeveloper ? 'active' : 'pending',
+          role: 'customer',
+          status: 'pending',
           plan: "",
           paymentStatus: "pending"
         });
         
-        if (isDeveloper) {
-          toast.success("Developer Access Granted. Welcome, Commander.", { duration: 5000 });
-        } else {
-          toast.success("Identity registration complete. Awaiting HQ approval.", { duration: 5000 });
-        }
+        toast.success("Identity registration complete. Awaiting admin approval.", { duration: 5000 });
         navigate('/');
       }
     } catch (error: any) {
@@ -69,7 +67,7 @@ export default function Signup() {
       } else if (error.code === 'auth/email-already-in-use') {
         message = "This email is already registered. Try logging in instead.";
       } else if (error.code === 'auth/weak-password') {
-        message = "Your password is too weak. Please use at least 6 characters.";
+        message = "Your password is too weak. Use 12+ characters with uppercase, lowercase, number and symbol.";
       } else if (error.code === 'auth/invalid-email') {
         message = "The email address is invalid.";
       }
@@ -83,7 +81,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="flex items-center justify-center p-4 sm:p-6 pb-20">
+    <div className="flex items-center justify-center p-4 sm:p-6 pb-20 bg-[radial-gradient(circle_at_top,#eef2ff_0%,#f8fafc_50%,#ffffff_100%)]">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -100,7 +98,7 @@ export default function Signup() {
 
           <CardHeader className="text-center pt-8 pb-4 px-6 sm:px-10">
             <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">Create Customer Account</CardTitle>
-            <CardDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2 leading-none">Enter your details to get started</CardDescription>
+            <CardDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2 leading-relaxed">New accounts stay pending until admin approval</CardDescription>
           </CardHeader>
 
           <CardContent className="px-6 sm:px-10 pb-8 pt-0">
@@ -163,14 +161,29 @@ export default function Signup() {
                     onChange={(e) => setPassword(e.target.value)}
                     className="input-modern pl-11 h-12 border-slate-200 focus:border-indigo-600"
                     required
-                    minLength={6}
+                    minLength={12}
+                    autoComplete="new-password"
                   />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  {passwordChecks.map((check) => (
+                    <div
+                      key={check.label}
+                      className={`rounded-lg border px-3 py-2 text-[9px] font-black uppercase tracking-wider ${
+                        check.passed
+                          ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                          : 'bg-slate-50 text-slate-400 border-slate-100'
+                      }`}
+                    >
+                      {check.label}
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <Button 
                 type="submit"
-                disabled={loading}
+                disabled={loading || !validateStrongPassword(password).isStrong}
                 className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-3 font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-200 mt-4 active:scale-[0.98] transition-all"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserPlus className="w-5 h-5" />}

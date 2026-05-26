@@ -91,21 +91,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const userData = docSnapshot.data() as UserProfile;
             console.log("AUTH_DEBUG: Profile Found:", userData.role);
 
-            // Role Elevation for developer
-            const isDev = firebaseUser.email?.toLowerCase() === 'muhammadramzan2330@gmail.com';
-            if (isDev && (userData.role !== 'admin' || userData.status !== 'active')) {
-              console.log("AUTH_DEBUG: Elevating developer to admin...");
-              const { updateDoc } = await import('firebase/firestore');
-              try {
-                await updateDoc(docSnapshot.ref, { 
-                  role: 'admin', 
-                  status: 'active' 
-                });
-              } catch (err) {
-                console.error("Elevation failed (check rules):", err);
-              }
-            }
-
             setProfile({ ...userData, id: docSnapshot.id } as any);
             setError(null);
             setLoading(false);
@@ -113,7 +98,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.warn("AUTH_DEBUG: No profile doc. Checking for email-linked profile...");
             try {
               const { setDoc, serverTimestamp } = await import('firebase/firestore');
-              const isDeveloper = firebaseUser.email?.toLowerCase() === 'muhammadramzan2330@gmail.com';
               const email = firebaseUser.email?.toLowerCase() || '';
 
               if (email) {
@@ -141,8 +125,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Account',
                 email,
                 phone: '', 
-                role: isDeveloper ? 'admin' : 'customer',
-                status: isDeveloper ? 'active' : 'pending',
+                role: 'customer',
+                status: 'pending',
                 plan: "",
                 paymentStatus: "pending",
                 createdAt: serverTimestamp(),
@@ -194,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const isAdmin = profile?.role === 'admin' || user?.email?.toLowerCase() === 'muhammadramzan2330@gmail.com';
+  const isAdmin = profile?.role === 'admin' && profile?.status === 'active';
   const isCustomer = profile?.role === 'customer' && !isAdmin;
 
   return (

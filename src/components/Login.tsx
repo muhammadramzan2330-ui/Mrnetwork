@@ -9,6 +9,7 @@ import { LogIn, Shield, Loader2, Mail, Lock } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { clearLoginLockout, getLoginLockout, recordFailedLogin } from '@/lib/security';
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
@@ -64,11 +65,21 @@ export default function Login() {
     e.preventDefault();
     if (!email.trim() || !password || loading) return;
 
+    const lockout = getLoginLockout();
+    if (lockout.locked) {
+      toast.error("Login temporarily locked", {
+        description: `Too many failed attempts. Try again in ${Math.ceil(lockout.remainingSeconds / 60)} minute(s).`,
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       await loginWithEmail(email.trim(), password);
+      clearLoginLockout();
       toast.success("Welcome back!");
     } catch (error: any) {
+      const failed = recordFailedLogin();
       // Standard Firebase auth error handling
       const isCredentialError = error.code === 'auth/invalid-credential' || 
                                error.code === 'auth/user-not-found' || 
@@ -83,7 +94,7 @@ export default function Login() {
       
       // auth/invalid-credential is the modern Firebase error for both wrong password and user not found
       if (error.code === 'auth/invalid-credential') {
-        message = "Invalid email or password. Please verify your credentials. If you are new, you must create an account first.";
+        message = "Invalid email or password. Please verify your credentials.";
       } else if (error.code === 'auth/user-not-found') {
         message = "No account found with this email address.";
       } else if (error.code === 'auth/wrong-password') {
@@ -114,7 +125,9 @@ export default function Login() {
       }
       
       toast.error(message, { 
-        description: `Code: ${error.code} | ${error.message}`,
+        description: failed.locked
+          ? "Too many failed attempts. Login is locked for 15 minutes."
+          : `Attempts remaining before lock: ${failed.remainingAttempts}`,
         duration: 8000,
       });
       setLoading(false);
@@ -122,7 +135,7 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center p-4 sm:p-6 pb-20">
+    <div className="flex items-center justify-center p-4 sm:p-6 pb-20 bg-[radial-gradient(circle_at_top,#eef2ff_0%,#f8fafc_48%,#ffffff_100%)]">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -173,11 +186,11 @@ export default function Login() {
               </div>
             </div>
           )}
-          <div className="h-28 bg-gradient-to-br from-indigo-600 to-cyan-500 flex flex-col items-center justify-center p-6 text-white relative">
+          <div className="h-32 header-gradient flex flex-col items-center justify-center p-6 text-white relative">
             <div className="relative z-10 p-3 bg-white/10 rounded-xl backdrop-blur-md mb-2 border border-white/20 shadow-xl">
               <Shield className="w-8 h-8 text-white" />
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 relative z-10 leading-none">ISP Registry Login</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 relative z-10 leading-none">Secure ISP Registry</p>
             
             {/* Abstract decorations */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl" />
@@ -185,12 +198,19 @@ export default function Login() {
           </div>
           
           <CardHeader className="text-center pt-8 pb-4 px-6 sm:px-10">
-            <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">Welcome Back</CardTitle>
-            <CardDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2 leading-none">Enter your credentials to access your account</CardDescription>
+            <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">Protected Login</CardTitle>
+            <CardDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2 leading-relaxed">Encrypted Firebase authentication with failed-attempt lockout</CardDescription>
           </CardHeader>
           
           <CardContent className="px-6 sm:px-10 pb-8 pt-0">
             <form onSubmit={handleEmailLogin} className="space-y-5 mb-8">
+              <div className="grid grid-cols-3 gap-2">
+                {['Role Guard', 'Lockout', 'HTTPS'].map((item) => (
+                  <div key={item} className="rounded-xl bg-emerald-50 border border-emerald-100 px-2 py-2 text-center">
+                    <p className="text-[8px] font-black uppercase tracking-widest text-emerald-600">{item}</p>
+                  </div>
+                ))}
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Email Address</Label>
                 <div className="relative group">
