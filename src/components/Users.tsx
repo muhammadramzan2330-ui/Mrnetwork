@@ -48,7 +48,6 @@ export default function Users() {
   const [paymentMethod, setPaymentMethod] = useState('easypaisa');
   const [showPasswords, setShowPasswords] = useState<{ [key: string]: boolean }>({});
   const [creating, setCreating] = useState(false);
-  const newUserPasswordChecks = getPasswordChecks(newUser.password);
 
   const [newUser, setNewUser] = useState({
     name: '',
@@ -60,6 +59,7 @@ export default function Users() {
     pppoeUsername: '',
     pppoePassword: '',
   });
+  const newUserPasswordChecks = getPasswordChecks(newUser.password);
 
   const handleAddUser = async () => {
     if (!newUser.name || !newUser.email || !newUser.password) {

@@ -708,7 +708,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
         const paymentRef = doc(collection(db, 'payments'));
         const userDoc = await transaction.get(userRef);
         if (!userDoc.exists()) throw new Error("User missing");
-        const customer = { id: bill.userId, ...userDoc.data() };
+        const customer: any = { id: bill.userId, ...userDoc.data() };
         const pkg = state.packages.find(p => p.id === customer.packageId);
         const split = getRevenueSplit(bill.amount, customer, pkg);
 
