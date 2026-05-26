@@ -161,9 +161,12 @@ export const registerWithEmail = async (email: string, pass: string) => {
   }
 };
 
-export const resetPassword = (email: string) => {
+export const resetPassword = (email: string, continueUrl?: string) => {
   if (!isFirebaseInitialized) throw new Error("Firebase not initialized");
-  return sendPasswordResetEmail(auth, email);
+  return sendPasswordResetEmail(auth, email, {
+    url: continueUrl || window.location.origin,
+    handleCodeInApp: false,
+  });
 };
 
 export const logout = () => {

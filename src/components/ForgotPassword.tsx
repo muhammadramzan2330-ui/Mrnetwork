@@ -22,7 +22,7 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
-      await resetPassword(cleanEmail);
+      await resetPassword(cleanEmail, window.location.origin);
       setSubmitted(true);
       toast.success("Password reset email sent", {
         description: "Please check your inbox and spam folder.",
