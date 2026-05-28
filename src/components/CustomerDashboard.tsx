@@ -65,6 +65,8 @@ export default function CustomerDashboard() {
   const supportNumber = settings?.easypaisaNumber || "03001234567"; // Fallback to settings or default
   const passwordChecks = getPasswordChecks(newPassword);
   const passwordStatus = validateStrongPassword(newPassword);
+  const customerName = (profile.name || user?.displayName || profile.email?.split('@')[0] || 'Customer').trim();
+  const headlineName = customerName.split(/\s+/)[0] || 'Customer';
   const searchQuery = searchTerm.trim().toLowerCase();
   const matchesSearch = (...values: any[]) => {
     if (!searchQuery) return false;
@@ -103,9 +105,9 @@ export default function CustomerDashboard() {
       key: 'account-profile',
       title: 'Account Profile',
       section: 'Profile',
-      description: `${profile.name || 'Customer'} - ${profile.phone || profile.email || 'Account details'}`,
+      description: `${customerName} - ${profile.phone || profile.email || 'Account details'}`,
       icon: <User className="w-4 h-4" />,
-      isMatch: matchesSearch('account profile customer name phone email member id', profile.name, profile.phone, profile.email, profile.uid),
+      isMatch: matchesSearch('account profile customer name phone email member id', customerName, profile.phone, profile.email, profile.uid),
       action: () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }),
     },
     {
@@ -212,7 +214,7 @@ export default function CustomerDashboard() {
       await reauthenticateWithCredential(currentUser, credential);
       await updatePassword(currentUser, newPassword);
       if (addLog) {
-        await addLog('Security Password Updated', profile.name, 'auth', 'Customer updated password inside app');
+        await addLog('Security Password Updated', customerName, 'auth', 'Customer updated password inside app');
       }
       setCurrentPassword('');
       setNewPassword('');
@@ -247,13 +249,13 @@ export default function CustomerDashboard() {
     try {
       await addTicket({
         userId: user?.uid || profile.uid || profile.id,
-        userName: profile.name,
+        userName: customerName,
         issueType: ticketType,
         message: ticketMessage,
         priority: ticketPriority,
       });
       setTicketMessage('');
-      if (addLog) addLog('Ticket Submitted', profile.name, 'customer', `Issue: ${ticketType}`);
+      if (addLog) addLog('Ticket Submitted', customerName, 'customer', `Issue: ${ticketType}`);
     } catch (e) {
       toast.error("Failed to submit ticket");
     } finally {
@@ -284,7 +286,7 @@ export default function CustomerDashboard() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center max-w-7xl mx-auto relative z-10 gap-6">
           <div className="flex flex-col">
             <p className="text-white/60 text-[11px] font-bold uppercase tracking-[0.3em] mb-1">MR NETWORK // Customer Portal</p>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Welcome, {profile.name?.split(' ')[0]}</h1>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Welcome, {headlineName}</h1>
             <p className="text-white/80 text-sm mt-1.5 font-medium flex items-center gap-2">
               <Calendar className="w-4 h-4 opacity-70" />
               Membership ID: <span className="text-white font-bold opacity-100">{profile.uid?.slice(-8).toUpperCase()}</span>
@@ -656,7 +658,7 @@ export default function CustomerDashboard() {
                                 onClick={() => {
                                   generateInvoicePDF({
                                     invoiceNumber: bill.id.slice(-8).toUpperCase(),
-                                    customerName: profile.name,
+                                    customerName,
                                     phone: profile.phone || 'N/A',
                                     packageName: bill.packageName || assignedPackage?.name || 'Service',
                                     speed: profile.packageSpeed || assignedPackage?.speed || 'Standard',
@@ -665,7 +667,7 @@ export default function CustomerDashboard() {
                                     status: isOverdue ? 'overdue' : bill.status,
                                     createdDate: formatDate(bill.createdAt || new Date())
                                   });
-                                  if (addLog) addLog('Invoice Downloaded', profile.name, 'customer', `Invoice #${bill.id.slice(-8)}`);
+                                  if (addLog) addLog('Invoice Downloaded', customerName, 'customer', `Invoice #${bill.id.slice(-8)}`);
                                 }}
                               >
                                 <Download className="w-4 h-4" />
@@ -718,7 +720,7 @@ export default function CustomerDashboard() {
                 <div className="space-y-8">
                   <div className="relative">
                     <label className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] block mb-2">Member Name</label>
-                    <p className="text-slate-900 font-extrabold text-lg leading-tight">{profile.name}</p>
+                    <p className="text-slate-900 font-extrabold text-lg leading-tight">{customerName}</p>
                     <div className="absolute -left-4 top-0 w-1 h-full bg-indigo-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                   <div>

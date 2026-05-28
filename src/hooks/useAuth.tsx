@@ -54,6 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     let unsubscribeProfile: (() => void) | undefined;
+    let unsubscribeLinkedProfile: (() => void) | undefined;
+    let linkedProfileDocId: string | null = null;
 
     // Handle redirect result
     getRedirectResult(auth).then((result) => {
@@ -75,6 +77,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (unsubscribeProfile) {
           unsubscribeProfile();
           unsubscribeProfile = undefined;
+        }
+        if (unsubscribeLinkedProfile) {
+          unsubscribeLinkedProfile();
+          unsubscribeLinkedProfile = undefined;
+          linkedProfileDocId = null;
         }
 
         const currentUserUid = firebaseUser.uid.trim();
@@ -110,12 +117,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                 if (!existingProfile.empty) {
                   const existingDoc = existingProfile.docs[0];
-                  const existingData = existingDoc.data() as UserProfile;
 
                   console.log("AUTH_DEBUG: Email-linked profile found:", existingDoc.id);
-                  setProfile({ ...existingData, id: existingDoc.id } as any);
-                  setError(null);
-                  setLoading(false);
+                  if (linkedProfileDocId !== existingDoc.id) {
+                    if (unsubscribeLinkedProfile) unsubscribeLinkedProfile();
+                    linkedProfileDocId = existingDoc.id;
+                    unsubscribeLinkedProfile = onSnapshot(existingDoc.ref, (linkedSnapshot) => {
+                      if (linkedSnapshot.exists()) {
+                        const linkedData = linkedSnapshot.data() as UserProfile;
+                        setProfile({ ...linkedData, id: linkedSnapshot.id } as any);
+                        setError(null);
+                      }
+                      setLoading(false);
+                    }, (linkedErr) => {
+                      console.error("AUTH_DEBUG: Linked Profile Snapshot Error:", linkedErr);
+                      setError("Identity verification service unavailable. Please check your connection.");
+                      setLoading(false);
+                    });
+                  }
                   return;
                 }
               }
@@ -149,6 +168,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           unsubscribeProfile();
           unsubscribeProfile = undefined;
         }
+        if (unsubscribeLinkedProfile) {
+          unsubscribeLinkedProfile();
+          unsubscribeLinkedProfile = undefined;
+          linkedProfileDocId = null;
+        }
         setProfile(null);
         setError(null);
         setLoading(false);
@@ -172,6 +196,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       unsubscribeAuth();
       if (unsubscribeProfile) unsubscribeProfile();
+      if (unsubscribeLinkedProfile) unsubscribeLinkedProfile();
       window.removeEventListener('mousemove', resetTimer);
       window.removeEventListener('keydown', resetTimer);
       clearTimeout(inactivityTimeout);
