@@ -24,20 +24,20 @@ export default function ForgotPassword() {
     try {
       await resetPassword(cleanEmail, window.location.origin);
       setSubmitted(true);
-      toast.success("Password reset email sent", {
-        description: "Please check your inbox and spam folder.",
+      toast.success("Reset link request sent", {
+        description: "Agar ye email registered hai to password reset link send ho jayega. Inbox aur Spam folder check karein.",
       });
     } catch (error: any) {
       console.error('Reset password error:', error);
-      let message = "If this email is registered, a reset link will be sent.";
+      let message = "Agar ye email registered hai to password reset link send ho jayega. Inbox aur Spam folder check karein.";
       if (error.code === 'auth/invalid-email') {
         message = "Invalid email format.";
       } else if (error.code === 'auth/too-many-requests') {
         message = "Too many reset requests. Please try again later.";
       } else if (error.code === 'auth/user-not-found') {
         setSubmitted(true);
-        toast.success("Password reset email sent", {
-          description: "If this email is registered, you will receive a reset link.",
+        toast.success("Reset link request sent", {
+          description: "Agar ye email registered hai to password reset link send ho jayega. Inbox aur Spam folder check karein.",
         });
         return;
       }
@@ -59,7 +59,7 @@ export default function ForgotPassword() {
             <div className="relative z-10 p-4 bg-white/10 rounded-2xl backdrop-blur-md mb-3 border border-white/20 shadow-xl">
               <Shield className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-2xl font-black tracking-tight uppercase relative z-10">M & Network</h1>
+            <h1 className="text-2xl font-black tracking-tight uppercase relative z-10">MR NETWORK</h1>
             <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80 relative z-10">ISP Billing Management</p>
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
           </div>
@@ -68,7 +68,7 @@ export default function ForgotPassword() {
             <>
               <CardHeader className="text-center pt-8 pb-4 px-6 sm:px-10">
                 <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">Forgot Password</CardTitle>
-                <CardDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2 leading-relaxed">Enter your registered email to receive a secure reset link</CardDescription>
+                <CardDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2 leading-relaxed">Agar ye email registered hai to password reset link send ho jayega. Inbox aur Spam folder check karein.</CardDescription>
               </CardHeader>
               <CardContent className="px-6 sm:px-10 pb-8 pt-0">
                 <form onSubmit={handleResetPassword} className="space-y-6 mb-8">
@@ -140,8 +140,7 @@ export default function ForgotPassword() {
               </div>
               <h3 className="text-xl font-extrabold text-slate-900 mb-2 tracking-tight uppercase">Email Sent</h3>
               <p className="text-slate-400 mb-8 text-[10px] font-bold uppercase tracking-widest leading-relaxed px-4">
-                We've sent a password reset link to your email address.
-                Please check inbox and spam folder.
+                Agar ye email registered hai to password reset link send ho jayega. Inbox aur Spam folder check karein.
               </p>
               <Button 
                 onClick={() => navigate('/')} 
