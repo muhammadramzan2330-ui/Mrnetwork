@@ -24,7 +24,7 @@ export const generateInvoicePDF = (data: InvoiceData) => {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.text('M & NETWORK', 20, 25);
+  doc.text('MR NETWORK', 20, 25);
   
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
@@ -92,7 +92,7 @@ export const generateInvoicePDF = (data: InvoiceData) => {
   // Footer
   doc.setFontSize(8);
   doc.setTextColor(150, 150, 150);
-  doc.text('Thank you for choosing M & Network.', 105, 280, { align: 'center' });
+  doc.text('Thank you for choosing MR NETWORK.', 105, 280, { align: 'center' });
   doc.text('This is a computer generated invoice and does not require a signature.', 105, 285, { align: 'center' });
 
   doc.save(`Invoice_${data.invoiceNumber}.pdf`);
@@ -109,7 +109,7 @@ export const generateReceiptPDF = (data: InvoiceData & { paymentMethod: string; 
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.text('M & NETWORK', 20, 25);
+  doc.text('MR NETWORK', 20, 25);
   
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');

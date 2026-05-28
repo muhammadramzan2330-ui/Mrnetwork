@@ -133,7 +133,7 @@ export default function CustomerDashboard() {
       )}>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center max-w-7xl mx-auto relative z-10 gap-6">
           <div className="flex flex-col">
-            <p className="text-white/60 text-[11px] font-bold uppercase tracking-[0.3em] mb-1">M & Network // Customer Portal</p>
+            <p className="text-white/60 text-[11px] font-bold uppercase tracking-[0.3em] mb-1">MR NETWORK // Customer Portal</p>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Welcome, {profile.name?.split(' ')[0]}</h1>
             <p className="text-white/80 text-sm mt-1.5 font-medium flex items-center gap-2">
               <Calendar className="w-4 h-4 opacity-70" />

@@ -131,7 +131,7 @@ export default function SystemCheck() {
               <Activity className="w-6 h-6 text-indigo-600" />
               <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">System Health Audit</h1>
             </div>
-            <p className="text-slate-500 font-medium tracking-wide">Verification and maintenance checklist for M & NETWORK</p>
+            <p className="text-slate-500 font-medium tracking-wide">Verification and maintenance checklist for MR NETWORK</p>
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto">
              <Button 
@@ -298,7 +298,7 @@ export default function SystemCheck() {
                     <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest leading-none">Security Note</p>
                   </div>
                   <p className="text-xs font-medium text-indigo-800 leading-relaxed">
-                    M & NETWORK system follows end-to-end data integrity standards. Automated backups are stored securely within your configured Firebase cloud storage. Access is strictly limited via defined security rules.
+                    MR NETWORK system follows end-to-end data integrity standards. Automated backups are stored securely within your configured Firebase cloud storage. Access is strictly limited via defined security rules.
                   </p>
                </div>
             </div>

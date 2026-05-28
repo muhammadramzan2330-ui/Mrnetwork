@@ -371,8 +371,8 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
         const daysUntilExpiry = Math.max(0, Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
         const phone = user.whatsapp || user.phone;
         const message = daysUntilExpiry === 0
-          ? `M & NETWORK: Your internet package expires today. Please pay/recharge to keep your service active.`
-          : `M & NETWORK: Your internet package will expire in ${daysUntilExpiry} day${daysUntilExpiry === 1 ? '' : 's'}. Please pay/recharge on time.`;
+          ? `MR NETWORK: Your internet package expires today. Please pay/recharge to keep your service active.`
+          : `MR NETWORK: Your internet package will expire in ${daysUntilExpiry} day${daysUntilExpiry === 1 ? '' : 's'}. Please pay/recharge on time.`;
 
         await sendSMS(user.id, phone, message, 'reminder', {
           reminderFor: todayKey,

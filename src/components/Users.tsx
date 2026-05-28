@@ -251,7 +251,7 @@ export default function Users() {
     const unpaidBill = bills.find(b => b.userId === user.id && b.status === 'unpaid');
     const amount = unpaidBill?.amount || user.balance || user.packagePrice || 0;
     const dueDate = unpaidBill?.dueDate ? ` Due date: ${formatDate(unpaidBill.dueDate)}.` : '';
-    const message = `M & NETWORK: Dear ${user.name}, your internet bill is due. Amount: Rs. ${amount}.${dueDate} Please pay on time to avoid service suspension.`;
+    const message = `MR NETWORK: Dear ${user.name}, your internet bill is due. Amount: Rs. ${amount}.${dueDate} Please pay on time to avoid service suspension.`;
 
     await sendSMS(user.id, phone, message, 'reminder', {
       billId: unpaidBill?.id || '',

@@ -67,7 +67,7 @@ export default function Layout({ children }: LayoutProps) {
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2.5 ml-1 sm:ml-2">
             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-md shadow-indigo-200">M</div>
-            <span className="font-black text-[13px] sm:text-sm tracking-tighter text-slate-900 uppercase truncate max-w-[100px] sm:max-w-none hover:text-indigo-600 transition-colors cursor-default">M & NETWORK</span>
+            <span className="font-black text-[13px] sm:text-sm tracking-tighter text-slate-900 uppercase truncate max-w-[100px] sm:max-w-none hover:text-indigo-600 transition-colors cursor-default">MR NETWORK</span>
           </div>
         </div>
 

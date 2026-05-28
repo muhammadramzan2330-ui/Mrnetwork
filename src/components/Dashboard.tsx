@@ -287,7 +287,7 @@ export default function Dashboard() {
       <div className="header-gradient pt-8 pb-12 px-4 sm:px-8 text-white relative overflow-hidden md:rounded-b-3xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center max-w-7xl mx-auto relative z-10 gap-6">
           <div>
-            <p className="text-white/60 text-[11px] font-bold uppercase tracking-[0.3em] mb-1">M & Network // Admin</p>
+            <p className="text-white/60 text-[11px] font-bold uppercase tracking-[0.3em] mb-1">MR NETWORK // Admin</p>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">{isAdmin ? 'Overview Dashboard' : 'Customer Console'}</h1>
             <p className="text-white/80 text-sm mt-2 font-medium flex items-center gap-2">
               <Calendar className="w-4 h-4 opacity-70" />

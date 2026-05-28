@@ -64,7 +64,7 @@ export default function Bills() {
     }
 
     const phone = user.whatsapp || user.phone;
-    const message = `M & NETWORK: Dear ${bill.userName}, your internet bill is unpaid. Plan: ${bill.packageName}. Amount: Rs. ${bill.amount}. Due date: ${formatDate(bill.dueDate)}. Please pay to avoid suspension.`;
+    const message = `MR NETWORK: Dear ${bill.userName}, your internet bill is unpaid. Plan: ${bill.packageName}. Amount: Rs. ${bill.amount}. Due date: ${formatDate(bill.dueDate)}. Please pay to avoid suspension.`;
 
     await sendSMS(bill.userId, phone, message, 'reminder', {
       billId: bill.id,
