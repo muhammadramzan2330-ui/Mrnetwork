@@ -26,7 +26,9 @@ import {
   Download,
   Search,
   XCircle,
-  LayoutDashboard
+  LayoutDashboard,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { formatDate, formatCurrency, cn } from '@/lib/utils';
@@ -49,6 +51,9 @@ export default function CustomerDashboard() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isUpdatingSecurity, setIsUpdatingSecurity] = useState(false);
   const navigate = useNavigate();
 
@@ -627,23 +632,47 @@ export default function CustomerDashboard() {
                       <div className="space-y-3 bg-white px-5 py-3.5">
                         <div className="space-y-1.5">
                           <label className="block text-[11px] font-black text-slate-800 uppercase tracking-wide">Current Password</label>
-                          <Input
-                            type="password"
-                            value={currentPassword}
-                            onChange={(event) => setCurrentPassword(event.target.value)}
-                            placeholder="Current password"
-                            className="h-10 rounded-xl border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
-                          />
+                          <div className="relative">
+                            <Input
+                              type={showCurrentPassword ? 'text' : 'password'}
+                              value={currentPassword}
+                              onChange={(event) => setCurrentPassword(event.target.value)}
+                              placeholder="Current password"
+                              className="h-10 rounded-xl border-slate-200 bg-slate-50 pr-11 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              className="absolute right-1.5 top-1/2 h-7 w-7 -translate-y-1/2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-indigo-600"
+                              onClick={() => setShowCurrentPassword((value) => !value)}
+                              title={showCurrentPassword ? 'Hide password' : 'Show password'}
+                            >
+                              {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
                         </div>
                         <div className="space-y-1.5">
                           <label className="block text-[11px] font-black text-slate-800 uppercase tracking-wide">New Strong Password</label>
-                          <Input
-                            type="password"
-                            value={newPassword}
-                            onChange={(event) => setNewPassword(event.target.value)}
-                            placeholder="New strong password"
-                            className="h-10 rounded-xl border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
-                          />
+                          <div className="relative">
+                            <Input
+                              type={showNewPassword ? 'text' : 'password'}
+                              value={newPassword}
+                              onChange={(event) => setNewPassword(event.target.value)}
+                              placeholder="New strong password"
+                              className="h-10 rounded-xl border-slate-200 bg-slate-50 pr-11 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              className="absolute right-1.5 top-1/2 h-7 w-7 -translate-y-1/2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-indigo-600"
+                              onClick={() => setShowNewPassword((value) => !value)}
+                              title={showNewPassword ? 'Hide password' : 'Show password'}
+                            >
+                              {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                           {passwordChecks.map((check) => (
@@ -661,13 +690,25 @@ export default function CustomerDashboard() {
                         </div>
                         <div className="space-y-1.5">
                           <label className="block text-[11px] font-black text-slate-800 uppercase tracking-wide">Confirm Password</label>
-                          <Input
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(event) => setConfirmPassword(event.target.value)}
-                            placeholder="Confirm new password"
-                            className="h-10 rounded-xl border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
-                          />
+                          <div className="relative">
+                            <Input
+                              type={showConfirmPassword ? 'text' : 'password'}
+                              value={confirmPassword}
+                              onChange={(event) => setConfirmPassword(event.target.value)}
+                              placeholder="Confirm new password"
+                              className="h-10 rounded-xl border-slate-200 bg-slate-50 pr-11 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              className="absolute right-1.5 top-1/2 h-7 w-7 -translate-y-1/2 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-indigo-600"
+                              onClick={() => setShowConfirmPassword((value) => !value)}
+                              title={showConfirmPassword ? 'Hide password' : 'Show password'}
+                            >
+                              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </Button>
+                          </div>
                           {confirmPassword && newPassword !== confirmPassword && (
                             <p className="text-[11px] font-bold text-rose-500">Password match nahi kar raha.</p>
                           )}
