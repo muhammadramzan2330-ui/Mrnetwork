@@ -31,7 +31,7 @@ import {
 import { motion } from 'motion/react';
 import { formatDate, formatCurrency, cn } from '@/lib/utils';
 import { generateInvoicePDF } from '@/services/pdfService';
-import { auth } from '@/services/firebase';
+import { auth, resetPassword } from '@/services/firebase';
 import { signOut } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -44,6 +44,7 @@ export default function CustomerDashboard() {
   const [ticketType, setTicketType] = useState('Technical Issue');
   const [ticketPriority, setTicketPriority] = useState('medium');
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
+  const [isSendingSecurityLink, setIsSendingSecurityLink] = useState(false);
   const navigate = useNavigate();
 
   if (!profile) return null;
@@ -82,6 +83,32 @@ export default function CustomerDashboard() {
       navigate('/login');
     } catch (error) {
       toast.error("Failed to logout");
+    }
+  };
+
+  const handleUpdateSecurity = async () => {
+    if (!profile.email || isSendingSecurityLink) {
+      toast.error('No email found on this account');
+      return;
+    }
+
+    setIsSendingSecurityLink(true);
+    try {
+      await resetPassword(profile.email, window.location.origin);
+      if (addLog) {
+        await addLog('Security Reset Requested', profile.name, 'auth', 'Customer requested password reset link');
+      }
+      toast.success('Security update link sent', {
+        description: 'Agar ye email registered hai to reset link send ho jayega. Inbox aur Spam folder check karein.',
+      });
+    } catch (error: any) {
+      console.error('Security update failed:', error);
+      const message = error?.code === 'auth/too-many-requests'
+        ? 'Too many requests. Please try again later.'
+        : 'Agar ye email registered hai to reset link send ho jayega. Inbox aur Spam folder check karein.';
+      toast.info(message);
+    } finally {
+      setIsSendingSecurityLink(false);
     }
   };
 
@@ -533,9 +560,12 @@ export default function CustomerDashboard() {
                   <Button 
                     variant="ghost" 
                     className="w-full justify-between h-14 rounded-2xl border border-slate-100 px-6 hover:bg-slate-50 transition-all text-slate-400 hover:text-indigo-600"
-                    onClick={() => toast.info("Profile settings coming soon")}
+                    onClick={handleUpdateSecurity}
+                    disabled={isSendingSecurityLink}
                   >
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Update Security</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest">
+                      {isSendingSecurityLink ? 'Sending Link...' : 'Update Security'}
+                    </span>
                     <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>
