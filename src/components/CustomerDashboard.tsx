@@ -709,27 +709,27 @@ export default function CustomerDashboard() {
           </div>
 
           <div className="space-y-6">
-            <Card className="bg-white border-slate-100 shadow-sm rounded-3xl overflow-hidden relative group h-full">
-              <CardHeader className="bg-slate-50/50 py-8 px-8 relative overflow-hidden border-b border-slate-100">
+            <Card className="bg-white border-slate-100 shadow-sm rounded-3xl overflow-hidden relative group">
+              <CardHeader className="bg-slate-50/50 py-5 px-6 relative overflow-hidden border-b border-slate-100">
                 <CardTitle className="text-sm font-bold text-slate-800 relative z-10 flex items-center gap-3 text-indigo-600 uppercase tracking-widest text-[10px]">
                   <User className="w-4 h-4" />
                   Account Profile
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-8">
-                <div className="space-y-8">
+              <CardContent className="p-6">
+                <div className="space-y-5">
                   <div className="relative">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] block mb-2">Member Name</label>
-                    <p className="text-slate-900 font-extrabold text-lg leading-tight">{customerName}</p>
+                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] block mb-1.5">Member Name</label>
+                    <p className="text-slate-900 font-extrabold text-base leading-tight">{customerName}</p>
                     <div className="absolute -left-4 top-0 w-1 h-full bg-indigo-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>
                   <div>
-                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] block mb-2">Electronic Mail</label>
+                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] block mb-1.5">Electronic Mail</label>
                     <p className="text-slate-900 font-semibold text-sm break-all">{profile.email}</p>
                   </div>
                   <div>
-                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] block mb-2">Access Level</label>
-                    <div className="flex items-center gap-3 bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100/50">
+                    <label className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] block mb-1.5">Access Level</label>
+                    <div className="flex items-center gap-3 bg-indigo-50/50 px-4 py-3 rounded-2xl border border-indigo-100/50">
                       <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse" />
                       <p className="text-indigo-600 font-black text-xs uppercase tracking-[0.1em] leading-none">{profile.role}</p>
                     </div>
@@ -738,7 +738,7 @@ export default function CustomerDashboard() {
                     <DialogTrigger asChild>
                       <Button 
                         variant="ghost" 
-                        className="w-full justify-between h-14 rounded-2xl border border-slate-100 px-6 hover:bg-slate-50 transition-all text-slate-400 hover:text-indigo-600"
+                        className="w-full justify-between h-12 rounded-2xl border border-slate-100 px-5 hover:bg-slate-50 transition-all text-slate-400 hover:text-indigo-600"
                       >
                         <span className="text-[10px] font-bold uppercase tracking-widest">Update Security</span>
                         <ChevronRight className="w-4 h-4" />
