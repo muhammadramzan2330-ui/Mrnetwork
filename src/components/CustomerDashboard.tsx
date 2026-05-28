@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { 
   User, 
   Package, 
@@ -603,63 +603,77 @@ export default function CustomerDashboard() {
                         <ChevronRight className="w-4 h-4" />
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[440px] rounded-3xl border-slate-200">
-                      <DialogHeader>
-                        <DialogTitle className="text-xl font-black text-slate-900">Update Security</DialogTitle>
-                        <DialogDescription>
+                    <DialogContent showCloseButton={false} className="sm:max-w-[460px] rounded-[28px] border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl shadow-slate-900/20 overflow-hidden">
+                      <DialogHeader className="bg-slate-950 px-7 py-6 text-white">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-500 text-white shadow-lg shadow-indigo-950/30">
+                            <Shield className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <DialogTitle className="text-lg font-black uppercase tracking-wide text-white">Update Security</DialogTitle>
+                            <DialogDescription className="mt-1 text-xs font-medium text-slate-300">
                           App ke andar apna password secure tareeqe se change karein.
-                        </DialogDescription>
+                            </DialogDescription>
+                          </div>
+                          </div>
+                          <DialogClose asChild>
+                            <Button variant="ghost" size="icon-sm" className="h-9 w-9 shrink-0 rounded-full text-slate-300 hover:bg-white/10 hover:text-white">
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </DialogClose>
+                        </div>
                       </DialogHeader>
-                      <div className="space-y-4 pt-2">
+                      <div className="space-y-5 bg-white px-7 py-6">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Current Password</label>
+                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Current Password</label>
                           <Input
                             type="password"
                             value={currentPassword}
                             onChange={(event) => setCurrentPassword(event.target.value)}
                             placeholder="Current password"
-                            className="h-12 rounded-2xl"
+                            className="h-12 rounded-2xl border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">New Strong Password</label>
+                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">New Strong Password</label>
                           <Input
                             type="password"
                             value={newPassword}
                             onChange={(event) => setNewPassword(event.target.value)}
                             placeholder="New strong password"
-                            className="h-12 rounded-2xl"
+                            className="h-12 rounded-2xl border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
                           />
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                           {passwordChecks.map((check) => (
                             <div
                               key={check.label}
                               className={cn(
-                                "flex items-center gap-2 rounded-xl border px-3 py-2 text-[10px] font-bold",
-                                check.passed ? "border-emerald-100 bg-emerald-50 text-emerald-700" : "border-slate-100 bg-slate-50 text-slate-400"
+                                "flex min-h-10 items-center gap-2 rounded-xl border px-3 py-2 text-[10px] font-black uppercase tracking-wide transition-colors",
+                                check.passed ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-500"
                               )}
                             >
-                              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                              <span>{check.label}</span>
+                              <CheckCircle2 className={cn("w-3.5 h-3.5 shrink-0", check.passed ? "text-emerald-500" : "text-slate-300")} />
+                              <span className="leading-tight">{check.label}</span>
                             </div>
                           ))}
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Confirm Password</label>
+                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Confirm Password</label>
                           <Input
                             type="password"
                             value={confirmPassword}
                             onChange={(event) => setConfirmPassword(event.target.value)}
                             placeholder="Confirm new password"
-                            className="h-12 rounded-2xl"
+                            className="h-12 rounded-2xl border-slate-200 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus-visible:ring-indigo-500"
                           />
                           {confirmPassword && newPassword !== confirmPassword && (
                             <p className="text-[11px] font-bold text-rose-500">Password match nahi kar raha.</p>
                           )}
                         </div>
                         <Button
-                          className="w-full h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[10px]"
+                          className="w-full h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[10px] shadow-lg shadow-indigo-600/20 disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none"
                           onClick={handleUpdateSecurity}
                           disabled={isUpdatingSecurity || !currentPassword || !passwordStatus.isStrong || newPassword !== confirmPassword}
                         >
