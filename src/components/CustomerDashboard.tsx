@@ -31,8 +31,9 @@ import {
 import { motion } from 'motion/react';
 import { formatDate, formatCurrency, cn } from '@/lib/utils';
 import { generateInvoicePDF } from '@/services/pdfService';
-import { auth, resetPassword } from '@/services/firebase';
-import { signOut } from 'firebase/auth';
+import { auth } from '@/services/firebase';
+import { EmailAuthProvider, reauthenticateWithCredential, signOut, updatePassword } from 'firebase/auth';
+import { getPasswordChecks, validateStrongPassword } from '@/lib/security';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -44,7 +45,11 @@ export default function CustomerDashboard() {
   const [ticketType, setTicketType] = useState('Technical Issue');
   const [ticketPriority, setTicketPriority] = useState('medium');
   const [isSubmittingTicket, setIsSubmittingTicket] = useState(false);
-  const [isSendingSecurityLink, setIsSendingSecurityLink] = useState(false);
+  const [isSecurityOpen, setIsSecurityOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isUpdatingSecurity, setIsUpdatingSecurity] = useState(false);
   const navigate = useNavigate();
 
   if (!profile) return null;
@@ -52,6 +57,8 @@ export default function CustomerDashboard() {
   const userBills = bills.filter(b => b.userId === profile.id);
   const userTickets = tickets.filter(t => t.userId === profile.id);
   const now = new Date();
+  const passwordChecks = getPasswordChecks(newPassword);
+  const passwordStatus = validateStrongPassword(newPassword);
   
   // Search filter logic
   const filteredBills = userBills.filter(bill => {
@@ -87,28 +94,57 @@ export default function CustomerDashboard() {
   };
 
   const handleUpdateSecurity = async () => {
-    if (!profile.email || isSendingSecurityLink) {
-      toast.error('No email found on this account');
+    const currentUser = auth.currentUser;
+    const email = currentUser?.email || profile.email;
+
+    if (!currentUser || !email) {
+      toast.error('Account email nahi mila. Dobara login karein.');
       return;
     }
 
-    setIsSendingSecurityLink(true);
+    if (!currentPassword) {
+      toast.error('Current password enter karein.');
+      return;
+    }
+
+    if (!passwordStatus.isStrong) {
+      toast.error('New password strong nahi hai.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error('New password aur confirm password match nahi kar rahe.');
+      return;
+    }
+
+    setIsUpdatingSecurity(true);
     try {
-      await resetPassword(profile.email, window.location.origin);
+      const credential = EmailAuthProvider.credential(email, currentPassword);
+      await reauthenticateWithCredential(currentUser, credential);
+      await updatePassword(currentUser, newPassword);
       if (addLog) {
-        await addLog('Security Reset Requested', profile.name, 'auth', 'Customer requested password reset link');
+        await addLog('Security Password Updated', profile.name, 'auth', 'Customer updated password inside app');
       }
-      toast.success('Security update link sent', {
-        description: 'Agar ye email registered hai to reset link send ho jayega. Inbox aur Spam folder check karein.',
-      });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setIsSecurityOpen(false);
+      toast.success('Password update ho gaya.');
     } catch (error: any) {
       console.error('Security update failed:', error);
-      const message = error?.code === 'auth/too-many-requests'
-        ? 'Too many requests. Please try again later.'
-        : 'Agar ye email registered hai to reset link send ho jayega. Inbox aur Spam folder check karein.';
-      toast.info(message);
+      const message =
+        error?.code === 'auth/wrong-password' || error?.code === 'auth/invalid-credential'
+          ? 'Current password galat hai.'
+          : error?.code === 'auth/requires-recent-login'
+            ? 'Dobara login kar ke try karein.'
+            : error?.code === 'auth/weak-password'
+              ? 'New password aur strong rakhein.'
+              : error?.code === 'auth/operation-not-allowed'
+                ? 'Google login wale account ka password Google account se change hota hai.'
+                : 'Security update failed. Please try again.';
+      toast.error(message);
     } finally {
-      setIsSendingSecurityLink(false);
+      setIsUpdatingSecurity(false);
     }
   };
 
@@ -557,17 +593,81 @@ export default function CustomerDashboard() {
                       <p className="text-indigo-600 font-black text-xs uppercase tracking-[0.1em] leading-none">{profile.role}</p>
                     </div>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    className="w-full justify-between h-14 rounded-2xl border border-slate-100 px-6 hover:bg-slate-50 transition-all text-slate-400 hover:text-indigo-600"
-                    onClick={handleUpdateSecurity}
-                    disabled={isSendingSecurityLink}
-                  >
-                    <span className="text-[10px] font-bold uppercase tracking-widest">
-                      {isSendingSecurityLink ? 'Sending Link...' : 'Update Security'}
-                    </span>
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
+                  <Dialog open={isSecurityOpen} onOpenChange={setIsSecurityOpen}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        className="w-full justify-between h-14 rounded-2xl border border-slate-100 px-6 hover:bg-slate-50 transition-all text-slate-400 hover:text-indigo-600"
+                      >
+                        <span className="text-[10px] font-bold uppercase tracking-widest">Update Security</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[440px] rounded-3xl border-slate-200">
+                      <DialogHeader>
+                        <DialogTitle className="text-xl font-black text-slate-900">Update Security</DialogTitle>
+                        <DialogDescription>
+                          App ke andar apna password secure tareeqe se change karein.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 pt-2">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Current Password</label>
+                          <Input
+                            type="password"
+                            value={currentPassword}
+                            onChange={(event) => setCurrentPassword(event.target.value)}
+                            placeholder="Current password"
+                            className="h-12 rounded-2xl"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">New Strong Password</label>
+                          <Input
+                            type="password"
+                            value={newPassword}
+                            onChange={(event) => setNewPassword(event.target.value)}
+                            placeholder="New strong password"
+                            className="h-12 rounded-2xl"
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {passwordChecks.map((check) => (
+                            <div
+                              key={check.label}
+                              className={cn(
+                                "flex items-center gap-2 rounded-xl border px-3 py-2 text-[10px] font-bold",
+                                check.passed ? "border-emerald-100 bg-emerald-50 text-emerald-700" : "border-slate-100 bg-slate-50 text-slate-400"
+                              )}
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                              <span>{check.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Confirm Password</label>
+                          <Input
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(event) => setConfirmPassword(event.target.value)}
+                            placeholder="Confirm new password"
+                            className="h-12 rounded-2xl"
+                          />
+                          {confirmPassword && newPassword !== confirmPassword && (
+                            <p className="text-[11px] font-bold text-rose-500">Password match nahi kar raha.</p>
+                          )}
+                        </div>
+                        <Button
+                          className="w-full h-12 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-[10px]"
+                          onClick={handleUpdateSecurity}
+                          disabled={isUpdatingSecurity || !currentPassword || !passwordStatus.isStrong || newPassword !== confirmPassword}
+                        >
+                          {isUpdatingSecurity ? 'Updating...' : 'Update Password'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </CardContent>
             </Card>
