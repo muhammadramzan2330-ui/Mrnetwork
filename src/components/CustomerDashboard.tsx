@@ -626,7 +626,7 @@ export default function CustomerDashboard() {
                       </DialogHeader>
                       <div className="space-y-5 bg-white px-7 py-6">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Current Password</label>
+                          <label className="block text-xs font-black text-slate-800 uppercase tracking-wide">Current Password</label>
                           <Input
                             type="password"
                             value={currentPassword}
@@ -636,7 +636,7 @@ export default function CustomerDashboard() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">New Strong Password</label>
+                          <label className="block text-xs font-black text-slate-800 uppercase tracking-wide">New Strong Password</label>
                           <Input
                             type="password"
                             value={newPassword}
@@ -650,7 +650,7 @@ export default function CustomerDashboard() {
                             <div
                               key={check.label}
                               className={cn(
-                                "flex min-h-10 items-center gap-2 rounded-xl border px-3 py-2 text-[10px] font-black uppercase tracking-wide transition-colors",
+                                "flex min-h-10 items-center gap-2 rounded-xl border px-3 py-2 text-[11px] font-black uppercase tracking-normal transition-colors",
                                 check.passed ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-500"
                               )}
                             >
@@ -660,7 +660,7 @@ export default function CustomerDashboard() {
                           ))}
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Confirm Password</label>
+                          <label className="block text-xs font-black text-slate-800 uppercase tracking-wide">Confirm Password</label>
                           <Input
                             type="password"
                             value={confirmPassword}
