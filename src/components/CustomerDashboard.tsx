@@ -62,8 +62,16 @@ export default function CustomerDashboard() {
   const userBills = bills.filter(b => b.userId === profile.id);
   const userTickets = tickets.filter(t => t.userId === profile.id);
   const now = new Date();
+  const supportNumber = settings?.easypaisaNumber || "03001234567"; // Fallback to settings or default
   const passwordChecks = getPasswordChecks(newPassword);
   const passwordStatus = validateStrongPassword(newPassword);
+  const searchQuery = searchTerm.trim().toLowerCase();
+  const matchesSearch = (...values: any[]) => {
+    if (!searchQuery) return false;
+    return values
+      .filter((value) => value !== undefined && value !== null)
+      .some((value) => String(value).toLowerCase().includes(searchQuery));
+  };
   
   // Search filter logic
   const filteredBills = userBills.filter(bill => {
@@ -87,6 +95,82 @@ export default function CustomerDashboard() {
   
   // Get assigned package based on either packageId or plan string
   const assignedPackage = packages.find(p => p.id === (profile.packageId || profile.plan));
+  const filteredTickets = userTickets.filter((ticket) =>
+    matchesSearch(ticket.issueType, ticket.message, ticket.status, ticket.priority, ticket.id, formatDate(ticket.createdAt))
+  );
+  const functionSearchResults = searchQuery ? [
+    {
+      key: 'account-profile',
+      title: 'Account Profile',
+      section: 'Profile',
+      description: `${profile.name || 'Customer'} - ${profile.phone || profile.email || 'Account details'}`,
+      icon: <User className="w-4 h-4" />,
+      isMatch: matchesSearch('account profile customer name phone email member id', profile.name, profile.phone, profile.email, profile.uid),
+      action: () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }),
+    },
+    {
+      key: 'active-plan',
+      title: 'Active Plan',
+      section: 'Package',
+      description: profile.packageName || assignedPackage?.name || 'Package assignment details',
+      icon: <Package className="w-4 h-4" />,
+      isMatch: matchesSearch('plan package speed internet monthly active', profile.packageName, profile.packageSpeed, assignedPackage?.name, assignedPackage?.speed, assignedPackage?.price),
+      action: () => navigate('/packages'),
+    },
+    {
+      key: 'billing-payments',
+      title: 'Bills & Payments',
+      section: 'Payments',
+      description: currentBill ? `${formatCurrency(currentBill.amount)} - ${currentBill.status}` : 'Payment history and balance',
+      icon: <CreditCard className="w-4 h-4" />,
+      isMatch: matchesSearch('bill bills billing payment payments paid unpaid overdue balance due invoice recharge', currentBill?.amount, currentBill?.status, currentBill?.month, currentBill?.dueDate),
+      action: () => navigate('/payments'),
+    },
+    {
+      key: 'support-contact',
+      title: 'Support Contact',
+      section: 'Support',
+      description: `WhatsApp / Call: ${supportNumber}`,
+      icon: <Phone className="w-4 h-4" />,
+      isMatch: matchesSearch('support contact whatsapp call phone help complaint', supportNumber),
+      action: () => window.open(`https://wa.me/${supportNumber}`, '_blank'),
+    },
+    {
+      key: 'new-complaint',
+      title: 'New Complaint',
+      section: 'Ticket',
+      description: 'Slow internet, outage, billing issue, package change request',
+      icon: <MessageCircle className="w-4 h-4" />,
+      isMatch: matchesSearch('complaint ticket support issue slow outage router login package change request'),
+      action: () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }),
+    },
+    {
+      key: 'update-security',
+      title: 'Update Security',
+      section: 'Security',
+      description: 'Change password inside app',
+      icon: <Shield className="w-4 h-4" />,
+      isMatch: matchesSearch('security password update change login account safe'),
+      action: () => setIsSecurityOpen(true),
+    },
+  ].filter((item) => item.isMatch) : [];
+  const billSearchResults = searchQuery ? filteredBills.slice(0, 4).map((bill) => ({
+    key: `bill-${bill.id}`,
+    title: `${bill.packageName || 'Monthly Bill'} - ${bill.month}`,
+    section: 'Bill',
+    description: `${formatCurrency(bill.amount)} - ${bill.status} - Due ${formatDate(bill.dueDate)}`,
+    icon: <CreditCard className="w-4 h-4" />,
+    action: () => navigate('/payments'),
+  })) : [];
+  const ticketSearchResults = searchQuery ? filteredTickets.slice(0, 4).map((ticket) => ({
+    key: `ticket-${ticket.id}`,
+    title: ticket.issueType || 'Support Ticket',
+    section: 'Ticket',
+    description: `${ticket.status || 'open'} - ${ticket.message || ''}`,
+    icon: <MessageSquare className="w-4 h-4" />,
+    action: () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }),
+  })) : [];
+  const globalSearchResults = [...functionSearchResults, ...billSearchResults, ...ticketSearchResults];
 
   const handleLogout = async () => {
     try {
@@ -177,8 +261,6 @@ export default function CustomerDashboard() {
     }
   };
 
-  const supportNumber = settings?.easypaisaNumber || "03001234567"; // Fallback to settings or default
-
   const isSuspended = profile.status === 'suspended';
   const isExpired = profile.status === 'expired';
 
@@ -259,6 +341,58 @@ export default function CustomerDashboard() {
             </button>
           )}
         </div>
+
+        {searchTerm && (
+          <Card className="border-slate-100 bg-white shadow-sm rounded-3xl overflow-hidden">
+            <CardHeader className="px-6 py-5 border-b border-slate-100">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <CardTitle className="text-base font-black text-slate-900 uppercase tracking-tight">Main Search</CardTitle>
+                  <CardDescription className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                    Customer portal ke all functions aur records
+                  </CardDescription>
+                </div>
+                <Badge className="w-fit border-none bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase tracking-widest">
+                  {globalSearchResults.length} Results
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4">
+              {globalSearchResults.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                  {globalSearchResults.map((result) => (
+                    <button
+                      key={result.key}
+                      type="button"
+                      onClick={result.action}
+                      className="group flex min-h-[84px] items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 text-left transition-all hover:border-indigo-100 hover:bg-indigo-50/70"
+                    >
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm transition-all group-hover:bg-indigo-600 group-hover:text-white">
+                        {result.icon}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="mb-1 inline-flex rounded-full bg-white px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-slate-400">
+                          {result.section}
+                        </span>
+                        <span className="block truncate text-sm font-black text-slate-900">{result.title}</span>
+                        <span className="block truncate text-[11px] font-semibold text-slate-500">{result.description}</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 transition-transform group-hover:translate-x-1 group-hover:text-indigo-600" />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center px-6 py-10 text-center">
+                  <Search className="mb-3 h-9 w-9 text-slate-200" />
+                  <p className="text-sm font-black text-slate-700">No result found</p>
+                  <p className="mt-1 max-w-md text-xs font-medium text-slate-400">
+                    Plan, bill, payment, support, complaint, security, phone, status ya ticket keyword se search karein.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Urgent Status Banner for Suspended/Expired */}
         {(isSuspended || isExpired) && (
