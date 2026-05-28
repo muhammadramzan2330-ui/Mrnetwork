@@ -603,28 +603,28 @@ export default function CustomerDashboard() {
                         <ChevronRight className="w-4 h-4" />
                       </Button>
                     </DialogTrigger>
-                    <DialogContent showCloseButton={false} className="sm:max-w-[460px] rounded-[28px] border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl shadow-slate-900/20 overflow-hidden">
-                      <DialogHeader className="bg-slate-950 px-6 py-4 text-white">
+                    <DialogContent showCloseButton={false} className="sm:max-w-[460px] max-h-[calc(100vh-1.5rem)] rounded-[24px] border border-slate-200 bg-white p-0 text-slate-900 shadow-2xl shadow-slate-900/20 overflow-hidden">
+                      <DialogHeader className="bg-slate-950 px-5 py-3 text-white">
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500 text-white shadow-lg shadow-indigo-950/30">
-                            <Shield className="h-4 w-4" />
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500 text-white shadow-lg shadow-indigo-950/30">
+                            <Shield className="h-3.5 w-3.5" />
                           </div>
                           <div>
-                            <DialogTitle className="text-base font-black uppercase tracking-wide text-white">Update Security</DialogTitle>
-                            <DialogDescription className="mt-0.5 text-[11px] font-medium leading-snug text-slate-300">
+                            <DialogTitle className="text-sm font-black uppercase tracking-wide text-white">Update Security</DialogTitle>
+                            <DialogDescription className="mt-0.5 text-[10px] font-medium leading-tight text-slate-300">
                           App ke andar apna password secure tareeqe se change karein.
                             </DialogDescription>
                           </div>
                           </div>
                           <DialogClose asChild>
-                            <Button variant="ghost" size="icon-sm" className="h-9 w-9 shrink-0 rounded-full text-slate-300 hover:bg-white/10 hover:text-white">
+                            <Button variant="ghost" size="icon-sm" className="h-7 w-7 shrink-0 rounded-full text-slate-300 hover:bg-white/10 hover:text-white">
                               <XCircle className="h-4 w-4" />
                             </Button>
                           </DialogClose>
                         </div>
                       </DialogHeader>
-                      <div className="space-y-3.5 bg-white px-6 py-4">
+                      <div className="space-y-3 bg-white px-5 py-3.5">
                         <div className="space-y-1.5">
                           <label className="block text-[11px] font-black text-slate-800 uppercase tracking-wide">Current Password</label>
                           <Input
