@@ -199,7 +199,6 @@ export default function Login() {
           
           <CardHeader className="text-center pt-8 pb-4 px-6 sm:px-10">
             <CardTitle className="text-2xl font-extrabold text-slate-900 tracking-tight uppercase">Protected Login</CardTitle>
-            <CardDescription className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mt-2 leading-relaxed">Encrypted Firebase authentication with failed-attempt lockout</CardDescription>
           </CardHeader>
           
           <CardContent className="px-6 sm:px-10 pb-8 pt-0">
