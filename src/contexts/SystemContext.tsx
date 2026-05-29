@@ -266,10 +266,12 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       });
     }
 
-    transaction.update(doc(db, 'treasury', 'current'), {
+    transaction.set(doc(db, 'treasury', 'current'), {
       balance: increment(split.adminShare),
-      todayIn: increment(split.adminShare)
-    });
+      todayIn: increment(split.adminShare),
+      monthIn: increment(split.adminShare),
+      updatedAt: Timestamp.now()
+    }, { merge: true });
 
     return split;
   };
@@ -687,10 +689,12 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
             walletBalance: increment(-reqData.amount)
           });
 
-          transaction.update(doc(db, 'treasury', 'current'), {
+          transaction.set(doc(db, 'treasury', 'current'), {
             balance: increment(-reqData.amount),
-            todayOut: increment(reqData.amount)
-          });
+            todayOut: increment(reqData.amount),
+            monthOut: increment(reqData.amount),
+            updatedAt: Timestamp.now()
+          }, { merge: true });
 
           transaction.update(doc(db, 'requests', requestId), { status: 'resolved' });
         } else {
