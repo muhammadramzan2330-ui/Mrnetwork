@@ -76,7 +76,7 @@ export const generateInvoicePDF = (data: InvoiceData) => {
   
   doc.setFont('helvetica', 'normal');
   doc.text(data.customerName, 20, 62);
-  doc.text(`Phone: ${data.phone}`, 20, 68);
+  doc.text(`Customer Phone: ${data.phone}`, 20, 68);
 
   doc.setFont('helvetica', 'bold');
   doc.text('INVOICE DETAILS:', 130, 55);

@@ -203,6 +203,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
   };
 
   const normalizeReference = (reference: string = '') => reference.trim().replace(/\s+/g, '').toUpperCase();
+  const getCustomerPhone = (customer: any = {}) => customer.phone || customer.whatsapp || customer.mobile || customer.phoneNumber || '';
 
   const getRevenueSplit = (amount: number, customer: any, pkg: any) => {
     const hasSubdealer = !!customer?.subdealerId && customer.subdealerId !== 'admin';
@@ -433,6 +434,8 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
             transaction.set(payRef, {
               userId: user.id,
               userName: user.name,
+              userPhone: getCustomerPhone(user),
+              phone: getCustomerPhone(user),
               amount: pkg.price,
               method: 'wallet',
               status: 'approved',
@@ -517,6 +520,9 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
         ...paymentData,
         userId: customer.id,
         userName: customer.name,
+        userPhone: getCustomerPhone(customer),
+        phone: getCustomerPhone(customer),
+        whatsapp: customer.whatsapp || '',
         amount,
         method,
         reference,
@@ -718,6 +724,9 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
         transaction.set(paymentRef, {
           userId: bill.userId,
           userName: bill.userName,
+          userPhone: getCustomerPhone(customer) || bill.userPhone || bill.phone || '',
+          phone: getCustomerPhone(customer) || bill.userPhone || bill.phone || '',
+          whatsapp: customer.whatsapp || bill.whatsapp || '',
           amount: bill.amount,
           method: method,
           date: Timestamp.now(),
@@ -761,6 +770,9 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       await addDocument('bills', {
         userId: user.id,
         userName: user.name,
+        userPhone: getCustomerPhone(user),
+        phone: getCustomerPhone(user),
+        whatsapp: user.whatsapp || '',
         packageName: user.packageName || pkg?.name || 'Standard Package',
         amount: amount,
         month: currentMonth,
@@ -806,6 +818,9 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
             await addDocument('bills', {
               userId: user.id,
               userName: user.name,
+              userPhone: getCustomerPhone(user),
+              phone: getCustomerPhone(user),
+              whatsapp: user.whatsapp || '',
               packageName: user.packageName || pkg?.name || 'Standard Package',
               amount: amount,
               month: currentMonth,
