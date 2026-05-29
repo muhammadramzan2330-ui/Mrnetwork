@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Receipt, Printer, Download, ArrowUpRight, ArrowDownRight, Wallet, CreditCard, Banknote, Building2, Filter, CheckCircle2, XCircle, Clock, ChevronDown, RefreshCw, MessageSquare, Phone } from 'lucide-react';
+import { Plus, Search, Receipt, Printer, Download, ArrowUpRight, ArrowDownRight, Wallet, CreditCard, Banknote, Building2, Filter, CheckCircle2, XCircle, Clock, ChevronDown, RefreshCw, MessageSquare, Phone, Loader2 } from 'lucide-react';
 import { generateInvoicePDF, generateReceiptPDF } from '@/services/pdfService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -100,15 +100,31 @@ export default function Payments() {
     }
   };
 
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [processingPaymentId, setProcessingPaymentId] = useState<string | null>(null);
 
   const handleApprove = async (id: string) => {
     if (!isAdmin) return;
-    if (confirmingId === id) {
+    const confirmed = window.confirm('Payment approve karni hai? Pehle apne Easypaisa/JazzCash/Bank account mein amount confirm kar lein.');
+    if (!confirmed) return;
+
+    setProcessingPaymentId(id);
+    try {
       await approvePayment(id);
-      setConfirmingId(null);
-    } else {
-      setConfirmingId(id);
+    } finally {
+      setProcessingPaymentId(null);
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    if (!isAdmin) return;
+    const confirmed = window.confirm('Payment reject karni hai?');
+    if (!confirmed) return;
+
+    setProcessingPaymentId(id);
+    try {
+      await rejectPayment(id);
+    } finally {
+      setProcessingPaymentId(null);
     }
   };
 
@@ -579,7 +595,8 @@ export default function Payments() {
                           <Button 
                             variant="ghost" 
                             size="sm"
-                            onClick={() => rejectPayment(item.id)}
+                            onClick={() => handleReject(item.id)}
+                            disabled={processingPaymentId === item.id}
                             className="h-9 px-3 text-rose-500 font-bold text-[9px] hover:bg-rose-50 rounded-lg uppercase tracking-wider"
                           >
                             Reject
@@ -587,12 +604,17 @@ export default function Payments() {
                           <Button 
                             size="sm"
                             onClick={() => handleApprove(item.id)}
-                            className={cn(
-                              "h-9 px-4 rounded-lg text-[10px] font-bold uppercase transition-all shadow-sm",
-                              confirmingId === item.id ? "bg-orange-500 hover:bg-orange-600 text-white" : "bg-indigo-600 hover:bg-indigo-700 text-white"
-                            )}
+                            disabled={processingPaymentId === item.id}
+                            className="h-9 px-4 rounded-lg text-[10px] font-bold uppercase transition-all shadow-sm bg-indigo-600 hover:bg-indigo-700 text-white disabled:bg-slate-300 disabled:text-slate-500"
                           >
-                            {confirmingId === item.id ? "Confirm?" : "Approve"}
+                            {processingPaymentId === item.id ? (
+                              <>
+                                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                                Processing
+                              </>
+                            ) : (
+                              'Approve'
+                            )}
                           </Button>
                         </div>
                       )}
