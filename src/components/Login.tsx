@@ -204,13 +204,6 @@ export default function Login() {
           
           <CardContent className="px-6 sm:px-10 pb-8 pt-0">
             <form onSubmit={handleEmailLogin} className="space-y-5 mb-8">
-              <div className="grid grid-cols-3 gap-2">
-                {['Role Guard', 'Lockout', 'HTTPS'].map((item) => (
-                  <div key={item} className="rounded-xl bg-emerald-50 border border-emerald-100 px-2 py-2 text-center">
-                    <p className="text-[8px] font-black uppercase tracking-widest text-emerald-600">{item}</p>
-                  </div>
-                ))}
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Email Address</Label>
                 <div className="relative group">
