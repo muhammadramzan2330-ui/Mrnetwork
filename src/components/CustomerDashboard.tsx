@@ -668,7 +668,7 @@ export default function CustomerDashboard() {
                                   generateInvoicePDF({
                                     invoiceNumber: bill.id.slice(-8).toUpperCase(),
                                     customerName,
-                                    phone: customerPhone,
+                                    phone: customerPhone !== 'N/A' ? customerPhone : (bill.phone || bill.userPhone || 'N/A'),
                                     packageName: bill.packageName || assignedPackage?.name || 'Service',
                                     speed: profile.packageSpeed || assignedPackage?.speed || 'Standard',
                                     amount: bill.amount,

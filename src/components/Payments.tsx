@@ -500,7 +500,7 @@ export default function Payments() {
                               generateInvoicePDF({
                                 invoiceNumber: item.id.slice(-8).toUpperCase(),
                                 customerName: item.userName || user?.name || 'Customer',
-                                phone: user?.phone || 'N/A',
+                                phone: user?.phone || user?.whatsapp || item.phone || item.userPhone || 'N/A',
                                 packageName: item.packageName || 'Service',
                                 speed: user?.packageSpeed || 'Standard',
                                 amount: item.amount,
@@ -513,7 +513,7 @@ export default function Payments() {
                               generateReceiptPDF({
                                 invoiceNumber: item.id.slice(-8).toUpperCase(),
                                 customerName: item.userName || user?.name || 'Customer',
-                                phone: user?.phone || 'N/A',
+                                phone: user?.phone || user?.whatsapp || item.phone || item.userPhone || 'N/A',
                                 packageName: item.packageName || 'Account Recharge',
                                 speed: 'N/A',
                                 amount: item.amount,
@@ -540,7 +540,7 @@ export default function Payments() {
                               generateInvoicePDF({
                                 invoiceNumber: item.id.slice(-8).toUpperCase(),
                                 customerName: item.userName || user?.name || 'Customer',
-                                phone: user?.phone || 'N/A',
+                                phone: user?.phone || user?.whatsapp || item.phone || item.userPhone || 'N/A',
                                 packageName: item.packageName || 'Service',
                                 speed: user?.packageSpeed || 'Standard',
                                 amount: item.amount,
@@ -553,7 +553,7 @@ export default function Payments() {
                               generateReceiptPDF({
                                 invoiceNumber: item.id.slice(-8).toUpperCase(),
                                 customerName: item.userName || user?.name || 'Customer',
-                                phone: user?.phone || 'N/A',
+                                phone: user?.phone || user?.whatsapp || item.phone || item.userPhone || 'N/A',
                                 packageName: item.packageName || 'Account Recharge',
                                 speed: 'N/A',
                                 amount: item.amount,

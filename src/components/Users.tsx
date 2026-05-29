@@ -1010,7 +1010,7 @@ export default function Users() {
                                   generateInvoicePDF({
                                     invoiceNumber: item.id.slice(-8).toUpperCase(),
                                     customerName: ledgerUser.name,
-                                    phone: ledgerUser.phone || 'N/A',
+                                    phone: ledgerUser.phone || ledgerUser.whatsapp || item.phone || item.userPhone || 'N/A',
                                     packageName: item.packageName,
                                     speed: ledgerUser.packageSpeed || 'N/A',
                                     amount: item.amount,

@@ -246,7 +246,7 @@ export default function Bills() {
                                 generateInvoicePDF({
                                   invoiceNumber: bill.id.slice(-8).toUpperCase(),
                                   customerName: bill.userName,
-                                  phone: user.phone || 'N/A',
+                                  phone: user.phone || user.whatsapp || bill.phone || bill.userPhone || 'N/A',
                                   packageName: bill.packageName,
                                   speed: user.packageSpeed || 'N/A',
                                   amount: bill.amount,
