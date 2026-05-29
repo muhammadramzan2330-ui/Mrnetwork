@@ -4,11 +4,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { registerWithEmail, createUserProfile } from '@/services/firebase';
-import { UserPlus, Shield, Loader2, Mail, Lock, User, Phone } from 'lucide-react';
+import { UserPlus, Loader2, Mail, Lock, User, Phone } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
 import { getPasswordChecks, validateStrongPassword } from '@/lib/security';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function Signup() {
   const [loading, setLoading] = useState(false);
@@ -88,11 +89,8 @@ export default function Signup() {
         className="w-full max-w-md"
       >
         <Card className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-          <div className="h-28 bg-gradient-to-br from-indigo-600 to-cyan-500 flex flex-col items-center justify-center p-6 text-white relative">
-            <div className="relative z-10 p-3 bg-white/10 rounded-xl backdrop-blur-md mb-2 border border-white/20 shadow-xl">
-              <Shield className="w-8 h-8 text-white" />
-            </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 relative z-10 leading-none">New Account Registry</p>
+          <div className="h-40 bg-gradient-to-br from-indigo-600 to-cyan-500 flex flex-col items-center justify-center p-6 text-white relative">
+            <BrandLogo variant="hero" showPhone />
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
           </div>
 

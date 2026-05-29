@@ -4,6 +4,7 @@ import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Cast
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
+import BrandLogo from '@/components/BrandLogo';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -65,10 +66,7 @@ export default function Layout({ children }: LayoutProps) {
       {/* Universal Top Fixed Header */}
       <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md border-b border-slate-100 z-[9999] px-4 sm:px-6 h-16 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2.5 ml-1 sm:ml-2">
-            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs shadow-md shadow-indigo-200">M</div>
-            <span className="font-black text-[13px] sm:text-sm tracking-tighter text-slate-900 uppercase truncate max-w-[100px] sm:max-w-none hover:text-indigo-600 transition-colors cursor-default">MR NETWORK</span>
-          </div>
+          <BrandLogo variant="compact" showPhone className="ml-1 sm:ml-2" />
         </div>
 
         <div className="flex items-center gap-2">
@@ -142,13 +140,7 @@ export default function Layout({ children }: LayoutProps) {
               className="absolute inset-y-0 left-0 w-[300px] bg-white shadow-2xl flex flex-col border-r border-slate-100"
             >
               <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-black text-sm shadow-xl shadow-indigo-200">M</div>
-                  <div className="flex flex-col">
-                    <span className="font-black text-xs tracking-tighter text-slate-900 uppercase leading-none">Navigation</span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">ISP Management</span>
-                  </div>
-                </div>
+                <BrandLogo variant="drawer" showPhone />
                 <button 
                   onClick={() => setIsDrawerOpen(false)}
                   aria-label="Close Navigation"

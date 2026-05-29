@@ -5,11 +5,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { signInWithGoogle, auth, loginWithEmail } from '@/services/firebase';
 import { signOut, getRedirectResult } from 'firebase/auth';
-import { LogIn, Shield, Loader2, Mail, Lock, Phone } from 'lucide-react';
+import { LogIn, Shield, Loader2, Mail, Lock } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
 import { clearLoginLockout, getLoginLockout, recordFailedLogin } from '@/lib/security';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function Login() {
   const [loading, setLoading] = useState(false);
@@ -186,16 +187,8 @@ export default function Login() {
               </div>
             </div>
           )}
-          <div className="h-36 header-gradient flex flex-col items-center justify-center p-6 text-white relative">
-            <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-indigo-600 shadow-xl shadow-indigo-950/20 mb-3">
-              <span className="text-xl font-black tracking-tight">MR</span>
-            </div>
-            <p className="text-lg font-black uppercase tracking-[0.12em] relative z-10 leading-none">MRNETWORK</p>
-            <div className="relative z-10 mt-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-[10px] font-black tracking-widest text-white backdrop-blur-md border border-white/20">
-              <Phone className="h-3.5 w-3.5" />
-              03040232330
-            </div>
-            
+          <div className="h-40 header-gradient flex flex-col items-center justify-center p-6 text-white relative">
+            <BrandLogo variant="hero" showPhone />
             {/* Abstract decorations */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl" />
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-cyan-400/20 rounded-full -ml-12 -mb-12 blur-2xl" />

@@ -4,10 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { resetPassword } from '@/services/firebase';
-import { Shield, Loader2, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Loader2, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
@@ -56,11 +57,7 @@ export default function ForgotPassword() {
       >
         <Card className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
           <div className="h-44 header-gradient flex flex-col items-center justify-center p-6 text-white relative">
-            <div className="relative z-10 p-4 bg-white/10 rounded-2xl backdrop-blur-md mb-3 border border-white/20 shadow-xl">
-              <Shield className="w-10 h-10 text-white" />
-            </div>
-            <h1 className="text-2xl font-black tracking-tight uppercase relative z-10">MR NETWORK</h1>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-80 relative z-10">ISP Billing Management</p>
+            <BrandLogo variant="hero" showPhone />
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl opacity-50" />
           </div>
           

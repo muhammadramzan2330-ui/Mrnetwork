@@ -13,6 +13,39 @@ interface InvoiceData {
   createdDate: string;
 }
 
+const officeInfo = {
+  address: 'Ghari Ikhtiar Khan',
+  contacts: [
+    { name: 'Muhammad Ramzan', phone: '03040232330' },
+    { name: 'Muhammad Bilal', phone: '03039496671' },
+    { name: 'JAM Majid', phone: '03047522234' },
+  ],
+};
+
+const drawOfficeInfo = (doc: jsPDF, startY: number, themeColor: [number, number, number]) => {
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  doc.roundedRect(20, startY, 170, 30, 3, 3, 'FD');
+
+  doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text('OFFICE ADDRESS & CONTACTS', 26, startY + 7);
+
+  doc.setTextColor(50, 50, 50);
+  doc.setFontSize(8.5);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Address: ${officeInfo.address}`, 26, startY + 14);
+
+  officeInfo.contacts.forEach((contact, index) => {
+    const x = 26 + index * 54;
+    doc.setFont('helvetica', 'bold');
+    doc.text(contact.name, x, startY + 22);
+    doc.setFont('helvetica', 'normal');
+    doc.text(contact.phone, x, startY + 27);
+  });
+};
+
 export const generateInvoicePDF = (data: InvoiceData) => {
   const doc = new jsPDF();
   const themeColor: [number, number, number] = [79, 70, 229]; // Indigo-600
@@ -52,9 +85,11 @@ export const generateInvoicePDF = (data: InvoiceData) => {
   doc.text(`Due Date: ${data.dueDate}`, 130, 68);
   doc.text(`Status: ${data.status.toUpperCase()}`, 130, 74);
 
+  drawOfficeInfo(doc, 82, themeColor);
+
   // Table
   autoTable(doc, {
-    startY: 85,
+    startY: 122,
     head: [['Description', 'Package', 'Speed', 'Total']],
     body: [
       ['Internet Service Subscription', data.packageName, data.speed, `Rs. ${data.amount.toLocaleString()}`],
@@ -132,8 +167,10 @@ export const generateReceiptPDF = (data: InvoiceData & { paymentMethod: string; 
   const splitText = doc.splitTextToSize(bodyText, 160);
   doc.text(splitText, 25, 75);
 
+  drawOfficeInfo(doc, 92, themeColor);
+
   autoTable(doc, {
-    startY: 90,
+    startY: 130,
     body: [
       ['Reference ID', data.reference],
       ['Payment Method', data.paymentMethod],
