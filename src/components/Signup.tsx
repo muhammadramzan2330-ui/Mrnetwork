@@ -22,7 +22,11 @@ export default function Signup() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password || !name || loading) return;
+    const cleanPhone = phone.trim();
+    if (!email.trim() || !password || !name || !cleanPhone || loading) {
+      toast.error("Name, email, phone number and password are required.");
+      return;
+    }
 
     const passwordResult = validateStrongPassword(password);
     if (!passwordResult.isStrong) {
@@ -39,9 +43,10 @@ export default function Signup() {
       if (result.user) {
         // Create customer profile with explicit fields as requested
         await createUserProfile(result.user.uid, {
-          name,
+          name: name.trim(),
           email: result.user.email,
-          phone,
+          phone: cleanPhone,
+          whatsapp: cleanPhone,
           role: 'customer',
           status: 'pending',
           plan: "",
@@ -143,6 +148,7 @@ export default function Signup() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className="input-modern pl-11 h-12 border-slate-200 focus:border-indigo-600"
+                    required
                   />
                 </div>
               </div>

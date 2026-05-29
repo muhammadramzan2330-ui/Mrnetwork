@@ -41,7 +41,7 @@ import { toast } from 'sonner';
 
 export default function CustomerDashboard() {
   const { profile, user } = useAuth();
-  const { bills, settings, packages, addLog, payments, addTicket, tickets } = useSystem();
+  const { bills, settings, packages, addLog, payments, addTicket, tickets, users } = useSystem();
   const [searchTerm, setSearchTerm] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
   const [ticketType, setTicketType] = useState('Technical Issue');
@@ -67,6 +67,15 @@ export default function CustomerDashboard() {
   const passwordStatus = validateStrongPassword(newPassword);
   const customerName = (profile.name || user?.displayName || profile.email?.split('@')[0] || 'Customer').trim();
   const headlineName = customerName.split(/\s+/)[0] || 'Customer';
+  const currentCustomer = users.find((customer: any) => customer.id === profile.id || customer.uid === user?.uid || customer.email === profile.email);
+  const customerPhone = (
+    (profile as any).phone ||
+    (profile as any).whatsapp ||
+    currentCustomer?.phone ||
+    currentCustomer?.whatsapp ||
+    user?.phoneNumber ||
+    'N/A'
+  );
   const searchQuery = searchTerm.trim().toLowerCase();
   const matchesSearch = (...values: any[]) => {
     if (!searchQuery) return false;
@@ -105,9 +114,9 @@ export default function CustomerDashboard() {
       key: 'account-profile',
       title: 'Account Profile',
       section: 'Profile',
-      description: `${customerName} - ${profile.phone || profile.email || 'Account details'}`,
+      description: `${customerName} - ${customerPhone !== 'N/A' ? customerPhone : profile.email || 'Account details'}`,
       icon: <User className="w-4 h-4" />,
-      isMatch: matchesSearch('account profile customer name phone email member id', customerName, profile.phone, profile.email, profile.uid),
+      isMatch: matchesSearch('account profile customer name phone email member id', customerName, customerPhone, profile.email, profile.uid),
       action: () => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }),
     },
     {
@@ -491,7 +500,7 @@ export default function CustomerDashboard() {
                     </div>
                     <div>
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Linked Mobile</p>
-                      <p className="text-xs font-bold text-slate-700">{profile.phone || 'N/A'}</p>
+                      <p className="text-xs font-bold text-slate-700">{customerPhone}</p>
                     </div>
                   </div>
                 </div>
@@ -659,7 +668,7 @@ export default function CustomerDashboard() {
                                   generateInvoicePDF({
                                     invoiceNumber: bill.id.slice(-8).toUpperCase(),
                                     customerName,
-                                    phone: profile.phone || 'N/A',
+                                    phone: customerPhone,
                                     packageName: bill.packageName || assignedPackage?.name || 'Service',
                                     speed: profile.packageSpeed || assignedPackage?.speed || 'Standard',
                                     amount: bill.amount,
@@ -728,6 +737,10 @@ export default function CustomerDashboard() {
                   <div>
                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] block mb-1.5">Electronic Mail</label>
                     <p className="text-slate-900 font-semibold text-sm break-all">{profile.email}</p>
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] block mb-1.5">Mobile Number</label>
+                    <p className="text-slate-900 font-semibold text-sm">{customerPhone}</p>
                   </div>
                   <div>
                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] block mb-1.5">Access Level</label>
