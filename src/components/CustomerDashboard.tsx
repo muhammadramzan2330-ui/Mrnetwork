@@ -599,8 +599,8 @@ export default function CustomerDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <Card className="bg-white border border-slate-200/80 ring-0 shadow-sm shadow-slate-200/70 rounded-3xl overflow-hidden min-h-[360px]">
-              <CardHeader className="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-indigo-50 via-sky-50 to-white flex flex-row items-center justify-between">
+            <Card className="customer-panel min-h-[320px]">
+              <CardHeader className="customer-panel-header flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-extrabold text-slate-900 tracking-tight">
                     {searchTerm ? 'Search Results' : 'Billing History'}
@@ -690,9 +690,9 @@ export default function CustomerDashboard() {
                     })}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-24 px-8 text-center">
-                    <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6">
-                      {searchTerm ? <Search className="w-10 h-10 text-slate-200" /> : <History className="w-10 h-10 text-slate-200" />}
+                  <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
+                    <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mb-5">
+                      {searchTerm ? <Search className="w-8 h-8 text-indigo-200" /> : <History className="w-8 h-8 text-indigo-200" />}
                     </div>
                     <h3 className="text-[10px] font-extrabold text-slate-400 uppercase tracking-[0.2em]">
                       {searchTerm ? 'No matches found' : 'Transaction Registry Empty'}
@@ -709,8 +709,8 @@ export default function CustomerDashboard() {
           </div>
 
           <div className="space-y-6">
-            <Card className="bg-white border border-slate-200/80 ring-0 shadow-sm shadow-slate-200/70 rounded-3xl overflow-hidden relative group">
-              <CardHeader className="bg-gradient-to-r from-indigo-50 via-sky-50 to-white py-5 px-6 relative overflow-hidden border-b border-slate-100">
+            <Card className="customer-panel relative group">
+              <CardHeader className="customer-panel-header relative overflow-hidden">
                 <CardTitle className="text-sm font-bold text-slate-800 relative z-10 flex items-center gap-3 text-indigo-700 uppercase tracking-widest text-[10px]">
                   <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm">
                     <User className="w-4 h-4" />
@@ -718,8 +718,8 @@ export default function CustomerDashboard() {
                   Account Profile
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-5">
+              <CardContent className="customer-panel-body">
+                <div className="space-y-4">
                   <div className="relative">
                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] block mb-1.5">Member Name</label>
                     <p className="text-slate-900 font-extrabold text-base leading-tight">{customerName}</p>
@@ -731,7 +731,7 @@ export default function CustomerDashboard() {
                   </div>
                   <div>
                     <label className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] block mb-1.5">Access Level</label>
-                    <div className="flex items-center gap-3 bg-indigo-50 px-4 py-3 rounded-2xl border border-indigo-100">
+                    <div className="customer-info-box flex items-center gap-3 bg-indigo-50 border-indigo-100">
                       <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 shadow-sm shadow-indigo-600/40 animate-pulse" />
                       <p className="text-indigo-600 font-black text-xs uppercase tracking-[0.1em] leading-none">{profile.role}</p>
                     </div>
@@ -740,7 +740,7 @@ export default function CustomerDashboard() {
                     <DialogTrigger asChild>
                       <Button 
                         variant="ghost" 
-                        className="w-full justify-between h-12 rounded-2xl border border-slate-200 bg-white px-5 hover:bg-indigo-50 hover:border-indigo-100 transition-all text-slate-500 hover:text-indigo-600"
+                        className="w-full justify-between h-11 rounded-2xl border border-slate-200 bg-white px-5 hover:bg-indigo-50 hover:border-indigo-100 transition-all text-slate-500 hover:text-indigo-600"
                       >
                         <span className="text-[10px] font-bold uppercase tracking-widest">Update Security</span>
                         <ChevronRight className="w-4 h-4" />
@@ -865,8 +865,8 @@ export default function CustomerDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="bg-white border border-slate-200/80 ring-0 shadow-sm shadow-slate-200/70 rounded-3xl overflow-hidden relative group">
-              <CardHeader className="bg-gradient-to-r from-indigo-50 via-sky-50 to-white py-5 px-6 relative overflow-hidden border-b border-slate-100">
+            <Card className="customer-panel relative group">
+              <CardHeader className="customer-panel-header relative overflow-hidden">
                 <CardTitle className="text-sm font-bold text-slate-800 relative z-10 flex items-center justify-between text-indigo-700 uppercase tracking-widest text-[10px]">
                   <div className="flex items-center gap-3">
                     <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm">
@@ -877,11 +877,11 @@ export default function CustomerDashboard() {
                   <Badge className="bg-indigo-600 text-white border-none text-[8px] h-5 min-w-5 justify-center rounded-full font-black">{userTickets.length}</Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="space-y-5">
+              <CardContent className="customer-panel-body">
+                <div className="space-y-4">
                   <Dialog>
                     <DialogTrigger asChild>
-                      <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] gap-3 transition-all shadow-lg shadow-indigo-600/20">
+                      <Button className="w-full bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-700 hover:to-cyan-700 text-white h-11 rounded-2xl font-black uppercase tracking-widest text-[10px] gap-3 transition-all shadow-lg shadow-indigo-600/20">
                         <MessageCircle className="w-4 h-4" /> 
                         New Complaint
                       </Button>
@@ -944,7 +944,7 @@ export default function CustomerDashboard() {
                     </DialogContent>
                   </Dialog>
 
-                  <div className="space-y-3 max-h-[260px] overflow-y-auto pr-1 no-scrollbar">
+                  <div className="space-y-3 max-h-[240px] overflow-y-auto pr-1 no-scrollbar">
                     {userTickets.length > 0 ? (
                       userTickets.map((ticket) => (
                         <div key={ticket.id} className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 group/ticket hover:bg-indigo-50/50 hover:border-indigo-100 transition-all">
