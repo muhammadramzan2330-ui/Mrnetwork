@@ -59,8 +59,14 @@ export default function CustomerDashboard() {
 
   if (!profile) return null;
 
-  const userBills = bills.filter(b => b.userId === profile.id);
-  const userTickets = tickets.filter(t => t.userId === profile.id);
+  const currentCustomer = users.find((customer: any) => (
+    customer.id === profile.id ||
+    customer.uid === user?.uid ||
+    (customer.email || '').toLowerCase() === (profile.email || '').toLowerCase()
+  ));
+  const ownerIds = new Set([profile.id, profile.uid, user?.uid, currentCustomer?.id, currentCustomer?.uid].filter(Boolean));
+  const userBills = bills.filter(b => ownerIds.has(b.userId));
+  const userTickets = tickets.filter(t => ownerIds.has(t.userId));
   const now = new Date();
   const supportNumber = settings?.easypaisaNumber || "03001234567"; // Fallback to settings or default
   const passwordChecks = getPasswordChecks(newPassword);
@@ -68,11 +74,6 @@ export default function CustomerDashboard() {
   const customerName = (profile.name || user?.displayName || profile.email?.split('@')[0] || 'Customer').trim();
   const headlineName = customerName.split(/\s+/)[0] || 'Customer';
   const getPhone = (source: any = {}) => source.phone || source.whatsapp || source.mobile || source.phoneNumber || source.userPhone || source.customerPhone || '';
-  const currentCustomer = users.find((customer: any) => (
-    customer.id === profile.id ||
-    customer.uid === user?.uid ||
-    (customer.email || '').toLowerCase() === (profile.email || '').toLowerCase()
-  ));
   const customerPhone = (
     getPhone(profile) ||
     getPhone(currentCustomer) ||
@@ -276,10 +277,11 @@ export default function CustomerDashboard() {
     }
   };
 
-  const isSuspended = profile.status === 'suspended';
-  const isExpired = profile.status === 'expired';
-
   const hasOverdueBills = userBills.some(b => b.status === 'unpaid' && new Date(b.dueDate) < now);
+  const hasUnpaidBills = userBills.some(b => b.status === 'unpaid');
+  const isSuspended = profile.status === 'suspended';
+  const isExpired = profile.status === 'expired' && hasUnpaidBills;
+  const displayStatus = isExpired ? 'expired' : (profile.status === 'expired' ? 'active' : (profile.status || 'active'));
 
   return (
     <div className="flex flex-col min-h-full bg-[#F8FAFC]">
@@ -320,11 +322,11 @@ export default function CustomerDashboard() {
                 <div className="flex items-center gap-2">
                   <div className={cn(
                     "w-2 h-2 rounded-full animate-pulse shadow-lg",
-                    profile.status === 'active' ? "bg-emerald-400 shadow-emerald-400/50" : 
+                    displayStatus === 'active' ? "bg-emerald-400 shadow-emerald-400/50" : 
                     isSuspended ? "bg-rose-400 shadow-rose-400/50" : 
                     "bg-amber-400 shadow-amber-400/50"
                   )} />
-                  <p className="text-sm font-bold text-white tracking-wide uppercase">{profile.status || 'Active'}</p>
+                  <p className="text-sm font-bold text-white tracking-wide uppercase">{displayStatus}</p>
                 </div>
               </div>
             </div>
@@ -462,15 +464,15 @@ export default function CustomerDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-xl font-bold text-slate-900 uppercase">
-                      {searchTerm && (profile.status || '').toLowerCase().includes(searchTerm.toLowerCase()) ? (
-                         <span className="bg-yellow-200">{profile.status || 'Verified'}</span>
+                      {searchTerm && displayStatus.toLowerCase().includes(searchTerm.toLowerCase()) ? (
+                         <span className="bg-yellow-200">{displayStatus}</span>
                       ) : (
-                        profile.status || 'Verified'
+                        displayStatus || 'Verified'
                       )}
                     </div>
                     <div className="mt-4 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className={cn("w-1.5 h-1.5 rounded-full", profile.status === 'active' ? "bg-emerald-500" : "bg-indigo-600")} />
+                        <span className={cn("w-1.5 h-1.5 rounded-full", displayStatus === 'active' ? "bg-emerald-500" : "bg-indigo-600")} />
                         <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">ID: {profile.uid?.slice(-6) || 'N/A'}</p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-transform" />
@@ -490,7 +492,7 @@ export default function CustomerDashboard() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
-                    <Badge className={cn("capitalize font-bold border-none", profile.status === 'active' ? "bg-emerald-50 text-emerald-600" : "bg-indigo-50 text-indigo-600")}>{profile.status}</Badge>
+                    <Badge className={cn("capitalize font-bold border-none", displayStatus === 'active' ? "bg-emerald-50 text-emerald-600" : "bg-indigo-50 text-indigo-600")}>{displayStatus}</Badge>
                   </div>
                   <div className="p-4 rounded-xl bg-slate-50 border border-slate-100">
                     <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1">Member Since</p>
@@ -532,9 +534,9 @@ export default function CustomerDashboard() {
                 )}
                 <div className="mt-4 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className={cn("w-1.5 h-1.5 rounded-full", profile.status === 'active' ? "bg-emerald-500" : "bg-rose-500")} />
+                    <span className={cn("w-1.5 h-1.5 rounded-full", displayStatus === 'active' ? "bg-emerald-500" : "bg-rose-500")} />
                     <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                      {profile.packageSpeed || assignedPackage?.speed || (profile.status ? `Status: ${profile.status}` : 'Pending assignment')}
+                      {profile.packageSpeed || assignedPackage?.speed || (displayStatus ? `Status: ${displayStatus}` : 'Pending assignment')}
                     </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-transform" />

@@ -566,10 +566,20 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
 
         const pkg = state.packages.find(p => p.id === user.packageId);
         const split = getRevenueSplit(payment.amount, customer, pkg);
+        const payableBill = payment.billId
+          ? state.bills.find(b => b.id === payment.billId)
+          : state.bills
+              .filter(b => b.userId === payment.userId && b.status === 'unpaid')
+              .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+              .find(b => Number(b.amount || 0) === Number(payment.amount || 0)) ||
+            state.bills
+              .filter(b => b.userId === payment.userId && b.status === 'unpaid')
+              .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
 
         // Update balances
         transaction.update(doc(db, 'payments', paymentId), {
           status: 'approved',
+          billId: payableBill?.id || payment.billId || '',
           approvedAt: Timestamp.now(),
           verifiedBy: user?.email || 'admin',
           verificationStatus: 'verified',
@@ -589,8 +599,8 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
 
         applyRevenueSplit(transaction, customer, pkg, payment.amount, paymentId, 'payment_approval');
 
-        if (payment.billId) {
-          transaction.update(doc(db, 'bills', payment.billId), {
+        if (payableBill?.id) {
+          transaction.update(doc(db, 'bills', payableBill.id), {
             status: 'paid',
             paidAt: Timestamp.now(),
             paymentId,
