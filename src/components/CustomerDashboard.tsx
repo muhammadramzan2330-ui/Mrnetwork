@@ -66,6 +66,21 @@ export default function CustomerDashboard() {
   ));
   const ownerIds = new Set([profile.id, (profile as any).linkedProfileId, profile.uid, user?.uid, currentCustomer?.id, currentCustomer?.uid].filter(Boolean));
   const userBills = bills.filter(b => ownerIds.has(b.userId));
+  const userPayments = payments.filter((payment: any) => (
+    ownerIds.has(payment.userId) ||
+    ownerIds.has(payment.uid) ||
+    userBills.some((bill: any) => payment.billId && payment.billId === bill.id)
+  ));
+  const coveringPayments = userPayments.filter((payment: any) => ['approved', 'pending'].includes(payment.status));
+  const coveredBillIds = new Set(coveringPayments.map((payment: any) => payment.billId).filter(Boolean));
+  const coveredBillAmounts = new Set(coveringPayments.map((payment: any) => Number(payment.amount || 0)).filter((amount: number) => amount > 0));
+  const displayBills = userBills.map((bill: any) => {
+    const isCovered = bill.status === 'unpaid' && (
+      coveredBillIds.has(bill.id) ||
+      coveredBillAmounts.has(Number(bill.amount || 0))
+    );
+    return isCovered ? { ...bill, status: 'paid', paymentSubmitted: true } : bill;
+  });
   const userTickets = tickets.filter(t => ownerIds.has(t.userId));
   const now = new Date();
   const supportNumber = settings?.easypaisaNumber || "03001234567"; // Fallback to settings or default
@@ -90,7 +105,7 @@ export default function CustomerDashboard() {
   };
   
   // Search filter logic
-  const filteredBills = userBills.filter(bill => {
+  const filteredBills = displayBills.filter(bill => {
     const isOverdue = bill.status === 'unpaid' && new Date(bill.dueDate) < now;
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
@@ -106,7 +121,7 @@ export default function CustomerDashboard() {
     );
   });
 
-  const currentBill = userBills
+  const currentBill = displayBills
     .sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime())[0];
   
   // Get assigned package based on either packageId or plan string
@@ -277,8 +292,8 @@ export default function CustomerDashboard() {
     }
   };
 
-  const hasOverdueBills = userBills.some(b => b.status === 'unpaid' && new Date(b.dueDate) < now);
-  const hasUnpaidBills = userBills.some(b => b.status === 'unpaid');
+  const hasOverdueBills = displayBills.some(b => b.status === 'unpaid' && new Date(b.dueDate) < now);
+  const hasUnpaidBills = displayBills.some(b => b.status === 'unpaid');
   const isSuspended = profile.status === 'suspended';
   const isExpired = profile.status === 'expired' && hasUnpaidBills;
   const displayStatus = isExpired ? 'expired' : (profile.status === 'expired' ? 'active' : (profile.status || 'active'));

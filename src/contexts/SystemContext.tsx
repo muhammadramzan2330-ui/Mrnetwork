@@ -517,8 +517,16 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      const relatedOwnerIds = Array.from(new Set([
+        customer.id,
+        customer.uid,
+        profile?.id,
+        (profile as any)?.linkedProfileId,
+        user?.uid,
+      ].filter(Boolean)));
+
       const unpaidBill = state.bills
-        .filter(b => b.userId === customer.id && b.status === 'unpaid')
+        .filter(b => relatedOwnerIds.includes(b.userId) && b.status === 'unpaid')
         .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
 
       if (!isAdmin && unpaidBill && amount !== Number(unpaidBill.amount || 0)) {
@@ -603,13 +611,39 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
           adminShare: split.adminShare
         });
 
-        transaction.update(doc(db, 'user', payment.userId), {
-          walletBalance: increment(payment.amount),
+        relatedCustomers.forEach((relatedCustomer: any) => {
+          transaction.set(doc(db, 'user', relatedCustomer.id), {
+            ...(relatedCustomer.id === payment.userId ? { walletBalance: increment(payment.amount) } : {}),
+            billingStatus: 'paid',
+            status: 'active',
+            lastPaymentDate: Timestamp.now(),
+            expiryDate: getNextExpiryDate({ ...customer, ...relatedCustomer }, pkg),
+            updatedAt: Timestamp.now()
+          }, { merge: true });
+        });
+
+        if (!relatedCustomers.some((relatedCustomer: any) => relatedCustomer.id === payment.userId)) {
+          transaction.update(doc(db, 'user', payment.userId), {
+            walletBalance: increment(payment.amount),
+            billingStatus: 'paid',
+            status: 'active',
+            lastPaymentDate: Timestamp.now(),
+            expiryDate: getNextExpiryDate(customer, pkg),
+            updatedAt: Timestamp.now()
+          });
+        }
+
+        const authProfileIds = relatedCustomers
+          .map((relatedCustomer: any) => relatedCustomer.uid)
+          .filter((uid: any) => uid && uid !== payment.userId && !relatedCustomers.some((relatedCustomer: any) => relatedCustomer.id === uid));
+        authProfileIds.forEach((profileId: string) => {
+          transaction.set(doc(db, 'user', profileId), {
           billingStatus: 'paid',
           status: 'active',
           lastPaymentDate: Timestamp.now(),
           expiryDate: getNextExpiryDate(customer, pkg),
           updatedAt: Timestamp.now()
+        }, { merge: true });
         });
 
         applyRevenueSplit(transaction, customer, pkg, payment.amount, paymentId, 'payment_approval');
@@ -758,15 +792,53 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
         const customer: any = { id: bill.userId, ...userDoc.data() };
         const pkg = state.packages.find(p => p.id === customer.packageId);
         const split = getRevenueSplit(bill.amount, customer, pkg);
+        const relatedCustomers = state.users.filter((candidate: any) => (
+          candidate.id === bill.userId ||
+          candidate.uid === bill.userId ||
+          (candidate.email && customer.email && candidate.email === customer.email)
+        ));
+        const relatedOwnerIds = Array.from(new Set([
+          bill.userId,
+          customer.uid,
+          ...relatedCustomers.flatMap((candidate: any) => [candidate.id, candidate.uid]),
+        ].filter(Boolean)));
+        const billsToPay = state.bills.filter((candidateBill: any) => (
+          candidateBill.id === billId ||
+          (
+            relatedOwnerIds.includes(candidateBill.userId) &&
+            candidateBill.status === 'unpaid' &&
+            (
+              Number(candidateBill.amount || 0) === Number(bill.amount || 0) ||
+              new Date(candidateBill.dueDate) < new Date()
+            )
+          )
+        ));
 
-        transaction.update(billRef, { status: 'paid', updatedAt: Timestamp.now() });
-        transaction.update(userRef, {
-          billingStatus: 'paid',
-          status: 'active',
-          lastPaymentDate: Timestamp.now(),
-          expiryDate: getNextExpiryDate(customer, pkg),
-          updatedAt: Timestamp.now()
+        billsToPay.forEach((candidateBill: any) => {
+          transaction.update(doc(db, 'bills', candidateBill.id), {
+            status: 'paid',
+            paidAt: Timestamp.now(),
+            updatedAt: Timestamp.now()
+          });
         });
+        relatedCustomers.forEach((relatedCustomer: any) => {
+          transaction.set(doc(db, 'user', relatedCustomer.id), {
+            billingStatus: 'paid',
+            status: 'active',
+            lastPaymentDate: Timestamp.now(),
+            expiryDate: getNextExpiryDate({ ...customer, ...relatedCustomer }, pkg),
+            updatedAt: Timestamp.now()
+          }, { merge: true });
+        });
+        if (!relatedCustomers.some((relatedCustomer: any) => relatedCustomer.id === bill.userId)) {
+          transaction.update(userRef, {
+            billingStatus: 'paid',
+            status: 'active',
+            lastPaymentDate: Timestamp.now(),
+            expiryDate: getNextExpiryDate(customer, pkg),
+            updatedAt: Timestamp.now()
+          });
+        }
         
         transaction.set(paymentRef, {
           userId: bill.userId,
