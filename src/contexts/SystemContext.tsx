@@ -204,6 +204,14 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
 
   const normalizeReference = (reference: string = '') => reference.trim().replace(/\s+/g, '').toUpperCase();
   const getCustomerPhone = (customer: any = {}) => customer.phone || customer.whatsapp || customer.mobile || customer.phoneNumber || '';
+  const getNextExpiryDate = (customer: any = {}, pkg: any = {}) => {
+    const validityDays = Number(pkg?.validity || customer.validity || 30);
+    const baseDate = customer.expiryDate && new Date(customer.expiryDate) > new Date()
+      ? new Date(customer.expiryDate)
+      : new Date();
+    baseDate.setDate(baseDate.getDate() + validityDays);
+    return baseDate.toISOString();
+  };
 
   const getRevenueSplit = (amount: number, customer: any, pkg: any) => {
     const hasSubdealer = !!customer?.subdealerId && customer.subdealerId !== 'admin';
@@ -572,6 +580,10 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
 
         transaction.update(doc(db, 'user', payment.userId), {
           walletBalance: increment(payment.amount),
+          billingStatus: 'paid',
+          status: 'active',
+          lastPaymentDate: Timestamp.now(),
+          expiryDate: getNextExpiryDate(customer, pkg),
           updatedAt: Timestamp.now()
         });
 
@@ -723,7 +735,13 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
         const split = getRevenueSplit(bill.amount, customer, pkg);
 
         transaction.update(billRef, { status: 'paid', updatedAt: Timestamp.now() });
-        transaction.update(userRef, { billingStatus: 'paid', lastPaymentDate: Timestamp.now() });
+        transaction.update(userRef, {
+          billingStatus: 'paid',
+          status: 'active',
+          lastPaymentDate: Timestamp.now(),
+          expiryDate: getNextExpiryDate(customer, pkg),
+          updatedAt: Timestamp.now()
+        });
         
         transaction.set(paymentRef, {
           userId: bill.userId,
