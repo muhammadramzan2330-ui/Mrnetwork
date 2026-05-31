@@ -23,7 +23,9 @@ import {
   ShieldCheck,
   LayoutDashboard,
   Search,
-  X
+  X,
+  FileText,
+  MoreVertical
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -259,6 +261,164 @@ export default function Dashboard() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (isAdmin) {
+    const monthlyRevenue = payments
+      .filter((p: any) => p.status === 'approved' && p.type === 'in')
+      .reduce((sum: number, p: any) => sum + Number(p.amount || 0), 0);
+    const onlineDevices = Math.max(activeUsersCount - suspendedUsersCount, 0);
+    const darkMetrics = [
+      {
+        label: 'Active Customers',
+        value: activeUsersCount.toLocaleString(),
+        trend: '+12.5%',
+        icon: Users,
+        color: 'from-blue-500 to-blue-700',
+        path: '/users',
+      },
+      {
+        label: 'Monthly Revenue',
+        value: `Rs. ${monthlyRevenue.toLocaleString()}`,
+        trend: '+18.7%',
+        icon: Wallet,
+        color: 'from-emerald-500 to-emerald-700',
+        path: '/treasury',
+      },
+      {
+        label: 'Unpaid Bills',
+        value: unpaidBillsCount.toLocaleString(),
+        trend: overdueBillsCount > 0 ? `${overdueBillsCount} overdue` : 'clear',
+        icon: CreditCard,
+        color: 'from-amber-500 to-orange-600',
+        path: '/bills',
+      },
+      {
+        label: 'Online Devices',
+        value: onlineDevices.toLocaleString(),
+        trend: '+6.1%',
+        icon: Activity,
+        color: 'from-violet-500 to-indigo-700',
+        path: '/status',
+      },
+    ];
+
+    const quickActions = [
+      { title: 'Add Customer', desc: 'Create new customer and services', icon: Users, path: '/users', color: 'from-blue-500 to-blue-700' },
+      { title: 'Generate Bills', desc: 'Create and send invoices to customers', icon: FileText, action: handleSyncBills, color: 'from-emerald-500 to-emerald-700' },
+      { title: 'Payments', desc: 'View payments and transaction history', icon: CreditCard, path: '/payments', color: 'from-violet-500 to-purple-700' },
+      { title: 'Reports', desc: 'Analytics and business insights', icon: TrendingUp, path: '/reports', color: 'from-sky-500 to-blue-700' },
+      { title: 'Support Tickets', desc: 'View and manage support requests', icon: MessageSquare, path: '/tickets', color: 'from-amber-500 to-orange-600' },
+      { title: 'Settings', desc: 'Configure system preferences', icon: SlidersHorizontal, path: '/billing-settings', color: 'from-slate-500 to-slate-700' },
+    ];
+
+    return (
+      <div className="space-y-5">
+        <section className="relative overflow-hidden rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-700 via-blue-950 to-[#07111f] p-6 shadow-2xl shadow-blue-950/30 sm:p-10">
+          <div className="relative z-10 max-w-3xl">
+            <p className="mb-3 text-xs font-black uppercase tracking-[0.32em] text-blue-200">MR NETWORK ISP</p>
+            <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">Welcome Back, Admin</h1>
+            <p className="mt-3 max-w-xl text-sm font-medium leading-7 text-blue-100">
+              Manage customers, invoices, payments and network performance from your central dashboard.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <span className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold text-white">
+                <Calendar className="h-4 w-4" /> {formatDate(new Date())}
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-bold text-white">
+                <Activity className="h-4 w-4" /> {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            </div>
+          </div>
+          <div className="absolute bottom-0 right-0 h-48 w-80 opacity-30">
+            <div className="absolute bottom-0 right-8 h-36 w-20 border-x-2 border-t-2 border-blue-300/40" />
+            <div className="absolute bottom-16 right-16 h-24 w-24 rounded-full border-2 border-blue-300/30" />
+            <div className="absolute bottom-0 right-36 h-20 w-24 rounded-t-lg bg-blue-400/20" />
+            <div className="absolute bottom-0 right-0 h-28 w-24 rounded-t-lg bg-blue-500/20" />
+          </div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(56,189,248,0.22),transparent_30%),linear-gradient(135deg,transparent_0%,rgba(255,255,255,0.08)_100%)]" />
+        </section>
+
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {darkMetrics.map((metric, index) => (
+            <motion.button
+              key={metric.label}
+              type="button"
+              onClick={() => navigate(metric.path)}
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="group rounded-2xl border border-white/10 bg-white/[0.055] p-5 text-left shadow-xl shadow-black/10 transition-all hover:-translate-y-0.5 hover:bg-white/[0.075]"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <span className={cn("flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg", metric.color)}>
+                  <metric.icon className="h-7 w-7" />
+                </span>
+                <MoreVertical className="h-5 w-5 text-slate-500 transition-colors group-hover:text-slate-300" />
+              </div>
+              <div className="mt-4">
+                <p className="text-sm font-bold text-slate-300">{metric.label}</p>
+                <p className="mt-2 text-3xl font-black tracking-tight text-white">{metric.value}</p>
+                <p className="mt-3 text-xs font-bold text-emerald-400">{metric.trend} <span className="ml-1 font-medium text-slate-400">vs last month</span></p>
+              </div>
+            </motion.button>
+          ))}
+        </section>
+
+        <section className="rounded-2xl border border-white/10 bg-white/[0.045] p-5 shadow-xl shadow-black/10">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <h2 className="text-lg font-black text-white">Quick Actions</h2>
+            <button className="rounded-xl border border-white/10 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-white/7" onClick={() => navigate('/admin')}>
+              View All Actions
+            </button>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
+            {quickActions.map((action) => (
+              <button
+                key={action.title}
+                type="button"
+                onClick={() => action.path ? navigate(action.path) : action.action?.()}
+                className="group flex min-h-[170px] flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition-all hover:-translate-y-0.5 hover:bg-white/[0.07]"
+              >
+                <span className={cn("mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg", action.color)}>
+                  <action.icon className="h-6 w-6" />
+                </span>
+                <span className="text-base font-black text-white">{action.title}</span>
+                <span className="mt-2 text-sm font-medium leading-6 text-slate-400">{action.desc}</span>
+                <ChevronRight className="mt-auto h-5 w-5 self-end text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-6">
+            <div className="flex items-center gap-4">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/7 text-slate-200">
+                <ShieldCheck className="h-6 w-6" />
+              </span>
+              <div>
+                <h3 className="text-lg font-black text-white">Network Health</h3>
+                <p className="text-sm font-medium text-slate-400">All core systems are running smoothly.</p>
+              </div>
+              <span className="ml-auto rounded-xl bg-emerald-500/15 px-4 py-2 text-xs font-black text-emerald-400">Healthy</span>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-bold text-slate-300">System Uptime</p>
+                <p className="mt-1 text-3xl font-black text-emerald-400">99.9%</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs font-bold text-slate-400">Last 24 Hours</p>
+                <p className="mt-2 text-sm font-bold text-emerald-400">No major issues</p>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     );
   }

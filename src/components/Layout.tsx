@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, User, History, ShieldCheck as ShieldCheckIcon, LogOut, Settings } from 'lucide-react';
+import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, User, History, ShieldCheck as ShieldCheckIcon, LogOut, Settings, Bell, Radio, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -60,6 +60,113 @@ export default function Layout({ children }: LayoutProps) {
     await signOut(auth);
     setIsDrawerOpen(false);
   };
+
+  if (user) {
+    const shellNav = isAdmin ? [
+      { icon: LayoutDashboard, label: 'Overview', to: '/admin' },
+      { icon: Users, label: 'Customers', to: '/users' },
+      { icon: FileText, label: 'Billing', to: '/bills' },
+      { icon: CreditCard, label: 'Payments', to: '/payments' },
+      { icon: Radio, label: 'Network', to: '/status' },
+      { icon: TrendingUp, label: 'Reports', to: '/reports' },
+      { icon: MessageSquare, label: 'Support Tickets', to: '/tickets', badge: openTicketsCount > 0 ? openTicketsCount : null },
+      { icon: History, label: 'System Logs', to: '/audit-logs' },
+      { icon: Settings, label: 'Settings', to: '/billing-settings' },
+    ] : [
+      { icon: LayoutDashboard, label: 'Overview', to: '/dashboard' },
+      { icon: CreditCard, label: 'Payments', to: '/payments' },
+      { icon: Package, label: 'Service Plans', to: '/packages' },
+      { icon: FileText, label: 'Billing', to: '/payments' },
+      { icon: MessageSquare, label: 'Support Tickets', to: '/tickets', badge: openTicketsCount > 0 ? openTicketsCount : null },
+      { icon: User, label: 'Profile', to: '/profile' },
+    ];
+    const accountName = user.displayName || (isAdmin ? 'Admin' : 'Customer');
+    const accountInitials = isAdmin ? 'AD' : (accountName.slice(0, 2) || 'CU').toUpperCase();
+
+    return (
+      <div className="min-h-screen bg-[#07111f] text-slate-100 font-sans selection:bg-blue-500/30 selection:text-white">
+        <div className="flex min-h-screen">
+          <aside className="hidden lg:flex w-[290px] shrink-0 flex-col border-r border-white/10 bg-[#07101d] px-4 py-6">
+            <div className="mb-8 flex items-center gap-4 px-2">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-700 shadow-lg shadow-blue-700/30">
+                <span className="text-2xl font-black text-white">M</span>
+              </div>
+              <div>
+                <p className="text-lg font-black tracking-tight text-white">MR NETWORK</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">ISP Management System</p>
+              </div>
+            </div>
+
+            <nav className="flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
+              {shellNav.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) => cn(
+                    "group flex items-center gap-4 rounded-xl px-4 py-3.5 text-sm font-bold transition-all",
+                    isActive
+                      ? "bg-blue-600/90 text-white shadow-lg shadow-blue-950/30 ring-1 ring-blue-300/20"
+                      : "text-slate-300 hover:bg-white/7 hover:text-white"
+                  )}
+                >
+                  <item.icon className="h-5 w-5 text-current opacity-90 transition-transform group-hover:scale-110" />
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge && (
+                    <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-black text-white">{item.badge}</span>
+                  )}
+                </NavLink>
+              ))}
+            </nav>
+
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/40" />
+                <p className="text-xs font-bold text-slate-300">System Status</p>
+              </div>
+              <p className="text-base font-black text-emerald-400">All Systems Operational</p>
+              <p className="mt-3 text-xs font-medium text-slate-400">Last updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+            </div>
+          </aside>
+
+          <div className="flex min-w-0 flex-1 flex-col">
+            <header className="sticky top-0 z-50 flex min-h-20 items-center justify-between gap-4 border-b border-white/10 bg-[#07111f]/95 px-4 py-4 backdrop-blur-xl sm:px-7">
+              <div className="flex items-center gap-3 text-emerald-400">
+                <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/40" />
+                <span className="text-sm font-bold">System Online</span>
+              </div>
+              <div className="hidden min-w-0 max-w-xl flex-1 items-center rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-slate-400 md:flex">
+                <Search className="mr-3 h-5 w-5" />
+                <span className="truncate text-sm">Search customers, invoices, payments...</span>
+                <span className="ml-auto rounded-lg bg-white/7 px-2 py-1 text-[10px] font-black text-slate-300">Ctrl + K</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <button className="relative rounded-xl p-2 text-slate-300 hover:bg-white/7 hover:text-white" aria-label="Notifications">
+                  <Bell className="h-5 w-5" />
+                  {openTicketsCount > 0 && (
+                    <span className="absolute -right-1 -top-1 rounded-full bg-rose-500 px-1.5 text-[10px] font-black text-white">{openTicketsCount}</span>
+                  )}
+                </button>
+                <NavLink to="/profile" className="flex items-center gap-3 rounded-2xl px-2 py-1.5 hover:bg-white/7">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white">{accountInitials}</span>
+                  <span className="hidden sm:block">
+                    <span className="block text-sm font-black text-white">{accountName}</span>
+                    <span className="block text-xs font-medium text-slate-400">{isAdmin ? 'Super Administrator' : 'Customer Portal'}</span>
+                  </span>
+                </NavLink>
+                <button onClick={handleLogout} className="rounded-xl p-2 text-slate-400 hover:bg-rose-500/10 hover:text-rose-300" aria-label="Sign out">
+                  <LogOut className="h-5 w-5" />
+                </button>
+              </div>
+            </header>
+
+            <main className="flex-1 p-4 sm:p-7">
+              {children}
+            </main>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col font-sans selection:bg-indigo-100 selection:text-indigo-600 overflow-x-hidden">
