@@ -54,6 +54,14 @@ const SystemContext = createContext<(SystemState & SystemActions) | undefined>(u
 
 export function SystemProvider({ children }: { children: React.ReactNode }) {
   const { isAdmin, user, profile } = useAuth();
+  const getLatestSettings = (data: any[]) => {
+    if (!data.length) return null;
+    return [...data].sort((a: any, b: any) => {
+      const aTime = a.updatedAt?.toMillis?.() || new Date(a.updatedAt || a.createdAt || 0).getTime();
+      const bTime = b.updatedAt?.toMillis?.() || new Date(b.updatedAt || b.createdAt || 0).getTime();
+      return bTime - aTime;
+    })[0];
+  };
   const [state, setState] = useState<SystemState>({
     users: [],
     payments: [],
@@ -106,7 +114,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       unsubTickets = subscribeToCollection('tickets', (data) => setState(prev => ({ ...prev, tickets: data })), [orderBy('createdAt', 'desc')], errorHandler('tickets'));
       unsubLogs = subscribeToCollection('logs', (data) => setState(prev => ({ ...prev, logs: data })), [orderBy('date', 'desc')], errorHandler('logs'));
       unsubNotifs = subscribeToCollection('notifications', (data) => setState(prev => ({ ...prev, notifications: data })), [orderBy('date', 'desc')], errorHandler('notifications'));
-      unsubSettings = subscribeToCollection('settings', (data) => setState(prev => ({ ...prev, settings: data[0] })), [], errorHandler('settings'));
+      unsubSettings = subscribeToCollection('settings', (data) => setState(prev => ({ ...prev, settings: getLatestSettings(data) })), [], errorHandler('settings'));
       unsubTreasury = subscribeToCollection('treasury', (data) => {
         setState(prev => ({ ...prev, treasury: data[0] || null, loading: false }));
       }, [], errorHandler('treasury'));
@@ -143,7 +151,12 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
         notifications: [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) 
       })), [ownerFilter], errorHandler('notifications'));
       
-      // Treasury and Settings are not needed for customers but treasury loaded check should pass
+      unsubSettings = subscribeToCollection('settings', (data) => setState(prev => ({
+        ...prev,
+        settings: getLatestSettings(data)
+      })), [], errorHandler('settings'));
+
+      // Treasury is admin-only, but customer loading should pass
       setState(prev => ({ ...prev, loading: false }));
     }
 
