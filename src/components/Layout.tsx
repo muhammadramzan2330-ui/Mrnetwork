@@ -127,8 +127,9 @@ export default function Layout({ children }: LayoutProps) {
         <div className="flex min-h-screen">
           <aside className={cn("hidden w-[290px] shrink-0 flex-col border-r px-4 py-6", sideBg)}>
             <div className="mb-8 flex items-center gap-4 px-2">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-700 shadow-lg shadow-blue-700/30">
-                <span className="text-2xl font-black text-white">M</span>
+              <div className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-600 to-indigo-800 shadow-lg shadow-blue-700/30">
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.45),transparent_28%)]" />
+                <span className="relative text-3xl font-black italic tracking-[-0.18em] text-white">M</span>
               </div>
               <div>
                 <p className={cn("text-lg font-black tracking-tight", titleText)}>MR NETWORK</p>
@@ -215,8 +216,9 @@ export default function Layout({ children }: LayoutProps) {
                   >
                     <div className="mb-6 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-700 shadow-lg shadow-blue-700/30">
-                          <span className="text-xl font-black text-white">M</span>
+                        <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-600 to-indigo-800 shadow-lg shadow-blue-700/30">
+                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(255,255,255,0.45),transparent_28%)]" />
+                          <span className="relative text-2xl font-black italic tracking-[-0.18em] text-white">M</span>
                         </div>
                         <div>
                           <p className={cn("text-base font-black", titleText)}>MR NETWORK</p>
