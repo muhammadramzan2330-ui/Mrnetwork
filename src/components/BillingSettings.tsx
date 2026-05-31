@@ -26,6 +26,8 @@ export default function BillingSettings() {
   const [formData, setFormData] = useState({
     easypaisaName: 'Muhammad Ramzan',
     easypaisaNumber: '03001234567',
+    adminPhone: '03040232330',
+    adminEmail: 'mrnetwork.support@gmail.com',
     jazzcashName: 'Muhammad Ramzan',
     jazzcashNumber: '03451234567',
     bankName: 'HBL Bank',
@@ -57,6 +59,15 @@ export default function BillingSettings() {
         { label: 'Easypaisa Name', key: 'easypaisaName', placeholder: 'Muhammad Ramzan' },
         { label: 'JazzCash Number', key: 'jazzcashNumber', placeholder: '03451234567', icon: Smartphone },
         { label: 'JazzCash Name', key: 'jazzcashName', placeholder: 'Muhammad Ramzan' },
+      ]
+    },
+    {
+      title: 'Support Contact',
+      icon: MessageSquare,
+      description: 'Customer support phone and email shown in app',
+      fields: [
+        { label: 'Admin Phone', key: 'adminPhone', placeholder: '03040232330', icon: Smartphone },
+        { label: 'Admin Email', key: 'adminEmail', placeholder: 'mrnetwork.support@gmail.com', icon: AtSign },
       ]
     },
     {

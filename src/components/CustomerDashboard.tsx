@@ -28,7 +28,8 @@ import {
   XCircle,
   LayoutDashboard,
   Eye,
-  EyeOff
+  EyeOff,
+  Mail
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { formatDate, formatCurrency, cn } from '@/lib/utils';
@@ -111,7 +112,8 @@ export default function CustomerDashboard() {
   ));
   const userTickets = tickets.filter(t => ownerIds.has(t.userId));
   const now = new Date();
-  const supportNumber = settings?.easypaisaNumber || "03001234567"; // Fallback to settings or default
+  const supportNumber = settings?.adminPhone || settings?.supportPhone || settings?.easypaisaNumber || "03040232330";
+  const supportEmail = settings?.adminEmail || settings?.supportEmail || "mrnetwork.support@gmail.com";
   const passwordChecks = getPasswordChecks(newPassword);
   const passwordStatus = validateStrongPassword(newPassword);
   const customerName = (profile.name || user?.displayName || profile.email?.split('@')[0] || 'Customer').trim();
@@ -188,9 +190,9 @@ export default function CustomerDashboard() {
       key: 'support-contact',
       title: 'Support Contact',
       section: 'Support',
-      description: `WhatsApp / Call: ${supportNumber}`,
+      description: `Call: ${supportNumber} / Email: ${supportEmail}`,
       icon: <Phone className="w-4 h-4" />,
-      isMatch: matchesSearch('support contact whatsapp call phone help complaint', supportNumber),
+      isMatch: matchesSearch('support contact whatsapp call phone email help complaint', supportNumber, supportEmail),
       action: () => window.open(`https://wa.me/${supportNumber}`, '_blank'),
     },
     {
@@ -594,11 +596,20 @@ export default function CustomerDashboard() {
                 <Phone className="h-4 w-4 text-indigo-600/40 group-hover:text-indigo-600 transition-colors" />
               </CardHeader>
               <CardContent className="space-y-4 flex-1 flex flex-col justify-between">
-                <div className="text-xl font-bold text-slate-900">{supportNumber}</div>
-                <div className="flex gap-2">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2">
+                    <Phone className="h-4 w-4 shrink-0 text-indigo-500" />
+                    <p className="text-sm font-black text-slate-900">{supportNumber}</p>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2">
+                    <Mail className="h-4 w-4 shrink-0 text-indigo-500" />
+                    <p className="truncate text-xs font-bold text-slate-600">{supportEmail}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
                   <Button 
                     size="sm" 
-                    className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg h-9 text-[11px] font-bold gap-2"
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg h-9 text-[10px] font-bold gap-1.5"
                     onClick={(e) => { e.stopPropagation(); window.open(`https://wa.me/${supportNumber}`, '_blank'); }}
                   >
                     <MessageSquare className="w-3.5 h-3.5" /> WhatsApp
@@ -606,10 +617,18 @@ export default function CustomerDashboard() {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="flex-1 rounded-lg h-9 text-[11px] font-bold gap-2 border-slate-200 text-slate-600"
+                    className="rounded-lg h-9 text-[10px] font-bold gap-1.5 border-slate-200 text-slate-600"
                     onClick={(e) => { e.stopPropagation(); window.open(`tel:${supportNumber}`); }}
                   >
                     <Phone className="w-3.5 h-3.5" /> Call
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="rounded-lg h-9 text-[10px] font-bold gap-1.5 border-slate-200 text-slate-600"
+                    onClick={(e) => { e.stopPropagation(); window.open(`mailto:${supportEmail}`); }}
+                  >
+                    <Mail className="w-3.5 h-3.5" /> Email
                   </Button>
                 </div>
               </CardContent>
