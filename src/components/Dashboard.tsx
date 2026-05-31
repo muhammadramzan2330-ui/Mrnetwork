@@ -315,7 +315,7 @@ export default function Dashboard() {
     ];
 
     return (
-      <div className="space-y-5">
+      <div className="admin-dashboard-panel space-y-4 sm:space-y-5">
         <section className="relative overflow-hidden rounded-2xl border border-blue-400/20 bg-gradient-to-br from-blue-700 via-blue-950 to-[#07111f] p-6 shadow-2xl shadow-blue-950/30 sm:p-10">
           <div className="relative z-10 max-w-3xl">
             <p className="mb-3 text-xs font-black uppercase tracking-[0.32em] text-blue-200">MR NETWORK ISP</p>
@@ -341,7 +341,7 @@ export default function Dashboard() {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(56,189,248,0.22),transparent_30%),linear-gradient(135deg,transparent_0%,rgba(255,255,255,0.08)_100%)]" />
         </section>
 
-        <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
           {darkMetrics.map((metric, index) => (
             <motion.button
               key={metric.label}
@@ -350,7 +350,7 @@ export default function Dashboard() {
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
-              className="group rounded-2xl border border-white/10 bg-white/[0.055] p-5 text-left shadow-xl shadow-black/10 transition-all hover:-translate-y-0.5 hover:bg-white/[0.075]"
+              className="admin-metric-card group rounded-2xl border border-white/10 bg-white/[0.055] p-4 text-left shadow-xl shadow-black/10 transition-all hover:-translate-y-0.5 hover:bg-white/[0.075] sm:p-5"
             >
               <div className="flex items-start justify-between gap-4">
                 <span className={cn("flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg", metric.color)}>
@@ -359,34 +359,34 @@ export default function Dashboard() {
                 <MoreVertical className="h-5 w-5 text-slate-500 transition-colors group-hover:text-slate-300" />
               </div>
               <div className="mt-4">
-                <p className="text-sm font-bold text-slate-300">{metric.label}</p>
-                <p className="mt-2 text-3xl font-black tracking-tight text-white">{metric.value}</p>
-                <p className="mt-3 text-xs font-bold text-emerald-400">{metric.trend} <span className="ml-1 font-medium text-slate-400">vs last month</span></p>
+                <p className="admin-card-label text-sm font-bold text-slate-300">{metric.label}</p>
+                <p className="admin-card-number mt-2 break-words text-2xl font-black tracking-tight text-white sm:text-3xl">{metric.value}</p>
+                <p className="admin-card-sub mt-3 text-xs font-bold text-emerald-400">{metric.trend} <span className="ml-1 font-medium text-slate-400">vs last month</span></p>
               </div>
             </motion.button>
           ))}
         </section>
 
-        <section className="rounded-2xl border border-white/10 bg-white/[0.045] p-5 shadow-xl shadow-black/10">
+        <section className="admin-glass-card rounded-2xl border border-white/10 bg-white/[0.045] p-4 shadow-xl shadow-black/10 sm:p-5">
           <div className="mb-5 flex items-center justify-between gap-3">
-            <h2 className="text-lg font-black text-white">Quick Actions</h2>
-            <button className="rounded-xl border border-white/10 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-white/7" onClick={() => navigate('/admin')}>
+            <h2 className="admin-card-title text-lg font-black text-white">Quick Actions</h2>
+            <button className="admin-soft-button rounded-xl border border-white/10 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-white/7" onClick={() => navigate('/admin')}>
               View All Actions
             </button>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3 2xl:grid-cols-6">
             {quickActions.map((action) => (
               <button
                 key={action.title}
                 type="button"
                 onClick={() => action.path ? navigate(action.path) : action.action?.()}
-                className="group flex min-h-[170px] flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-left transition-all hover:-translate-y-0.5 hover:bg-white/[0.07]"
+                className="admin-action-card group flex min-h-[150px] flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition-all hover:-translate-y-0.5 hover:bg-white/[0.07] sm:min-h-[170px] sm:p-5"
               >
                 <span className={cn("mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg", action.color)}>
                   <action.icon className="h-6 w-6" />
                 </span>
-                <span className="text-base font-black text-white">{action.title}</span>
-                <span className="mt-2 text-sm font-medium leading-6 text-slate-400">{action.desc}</span>
+                <span className="admin-card-title text-base font-black text-white">{action.title}</span>
+                <span className="admin-card-sub mt-2 text-sm font-medium leading-6 text-slate-400">{action.desc}</span>
                 <ChevronRight className="mt-auto h-5 w-5 self-end text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
               </button>
             ))}
@@ -394,22 +394,22 @@ export default function Dashboard() {
         </section>
 
         <section className="grid grid-cols-1 gap-5 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-6">
+          <div className="admin-glass-card rounded-2xl border border-white/10 bg-white/[0.045] p-4 sm:p-6">
             <div className="flex items-center gap-4">
               <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/7 text-slate-200">
                 <ShieldCheck className="h-6 w-6" />
               </span>
               <div>
-                <h3 className="text-lg font-black text-white">Network Health</h3>
-                <p className="text-sm font-medium text-slate-400">All core systems are running smoothly.</p>
+                <h3 className="admin-card-title text-lg font-black text-white">Network Health</h3>
+                <p className="admin-card-sub text-sm font-medium text-slate-400">All core systems are running smoothly.</p>
               </div>
               <span className="ml-auto rounded-xl bg-emerald-500/15 px-4 py-2 text-xs font-black text-emerald-400">Healthy</span>
             </div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-6">
+          <div className="admin-glass-card rounded-2xl border border-white/10 bg-white/[0.045] p-4 sm:p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-bold text-slate-300">System Uptime</p>
+                <p className="admin-card-label text-sm font-bold text-slate-300">System Uptime</p>
                 <p className="mt-1 text-3xl font-black text-emerald-400">99.9%</p>
               </div>
               <div className="text-right">

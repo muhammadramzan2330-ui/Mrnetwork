@@ -123,7 +123,7 @@ export default function Layout({ children }: LayoutProps) {
     );
 
     return (
-      <div className={cn("min-h-screen font-sans selection:bg-blue-500/30 selection:text-white", shellBg)}>
+      <div className={cn("mr-panel-shell min-h-screen font-sans selection:bg-blue-500/30 selection:text-white", shellBg, isLight ? "mr-panel-light" : "mr-panel-dark")}>
         <div className="flex min-h-screen">
           <aside className={cn("hidden w-[290px] shrink-0 flex-col border-r px-4 py-6", sideBg)}>
             <div className="mb-8 flex items-center gap-4 px-2">
@@ -149,7 +149,7 @@ export default function Layout({ children }: LayoutProps) {
           </aside>
 
           <div className="flex min-w-0 flex-1 flex-col">
-            <header className={cn("sticky top-0 z-50 flex min-h-20 items-center justify-between gap-4 border-b px-4 py-4 backdrop-blur-xl sm:px-7", headerBg)}>
+            <header className={cn("sticky top-0 z-50 flex min-h-16 items-center justify-between gap-2 border-b px-3 py-3 backdrop-blur-xl sm:min-h-20 sm:gap-4 sm:px-7 sm:py-4", headerBg)}>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setIsDrawerOpen(true)}
@@ -158,7 +158,7 @@ export default function Layout({ children }: LayoutProps) {
                 >
                   <Menu className="h-6 w-6" />
                 </button>
-                <div className="hidden items-center gap-3 text-emerald-400 sm:flex">
+                <div className="hidden items-center gap-3 text-emerald-400 md:flex">
                 <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/40" />
                 <span className="text-sm font-bold">System Online</span>
                 </div>
@@ -168,7 +168,7 @@ export default function Layout({ children }: LayoutProps) {
                 <span className="truncate text-sm">Search customers, invoices, payments...</span>
                 <span className={cn("ml-auto rounded-lg px-2 py-1 text-[10px] font-black", isLight ? "bg-white text-slate-500 border border-slate-200" : "bg-white/7 text-slate-300")}>Ctrl + K</span>
               </div>
-              <div className="flex items-center gap-4">
+              <div className="flex min-w-0 items-center gap-1.5 sm:gap-3 lg:gap-4">
                 <button
                   onClick={() => setPanelTheme(isLight ? 'dark' : 'light')}
                   className={cn("rounded-xl p-2 transition-all", isLight ? "text-slate-600 hover:bg-slate-100" : "text-slate-300 hover:bg-white/7 hover:text-white")}
@@ -183,8 +183,8 @@ export default function Layout({ children }: LayoutProps) {
                     <span className="absolute -right-1 -top-1 rounded-full bg-rose-500 px-1.5 text-[10px] font-black text-white">{openTicketsCount}</span>
                   )}
                 </button>
-                <NavLink to="/profile" className="flex items-center gap-3 rounded-2xl px-2 py-1.5 hover:bg-white/7">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white">{accountInitials}</span>
+                <NavLink to="/profile" className={cn("flex min-w-0 items-center gap-2 rounded-2xl px-1.5 py-1.5 transition-all sm:gap-3 sm:px-2", isLight ? "hover:bg-slate-100" : "hover:bg-white/7")}>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white sm:h-11 sm:w-11 sm:text-sm">{accountInitials}</span>
                   <span className="hidden sm:block">
                     <span className={cn("block text-sm font-black", titleText)}>{accountName}</span>
                     <span className={cn("block text-xs font-medium", mutedText)}>{isAdmin ? 'Super Administrator' : 'Customer Portal'}</span>
@@ -233,7 +233,7 @@ export default function Layout({ children }: LayoutProps) {
               )}
             </AnimatePresence>
 
-            <main className="flex-1 p-4 sm:p-7">
+            <main className="min-w-0 flex-1 overflow-x-hidden p-3 sm:p-5 lg:p-7">
               {children}
             </main>
           </div>
