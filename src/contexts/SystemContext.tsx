@@ -114,7 +114,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       // For non-admins, subscribe to their OWN data
       // Remove orderBy when using where to avoid 400 error (requires composite index)
       // We will sort client-side by modifying the state update
-      const ownerIds = Array.from(new Set([user.uid, profile?.id].filter(Boolean)));
+      const ownerIds = Array.from(new Set([user.uid, profile?.id, (profile as any)?.linkedProfileId, profile?.uid].filter(Boolean)));
       const ownerFilter = ownerIds.length > 1 ? where('userId', 'in', ownerIds) : where('userId', '==', user.uid);
 
       unsubUsers = subscribeToCollection('user', (data) => setState(prev => ({ ...prev, users: data })), [where('uid', '==', user.uid)], errorHandler('user'));
@@ -564,17 +564,32 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
         const user = userDoc.data();
         const customer = { id: payment.userId, ...user };
 
+        const relatedCustomers = state.users.filter((candidate: any) => (
+          candidate.id === payment.userId ||
+          candidate.uid === payment.userId ||
+          (candidate.email && user.email && candidate.email === user.email)
+        ));
+        const relatedOwnerIds = Array.from(new Set([
+          payment.userId,
+          (customer as any).uid,
+          ...relatedCustomers.flatMap((candidate: any) => [candidate.id, candidate.uid]),
+        ].filter(Boolean)));
+
         const pkg = state.packages.find(p => p.id === user.packageId);
         const split = getRevenueSplit(payment.amount, customer, pkg);
+        const unpaidBills = state.bills
+          .filter(b => relatedOwnerIds.includes(b.userId) && b.status === 'unpaid')
+          .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
         const payableBill = payment.billId
           ? state.bills.find(b => b.id === payment.billId)
-          : state.bills
-              .filter(b => b.userId === payment.userId && b.status === 'unpaid')
-              .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-              .find(b => Number(b.amount || 0) === Number(payment.amount || 0)) ||
-            state.bills
-              .filter(b => b.userId === payment.userId && b.status === 'unpaid')
-              .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
+          : unpaidBills.find(b => Number(b.amount || 0) === Number(payment.amount || 0)) || unpaidBills[0];
+        const billsToPay = payment.billId
+          ? [payableBill].filter(Boolean)
+          : unpaidBills.filter(b => (
+              b.id === payableBill?.id ||
+              Number(b.amount || 0) === Number(payment.amount || 0) ||
+              new Date(b.dueDate) < new Date()
+            ));
 
         // Update balances
         transaction.update(doc(db, 'payments', paymentId), {
@@ -599,14 +614,14 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
 
         applyRevenueSplit(transaction, customer, pkg, payment.amount, paymentId, 'payment_approval');
 
-        if (payableBill?.id) {
-          transaction.update(doc(db, 'bills', payableBill.id), {
+        billsToPay.forEach((bill: any) => {
+          transaction.update(doc(db, 'bills', bill.id), {
             status: 'paid',
             paidAt: Timestamp.now(),
             paymentId,
             updatedAt: Timestamp.now()
           });
-        }
+        });
       });
 
       await addLog('Payment Approved', paymentId, 'payment');

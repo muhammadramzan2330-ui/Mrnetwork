@@ -118,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   ...userData,
                   phone: (userData as any).phone || linkedData.phone || linkedData.whatsapp || linkedData.mobile || linkedData.phoneNumber || '',
                   whatsapp: (userData as any).whatsapp || linkedData.whatsapp || linkedData.phone || '',
+                  linkedProfileId: linkedDoc.id,
                   id: docSnapshot.id,
                 };
               }

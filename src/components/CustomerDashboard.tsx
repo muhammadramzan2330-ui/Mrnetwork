@@ -64,7 +64,7 @@ export default function CustomerDashboard() {
     customer.uid === user?.uid ||
     (customer.email || '').toLowerCase() === (profile.email || '').toLowerCase()
   ));
-  const ownerIds = new Set([profile.id, profile.uid, user?.uid, currentCustomer?.id, currentCustomer?.uid].filter(Boolean));
+  const ownerIds = new Set([profile.id, (profile as any).linkedProfileId, profile.uid, user?.uid, currentCustomer?.id, currentCustomer?.uid].filter(Boolean));
   const userBills = bills.filter(b => ownerIds.has(b.userId));
   const userTickets = tickets.filter(t => ownerIds.has(t.userId));
   const now = new Date();
