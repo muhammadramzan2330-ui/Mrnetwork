@@ -1,73 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { db, auth } from '../services/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
-
-interface UserProfile {
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  status: string;
-  uid: string;
-}
+import { useAuth } from '@/hooks/useAuth';
 
 export default function UserProfile() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { profile, loading, user } = useAuth();
 
-  useEffect(() => {
-    // 1. Get current logged-in user from Firebase Auth
-    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
-      if (user) {
-        // 2. Query Firestore "user" collection where uid == current user UID
-        const q = query(
-          collection(db, 'user'), 
-          where('uid', '==', user.uid)
-        );
+  if (loading || (user && !profile)) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 py-24 space-y-4">
+        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] animate-pulse">Syncing profile...</p>
+      </div>
+    );
+  }
 
-        // 3. Listen for changes in real-time (onSnapshot) or fetch once (getDocs)
-        const unsubscribeFirestore = onSnapshot(q, (querySnapshot) => {
-          if (!querySnapshot.empty) {
-            // Get the first document found (assuming one profile per UID)
-            const docData = querySnapshot.docs[0].data() as UserProfile;
-            setProfile(docData);
-          } else {
-            setError("User profile not found in database.");
-          }
-          setLoading(false);
-        }, (err) => {
-          console.error("Firestore error:", err);
-          setError("Failed to fetch user data.");
-          setLoading(false);
-        });
+  if (!profile) {
+    return <div className="p-4 text-amber-500">Please sign in to view your profile.</div>;
+  }
 
-        // Cleanup Firestore listener on logout or unmount
-        return () => unsubscribeFirestore();
-      } else {
-        // No user is signed in
-        setProfile(null);
-        setLoading(false);
-      }
-    });
-
-    // Cleanup Auth listener on unmount
-    return () => unsubscribeAuth();
-  }, []);
-
-  if (loading) return <div className="p-4 text-slate-500">Loading user profile...</div>;
-  if (error) return <div className="p-4 text-red-500">{error}</div>;
-  if (!profile) return <div className="p-4 text-amber-500">Please sign in to view your profile.</div>;
+  const phone = (profile as any).phone || (profile as any).whatsapp || (profile as any).mobile || (profile as any).phoneNumber || 'N/A';
 
   return (
     <div className="p-6 bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 max-w-sm mx-auto mt-10">
       <div className="flex items-center gap-4 mb-6">
         <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
-          <span className="text-xl font-black">{profile.name[0]}</span>
+          <span className="text-xl font-black">{(profile.name || 'U')[0]}</span>
         </div>
         <div>
-          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight leading-none">{profile.name}</h2>
+          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight leading-none">{profile.name || 'Customer'}</h2>
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 leading-none">{profile.role} account</p>
         </div>
       </div>
@@ -80,7 +39,7 @@ export default function UserProfile() {
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phone</span>
-            <span className="text-xs font-bold text-slate-600">{profile.phone || 'N/A'}</span>
+            <span className="text-xs font-bold text-slate-600">{phone}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</span>
@@ -92,7 +51,6 @@ export default function UserProfile() {
             </span>
           </div>
         </div>
-        <p className="text-[9px] text-slate-300 font-mono text-center tracking-tighter">NODE_ID: {profile.uid}</p>
       </div>
     </div>
   );

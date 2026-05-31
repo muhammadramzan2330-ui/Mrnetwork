@@ -211,25 +211,9 @@ function AppRoutes() {
               </>
             ) : !profile ? (
               <Route path="*" element={
-                <div className="flex flex-col items-center justify-center p-6 text-center py-20">
-                  <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-rose-100">
-                    <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-500 mx-auto mb-6">
-                      <AlertCircle className="w-8 h-8" />
-                    </div>
-                    <h1 className="text-xl font-black text-slate-900 uppercase tracking-tight mb-2">Profile Not Found</h1>
-                    <p className="text-slate-500 text-sm font-medium mb-8">
-                       There was an issue linking your account to our records. Please try refreshing or contact support if the issue persists.
-                    </p>
-                    <div className="space-y-3">
-                      <Button 
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold uppercase tracking-widest text-xs"
-                        onClick={() => window.location.reload()}
-                      >
-                         Refresh Sync
-                      </Button>
-                      <Button variant="outline" className="w-full h-12 rounded-xl" onClick={handleLogout}>Sign Out</Button>
-                    </div>
-                  </div>
+                <div className="flex flex-col items-center justify-center p-12 py-32 space-y-4">
+                  <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] animate-pulse">Syncing Secure Profile...</p>
                 </div>
               } />
             ) : (
