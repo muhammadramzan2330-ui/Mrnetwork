@@ -16,16 +16,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
+import { useSystem } from '@/contexts/SystemContext';
+import { useAuth } from '@/hooks/useAuth';
+import { addDocument, updateDocument } from '@/services/firebase';
 
 export default function Requests() {
+  const { profile, isAdmin } = useAuth();
+  const { requests, users, packages } = useSystem();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'assigned' | 'resolved' | 'rejected'>('all');
   const [isOpen, setIsOpen] = useState(false);
-  const [requests, setRequests] = useState([
-    { id: '1', user: 'Muhammad Ramzan', type: 'speed_issue', status: 'pending', date: '2026-04-14 10:30 AM', description: 'Internet is very slow since morning.' },
-    { id: '2', user: 'Ali Khan', type: 'new_connection', status: 'assigned', date: '2026-04-13 02:15 PM', description: 'New connection request for House #45.', technician: 'Sajid' },
-    { id: '3', user: 'Sara Ahmed', type: 'router_issue', status: 'resolved', date: '2026-04-12 11:00 AM', description: 'Router not turning on.' },
-  ]);
 
   const [newReq, setNewReq] = useState<{
     user: string;
@@ -37,27 +37,62 @@ export default function Requests() {
     description: ''
   });
 
-  const handleAddRequest = () => {
+  const handleAddRequest = async () => {
     if (!newReq.user || !newReq.type) return;
+    const selectedUser = users.find((user: any) => user.id === newReq.user || user.uid === newReq.user);
 
-    const request = {
-      id: Math.random().toString(36).substr(2, 9),
-      user: newReq.user === '1' ? 'Muhammad Ramzan' : 'Ali Khan',
+    try {
+      await addDocument('requests', {
+      userId: selectedUser?.id || profile?.id || '',
+      userName: selectedUser?.name || profile?.name || 'Customer',
+      userPhone: selectedUser?.phone || selectedUser?.whatsapp || '',
       type: newReq.type,
       status: 'pending',
-      date: new Date().toLocaleString(),
+      date: new Date().toISOString(),
       description: newReq.description
-    };
+      });
 
-    setRequests([request, ...requests]);
-    setNewReq({ user: '', type: '', description: '' });
-    setIsOpen(false);
-    toast.success('Support ticket created');
+      setNewReq({ user: '', type: '', description: '' });
+      setIsOpen(false);
+      toast.success('Support ticket created');
+    } catch (e) {
+      toast.error('Request create nahi ho saki');
+    }
   };
 
-  const handleStatusChange = (id: string, newStatus: string) => {
-    setRequests(requests.map(r => r.id === id ? { ...r, status: newStatus } : r));
-    toast.info(`Request marked as ${newStatus}`);
+  const handleStatusChange = async (req: any, newStatus: string) => {
+    if (!isAdmin) return;
+
+    try {
+      if (req.type === 'package_change' && newStatus === 'resolved') {
+        const pkg = packages.find((item: any) => item.id === req.packageId) || req.requestedPackage;
+        const targetUser = users.find((user: any) => (
+          user.id === req.userId ||
+          user.uid === req.userId ||
+          (user.email && req.userEmail && user.email === req.userEmail)
+        ));
+
+        if (!pkg || !targetUser?.id) {
+          toast.error('Customer ya package record missing hai');
+          return;
+        }
+
+        await updateDocument('user', targetUser.id, {
+          packageId: pkg.id,
+          plan: pkg.id,
+          packageName: pkg.name,
+          packageSpeed: pkg.speed,
+          packagePrice: Number(pkg.price || 0),
+          planPrice: Number(pkg.price || 0),
+          status: targetUser.status === 'pending' ? 'active' : targetUser.status,
+        });
+      }
+
+      await updateDocument('requests', req.id, { status: newStatus });
+      toast.info(`Request marked as ${newStatus}`);
+    } catch (e) {
+      toast.error('Request update nahi ho saki');
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -85,13 +120,15 @@ export default function Requests() {
   const searchLower = searchTerm.trim().toLowerCase();
   const filteredRequests = requests.filter(r => {
     const searchable = [
-      r.user,
+      r.userName || r.user,
       r.description,
       r.status,
       r.date,
       'technician' in r ? r.technician || '' : '',
       getRequestTypeLabel(r.type),
       r.type,
+      r.packageName,
+      r.packageSpeed,
     ].join(' ').toLowerCase();
 
     const matchesSearch = !searchLower || searchable.includes(searchLower);
@@ -131,8 +168,11 @@ export default function Requests() {
                           <SelectValue placeholder="Select subscriber..." />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl border-slate-100 bg-white shadow-xl p-1">
-                          <SelectItem value="1" className="font-bold py-3 text-[10px] tracking-widest">Muhammad Ramzan</SelectItem>
-                          <SelectItem value="2" className="font-bold py-3 text-[10px] tracking-widest">Ali Khan</SelectItem>
+                          {users.map((user: any) => (
+                            <SelectItem key={user.id} value={user.id} className="font-bold py-3 text-[10px] tracking-widest">
+                              {user.name || user.email || 'Customer'}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -231,7 +271,7 @@ export default function Requests() {
                           className="font-bold text-slate-900 tracking-tight uppercase text-sm leading-tight break-words"
                           title={req.user}
                         >
-                          {req.user}
+                          {req.userName || req.user}
                         </h4>
                         {getStatusBadge(req.status)}
                       </div>
@@ -246,6 +286,15 @@ export default function Requests() {
                   <p className="text-slate-500 text-[11px] font-medium leading-relaxed group-hover:text-slate-700 transition-colors italic">
                     "{req.description}"
                   </p>
+                  {req.type === 'package_change' && (
+                    <div className="mt-3 rounded-lg bg-white p-3 border border-indigo-50">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500">Requested Plan</p>
+                      <p className="mt-1 text-xs font-black text-slate-900">{req.packageName || req.requestedPackage?.name}</p>
+                      <p className="text-[10px] font-bold text-slate-500">
+                        {req.packageSpeed || req.requestedPackage?.speed} - Rs. {Number(req.packagePrice || req.requestedPackage?.price || 0).toLocaleString()}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-between items-center mt-auto pt-4 border-t border-slate-50 gap-4">
@@ -257,13 +306,13 @@ export default function Requests() {
                     {req.status === 'pending' && (
                       <>
                         <Button 
-                          onClick={() => handleStatusChange(req.id, 'assigned')}
+                          onClick={() => handleStatusChange(req, req.type === 'package_change' ? 'resolved' : 'assigned')}
                           variant="ghost" size="sm" className="h-8 px-3 rounded-lg text-emerald-600 font-bold text-[9px] hover:bg-emerald-50 uppercase tracking-wider"
                         >
                           Approve
                         </Button>
                         <Button 
-                          onClick={() => handleStatusChange(req.id, 'rejected')}
+                          onClick={() => handleStatusChange(req, 'rejected')}
                           variant="ghost" size="sm" className="h-8 px-3 rounded-lg text-rose-600 font-bold text-[9px] hover:bg-rose-50 uppercase tracking-wider"
                         >
                           Reject
@@ -272,7 +321,7 @@ export default function Requests() {
                     )}
                     {req.status === 'assigned' && (
                       <Button 
-                        onClick={() => handleStatusChange(req.id, 'resolved')}
+                        onClick={() => handleStatusChange(req, 'resolved')}
                         size="sm"
                         className="h-8 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[9px] shadow-sm transition-all active:scale-95 uppercase tracking-wider"
                       >
@@ -281,7 +330,7 @@ export default function Requests() {
                     )}
                     {req.status === 'resolved' && (
                       <Button
-                        onClick={() => handleStatusChange(req.id, 'assigned')}
+                        onClick={() => handleStatusChange(req, 'assigned')}
                         variant="ghost"
                         size="sm"
                         className="h-8 px-3 rounded-lg text-indigo-600 font-bold text-[9px] hover:bg-indigo-50 uppercase tracking-wider gap-1.5"
@@ -291,7 +340,7 @@ export default function Requests() {
                     )}
                     {req.status === 'rejected' && (
                       <Button
-                        onClick={() => handleStatusChange(req.id, 'pending')}
+                        onClick={() => handleStatusChange(req, 'pending')}
                         variant="ghost"
                         size="sm"
                         className="h-8 px-3 rounded-lg text-amber-600 font-bold text-[9px] hover:bg-amber-50 uppercase tracking-wider gap-1.5"

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Package, Zap, DollarSign, Clock, ArrowUp, ArrowDown, Edit2, Trash2, Power, Globe, ShieldCheck, XCircle } from 'lucide-react';
+import { Plus, Search, Package, Zap, DollarSign, Clock, ArrowUp, ArrowDown, Edit2, Trash2, Power, Globe, ShieldCheck, XCircle, Send, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 
 export default function Packages() {
   const { profile, isAdmin } = useAuth();
-  const { packages } = useSystem();
+  const { packages, requests } = useSystem();
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
 
@@ -85,6 +85,50 @@ export default function Packages() {
       } catch (e) {
         toast.error('Delete failed');
       }
+    }
+  };
+
+  const handlePlanRequest = async (pkg: any) => {
+    if (!profile || isAdmin) return;
+
+    const userId = profile.id || profile.uid;
+    const alreadyPending = requests.some((request: any) => (
+      request.userId === userId &&
+      request.type === 'package_change' &&
+      request.status === 'pending'
+    ));
+
+    if (alreadyPending) {
+      toast.info('Aapki plan change request already admin approval ke liye pending hai.');
+      return;
+    }
+
+    try {
+      await addDocument('requests', {
+        userId,
+        userName: profile.name || profile.email || 'Customer',
+        userPhone: (profile as any).phone || (profile as any).whatsapp || '',
+        type: 'package_change',
+        status: 'pending',
+        packageId: pkg.id,
+        packageName: pkg.name,
+        packageSpeed: pkg.speed,
+        packagePrice: Number(pkg.price || 0),
+        requestedPackage: {
+          id: pkg.id,
+          name: pkg.name,
+          speed: pkg.speed,
+          price: Number(pkg.price || 0),
+          upload: pkg.upload || '',
+          download: pkg.download || '',
+          validity: Number(pkg.validity || 30),
+        },
+        description: `${profile.name || 'Customer'} requested ${pkg.name} (${pkg.speed}) plan. Price Rs. ${Number(pkg.price || 0).toLocaleString()}.`,
+        date: new Date().toISOString(),
+      });
+      toast.success('Plan request admin approval ke liye send ho gayi.');
+    } catch (e) {
+      toast.error('Plan request send nahi ho saki.');
     }
   };
 
@@ -202,6 +246,22 @@ export default function Packages() {
       {/* Plans Feed */}
       <div className="px-4 sm:px-8 pt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {filteredPackages.map((pkg, i) => (
+          (() => {
+            const currentPackageId = profile?.packageId || profile?.plan;
+            const isCurrentPlan = !isAdmin && currentPackageId === pkg.id;
+            const isPendingPlan = !isAdmin && requests.some((request: any) => (
+              request.userId === (profile?.id || profile?.uid) &&
+              request.type === 'package_change' &&
+              request.packageId === pkg.id &&
+              request.status === 'pending'
+            ));
+            const hasAnyPendingPlan = !isAdmin && requests.some((request: any) => (
+              request.userId === (profile?.id || profile?.uid) &&
+              request.type === 'package_change' &&
+              request.status === 'pending'
+            ));
+
+            return (
           <motion.div
             key={pkg.id}
             initial={{ opacity: 0, scale: 0.98 }}
@@ -253,7 +313,7 @@ export default function Packages() {
                 </div>
               </div>
 
-              <div className="px-6 pb-6 mt-auto">
+              <div className="px-6 pb-6 mt-auto space-y-4">
                 <div className="flex items-center justify-between pt-4 border-t border-slate-50">
                   <div className="flex gap-4">
                     <div className="flex flex-col">
@@ -272,9 +332,39 @@ export default function Packages() {
                     </div>
                   )}
                 </div>
+                {!isAdmin && (
+                  <Button
+                    onClick={() => handlePlanRequest(pkg)}
+                    disabled={isCurrentPlan || isPendingPlan || hasAnyPendingPlan}
+                    className={cn(
+                      "w-full h-11 rounded-xl text-[10px] font-black uppercase tracking-widest gap-2 shadow-sm",
+                      isCurrentPlan
+                        ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                        : isPendingPlan
+                          ? "bg-amber-100 text-amber-700 hover:bg-amber-100"
+                          : "bg-indigo-600 text-white hover:bg-indigo-700"
+                    )}
+                  >
+                    {isCurrentPlan ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4" /> Current Plan
+                      </>
+                    ) : isPendingPlan ? (
+                      <>
+                        <Clock className="w-4 h-4" /> Pending Approval
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" /> Request Plan
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </Card>
           </motion.div>
+            );
+          })()
         ))}
       </div>
     </div>
