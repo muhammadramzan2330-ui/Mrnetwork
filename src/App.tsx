@@ -154,30 +154,6 @@ function AppRoutes() {
                   </div>
                 </div>
               } />
-            ) : profile?.status === 'expired' && !isAdmin ? (
-              <>
-                <Route path="/payments" element={<Payments />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="*" element={
-                  <div className="flex flex-col items-center justify-center p-6 text-center py-20">
-                    <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-amber-100">
-                      <div className="w-20 h-20 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600 mx-auto mb-6">
-                        <AlertCircle className="w-10 h-10" />
-                      </div>
-                      <h1 className="text-2xl font-black text-slate-900 uppercase tracking-tight mb-2">Access Cycle Expired</h1>
-                      <p className="text-slate-500 font-medium mb-8">
-                        Your current billing cycle has concluded or payment is overdue. Please settle your dues to maintain active connectivity.
-                      </p>
-                      <Button 
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl font-bold uppercase tracking-widest text-xs"
-                        onClick={() => window.location.href = '/payments'}
-                      >
-                        Quick Pay
-                      </Button>
-                    </div>
-                  </div>
-                } />
-              </>
             ) : isAdmin ? (
               <>
                 <Route path="/admin" element={<Dashboard />} />
