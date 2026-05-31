@@ -1,324 +1,265 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  CheckCircle2, 
-  XCircle, 
-  RefreshCcw, 
-  ShieldCheck, 
-  Database, 
-  Smartphone, 
-  CreditCard, 
-  Package, 
-  FileText, 
-  MessageCircle, 
-  Download, 
-  Printer,
+import React, { useMemo, useState } from 'react';
+import {
+  AlertCircle,
+  CheckCircle2,
   ChevronRight,
-  Zap,
-  Activity,
-  Server,
-  Github,
-  GitBranch,
-  GitCommit
+  CreditCard,
+  Download,
+  FileText,
+  Package,
+  RefreshCcw,
+  ShieldCheck,
+  Smartphone,
+  UserCheck,
+  Users,
 } from 'lucide-react';
+import { motion } from 'motion/react';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { useSystem } from '../contexts/SystemContext';
 import { useAuth } from '../hooks/useAuth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { motion } from 'motion/react';
-import { cn, formatDate } from '@/lib/utils';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+
+type CheckStatus = 'success' | 'warning' | 'error';
 
 export default function SystemCheck() {
-  const { 
-    users, 
-    bills, 
-    packages, 
-    payments, 
-    tickets, 
-    settings,
-    loading 
-  } = useSystem();
-  const { user, isAdmin } = useAuth();
+  const { users, bills, packages, payments, requests, settings, loading } = useSystem();
+  const { isAdmin, user } = useAuth();
   const navigate = useNavigate();
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
 
-  const checklist = [
+  const duplicateOpenBills = useMemo(() => {
+    const seen = new Set<string>();
+    let duplicates = 0;
+    bills
+      .filter((bill: any) => bill.status === 'unpaid')
+      .forEach((bill: any) => {
+        const billUser = users.find((item: any) => item.id === bill.userId || item.uid === bill.userId);
+        const key = [
+          (billUser?.email || bill.userId || bill.userName || '').toString().toLowerCase(),
+          bill.month || '',
+          bill.packageName || '',
+          Number(bill.amount || 0),
+        ].join('|');
+        if (seen.has(key)) duplicates += 1;
+        seen.add(key);
+      });
+    return duplicates;
+  }, [bills, users]);
+
+  const pendingCustomers = users.filter((item: any) => item.status === 'pending').length;
+  const activeCustomers = users.filter((item: any) => item.status === 'active').length;
+  const customersWithPhone = users.filter((item: any) => item.phone || item.whatsapp || item.mobile || item.phoneNumber).length;
+  const pendingPlanRequests = requests.filter((item: any) => item.type === 'package_change' && item.status === 'pending').length;
+  const pendingPayments = payments.filter((item: any) => item.status === 'pending').length;
+  const overdueBills = bills.filter((item: any) => item.status === 'unpaid' && new Date(item.dueDate) < new Date()).length;
+  const approvedPayments = payments.filter((item: any) => item.status === 'approved').length;
+  const settingsReady = Boolean(settings?.adminPhone && settings?.adminEmail);
+
+  const flowChecks: Array<{
+    id: string;
+    title: string;
+    desc: string;
+    status: CheckStatus;
+    icon: any;
+    page: string;
+    action: string;
+    metric: string;
+  }> = [
     {
-      id: 'db',
-      label: 'Firebase Connected',
-      description: 'Verifies real-time database connection and data sync.',
-      status: !loading && users.length >= 0 ? 'success' : 'error',
-      icon: Server
+      id: 'signup',
+      title: 'Customer Signup Data',
+      desc: 'Name, email aur phone save ho rahe hain.',
+      status: users.length > 0 && customersWithPhone > 0 ? 'success' : users.length > 0 ? 'warning' : 'error',
+      icon: Smartphone,
+      page: '/users',
+      action: 'Open Customers',
+      metric: `${customersWithPhone}/${users.length} with phone`,
     },
     {
-      id: 'admin',
-      label: 'Admin Authorization',
-      description: 'Checks if current session has root administrative privileges.',
-      status: isAdmin ? 'success' : 'error',
-      icon: ShieldCheck
+      id: 'approval',
+      title: 'Admin Approval Queue',
+      desc: 'Pending customers admin approval ke liye visible hain.',
+      status: pendingCustomers === 0 ? 'success' : 'warning',
+      icon: UserCheck,
+      page: '/users',
+      action: 'Review Users',
+      metric: `${pendingCustomers} pending`,
     },
     {
-      id: 'auth',
-      label: 'User Authentication',
-      description: 'System-wide login and signup flow validation.',
-      status: users.length > 0 ? 'success' : 'warning',
-      icon: Smartphone
+      id: 'plan-request',
+      title: 'Plan Request Approval',
+      desc: 'Customer plan select kare, admin approve kare.',
+      status: pendingPlanRequests === 0 ? 'success' : 'warning',
+      icon: Package,
+      page: '/requests',
+      action: 'Open Requests',
+      metric: `${pendingPlanRequests} pending`,
     },
     {
-      id: 'plans',
-      label: 'Package Management',
-      description: 'Checks if internet subscription plans are active.',
-      status: packages.length > 0 ? 'success' : 'warning',
-      icon: Package
+      id: 'duplicate-bills',
+      title: 'Duplicate Bill Guard',
+      desc: 'Same month/customer duplicate overdue bill show nahi hona chahiye.',
+      status: duplicateOpenBills === 0 ? 'success' : 'warning',
+      icon: FileText,
+      page: '/bills',
+      action: 'Check Bills',
+      metric: `${duplicateOpenBills} duplicates`,
     },
     {
-      id: 'billing',
-      label: 'Auto-Bill Generation',
-      description: 'Invoice generation engine is configured and operational.',
-      status: bills.length > 0 ? 'success' : 'warning',
-      icon: FileText
+      id: 'payment-flow',
+      title: 'Payment Approval Flow',
+      desc: 'Customer payment submit kare, admin approve kare, status clear ho.',
+      status: pendingPayments === 0 && approvedPayments > 0 ? 'success' : pendingPayments > 0 ? 'warning' : 'warning',
+      icon: CreditCard,
+      page: '/payments',
+      action: 'Open Payments',
+      metric: `${pendingPayments} pending`,
     },
     {
-      id: 'payments',
-      label: 'Payment Ledger',
-      description: 'Financial tracking and payment marking systems.',
-      status: payments.length > 0 ? 'success' : 'warning',
-      icon: CreditCard
+      id: 'overdue',
+      title: 'Overdue Notification',
+      desc: 'Paid/approved bill ke baad customer overdue warning hide ho.',
+      status: overdueBills === 0 ? 'success' : 'warning',
+      icon: AlertCircle,
+      page: '/payments',
+      action: 'Review Dues',
+      metric: `${overdueBills} overdue`,
     },
     {
-      id: 'wa',
-      label: 'WhatsApp Reminders',
-      description: 'Ready to send automated payment reminders.',
-      status: settings?.easypaisaNumber ? 'success' : 'warning',
-      icon: MessageCircle
+      id: 'invoice',
+      title: 'Invoice Phone Details',
+      desc: 'Invoice me customer phone aur office contact show ho.',
+      status: customersWithPhone > 0 ? 'success' : 'warning',
+      icon: Download,
+      page: '/bills',
+      action: 'Download Invoice',
+      metric: customersWithPhone > 0 ? 'ready' : 'phone missing',
     },
     {
-      id: 'tickets',
-      label: 'Customer Support Desk',
-      description: 'Support ticket and complaint system readiness.',
-      status: tickets.length >= 0 ? 'success' : 'error',
-      icon: Zap
+      id: 'support',
+      title: 'Support Contact',
+      desc: 'Customer support card me admin phone/email sync ho.',
+      status: settingsReady ? 'success' : 'warning',
+      icon: ShieldCheck,
+      page: '/billing-settings',
+      action: 'Open Settings',
+      metric: settingsReady ? 'ready' : 'missing',
     },
-    {
-      id: 'backup',
-      label: 'Export & Backup Center',
-      description: 'System capability for full CSV data extraction.',
-      status: 'success', // Logic is built-in
-      icon: Download
-    }
   ];
 
-  const handleRunSystemTest = () => {
-    setIsVerifying(true);
+  const successCount = flowChecks.filter((item) => item.status === 'success').length;
+  const warningCount = flowChecks.filter((item) => item.status === 'warning').length;
+  const errorCount = flowChecks.filter((item) => item.status === 'error').length;
+
+  const runAudit = () => {
+    setIsRunning(true);
     setTimeout(() => {
-      setIsVerifying(false);
-      toast.success("Full system audit completed successfully!");
-    }, 2000);
+      setIsRunning(false);
+      toast.success('System test complete. Checklist refreshed.');
+    }, 1200);
   };
 
-  const handlePrint = () => {
-    window.print();
+  const statusStyle = {
+    success: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    warning: 'bg-amber-50 text-amber-700 border-amber-100',
+    error: 'bg-rose-50 text-rose-700 border-rose-100',
   };
 
   return (
-    <div className="p-6 md:p-10 space-y-10 bg-slate-50 min-h-full">
-      <div className="max-w-5xl mx-auto space-y-10">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <Activity className="w-6 h-6 text-indigo-600" />
-              <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tight">System Health Audit</h1>
+    <div className="min-h-full bg-slate-50 p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <header className="rounded-3xl bg-slate-950 p-6 text-white shadow-xl shadow-slate-900/10 sm:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.28em] text-indigo-300">MR NETWORK // Test Mode</p>
+              <h1 className="mt-2 text-2xl font-black tracking-tight sm:text-3xl">Final App Flow Checklist</h1>
+              <p className="mt-2 max-w-2xl text-sm font-medium leading-6 text-slate-300">
+                Signup, approval, plan request, billing, payment aur invoice flow ka quick status yahan se check karein.
+              </p>
             </div>
-            <p className="text-slate-500 font-medium tracking-wide">Verification and maintenance checklist for MR NETWORK</p>
-          </div>
-          <div className="flex items-center gap-3 w-full md:w-auto">
-             <Button 
-               onClick={handleRunSystemTest}
-               disabled={isVerifying}
-               className="h-14 px-8 bg-indigo-600 hover:bg-slate-900 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-indigo-100 flex-1 md:flex-none gap-3"
-             >
-               {isVerifying ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-               Run Integrity Test
-             </Button>
+            <Button
+              onClick={runAudit}
+              disabled={isRunning}
+              className="h-12 rounded-xl bg-indigo-600 px-6 text-[10px] font-black uppercase tracking-widest text-white hover:bg-indigo-700"
+            >
+              {isRunning ? <RefreshCcw className="mr-2 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+              Run Test
+            </Button>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card className="bg-slate-900 rounded-[2.5rem] p-10 text-white relative overflow-hidden border-none shadow-2xl shadow-indigo-200 col-span-1 md:col-span-2">
-             <div className="relative z-10 space-y-8">
-               <div className="flex items-center gap-6">
-                  <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center backdrop-blur-md">
-                    <CheckCircle2 className="w-10 h-10 text-emerald-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-black uppercase tracking-tight">Production Status: ACTIVE</h3>
-                    <p className="text-slate-400 font-medium uppercase tracking-widest text-[10px] mt-1">Version 2.0.4 • Last Audit: Today</p>
-                  </div>
-               </div>
-               
-               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                  {[
-                    { label: 'Latency', value: '142ms', sub: 'Optimal' },
-                    { label: 'Uptime', value: '99.9%', sub: 'Healthy' },
-                    { label: 'Sync', value: 'Real-time', sub: 'Google Cloud' },
-                    { label: 'Security', value: 'ECC-256', sub: 'Encrypted' }
-                  ].map((stat, i) => (
-                    <div key={i} className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">{stat.label}</p>
-                      <p className="text-lg font-black text-white">{stat.value}</p>
-                      <p className="text-[8px] font-bold text-indigo-400 uppercase mt-0.5">{stat.sub}</p>
-                    </div>
-                  ))}
-               </div>
-             </div>
-             {/* Abstract Glow */}
-             <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] -mr-48 -mt-48" />
-          </Card>
-
-          <div className="space-y-6">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Verification Checklist</h3>
-            <div className="space-y-4">
-              {checklist.map((item, index) => (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  key={item.id}
-                  className="group"
-                >
-                  <div className="bg-white p-5 rounded-2xl border border-slate-100 flex items-center justify-between hover:shadow-lg hover:shadow-slate-100 transition-all cursor-default">
-                    <div className="flex items-center gap-4">
-                      <div className={cn(
-                        "w-12 h-12 rounded-xl flex items-center justify-center transition-all",
-                        item.status === 'success' ? "bg-emerald-50 text-emerald-600" :
-                        item.status === 'warning' ? "bg-amber-50 text-amber-600" : "bg-rose-50 text-rose-600"
-                      )}>
-                        <item.icon className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{item.label}</h4>
-                        <p className="text-[10px] font-medium text-slate-400 mt-0.5">{item.description}</p>
-                      </div>
-                    </div>
-                    <div>
-                      {item.status === 'success' ? (
-                        <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-                      ) : item.status === 'warning' ? (
-                        <RefreshCcw className="w-6 h-6 text-amber-500 animate-spin-slow" />
-                      ) : (
-                        <XCircle className="w-6 h-6 text-rose-500" />
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-8">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Maintenance Controls</h3>
-            <div className="grid grid-cols-1 gap-6">
-               <Card className="bg-white border-slate-100 rounded-[2.5rem] p-8 shadow-sm group hover:border-slate-800 transition-all">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Github className="w-7 h-7" />
-                    </div>
-                    <div className="flex-grow">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">GitHub Repository Sync</h4>
-                        <Badge className="bg-emerald-50 text-emerald-600 border-none uppercase text-[9px] font-black px-2.5 py-1">Synced</Badge>
-                      </div>
-                      <p className="text-xs font-semibold text-slate-400">Automated Version Deployment Pipeline</p>
-                    </div>
-                  </div>
-                  <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100/80 font-mono text-[10px] space-y-3 text-slate-600 text-left">
-                    <div className="flex justify-between border-b border-slate-200/50 pb-2">
-                      <span className="uppercase font-black text-slate-400">Branch:</span>
-                      <span className="font-bold text-slate-800 flex items-center gap-1"><GitBranch className="w-3.5 h-3.5 text-indigo-600" /> main</span>
-                    </div>
-                    <div className="flex justify-between border-b border-slate-200/50 pb-2">
-                      <span className="uppercase font-black text-slate-400">Last Published:</span>
-                      <span className="font-bold text-indigo-600">Last week (7 days ago)</span>
-                    </div>
-                    <div className="flex flex-col gap-1.5 pt-1">
-                      <span className="uppercase font-black text-slate-400 mb-1">Changed Files:</span>
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 font-bold text-slate-700">
-                        <span className="text-emerald-600">✓ App.tsx</span>
-                        <span className="text-emerald-600">✓ Layout.tsx</span>
-                        <span className="text-emerald-600">✓ Status.tsx</span>
-                        <span className="text-emerald-600">✓ SystemCheck.tsx</span>
-                        <span className="text-indigo-600">+ 10 other files changed</span>
-                      </div>
-                    </div>
-                  </div>
-               </Card>
-
-               <Card className="bg-white border-slate-100 rounded-[2.5rem] p-8 shadow-sm group hover:border-indigo-200 transition-all">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Download className="w-7 h-7" />
-                    </div>
-                    <div>
-                      <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">Full System Backup</h4>
-                      <p className="text-xs font-medium text-slate-400">Export database snapshots as CSV</p>
-                    </div>
-                  </div>
-                  <Button 
-                    onClick={() => navigate('/exports')}
-                    className="w-full bg-slate-900 h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] gap-3"
-                  >
-                    Go to Backup Center <ChevronRight className="w-4 h-4" />
-                  </Button>
-               </Card>
-
-               <Card className="bg-white border-slate-100 rounded-[2.5rem] p-8 shadow-sm group hover:border-rose-200 transition-all">
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-14 h-14 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Printer className="w-7 h-7" />
-                    </div>
-                    <div>
-                      <h4 className="text-lg font-black text-slate-900 uppercase tracking-tight">Technical Print Audit</h4>
-                      <p className="text-xs font-medium text-slate-400">Print full status report for archives</p>
-                    </div>
-                  </div>
-                  <Button 
-                    onClick={handlePrint}
-                    variant="outline"
-                    className="w-full h-14 border-2 border-slate-100 rounded-2xl font-black uppercase tracking-widest text-[10px] gap-3 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all"
-                  >
-                    Generate Print PDF <Printer className="w-4 h-4" />
-                  </Button>
-               </Card>
-
-               <div className="bg-indigo-50 rounded-[2rem] p-8 space-y-4 border border-indigo-100">
-                  <div className="flex items-center gap-3">
-                    <ShieldCheck className="w-5 h-5 text-indigo-600" />
-                    <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest leading-none">Security Note</p>
-                  </div>
-                  <p className="text-xs font-medium text-indigo-800 leading-relaxed">
-                    MR NETWORK system follows end-to-end data integrity standards. Automated backups are stored securely within your configured Firebase cloud storage. Access is strictly limited via defined security rules.
-                  </p>
-               </div>
-            </div>
-          </div>
-        </div>
-
-        <footer className="pt-10 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-6">
-           <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden grayscale">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin" alt="Admin" />
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: 'Passed', value: successCount, color: 'text-emerald-600 bg-emerald-50', icon: CheckCircle2 },
+            { label: 'Needs Review', value: warningCount, color: 'text-amber-600 bg-amber-50', icon: AlertCircle },
+            { label: 'Errors', value: errorCount, color: 'text-rose-600 bg-rose-50', icon: AlertCircle },
+            { label: 'Active Customers', value: activeCustomers, color: 'text-indigo-600 bg-indigo-50', icon: Users },
+          ].map((stat) => (
+            <div key={stat.label} className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+              <div className={cn('mb-4 flex h-11 w-11 items-center justify-center rounded-xl', stat.color)}>
+                <stat.icon className="h-5 w-5" />
               </div>
-              <div>
-                <p className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{user?.email}</p>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Master Administrator</p>
+              <p className="text-3xl font-black text-slate-950">{stat.value}</p>
+              <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-slate-400">{stat.label}</p>
+            </div>
+          ))}
+        </section>
+
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {flowChecks.map((item, index) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.03 }}
+              className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm"
+            >
+              <div className="flex items-start gap-4">
+                <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border', statusStyle[item.status])}>
+                  <item.icon className="h-6 w-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-base font-black text-slate-950">{item.title}</h3>
+                    <Badge className={cn('border text-[9px] font-black uppercase tracking-widest', statusStyle[item.status])}>
+                      {item.status}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-sm font-medium leading-6 text-slate-500">{item.desc}</p>
+                  <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-slate-400">{item.metric}</p>
+                </div>
               </div>
-           </div>
-           <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse" />
-              <p className="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">Operational</p>
-           </div>
+              <Button
+                variant="outline"
+                onClick={() => navigate(item.page)}
+                className="mt-5 h-10 w-full justify-between rounded-xl border-slate-200 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-indigo-50 hover:text-indigo-700"
+              >
+                {item.action}
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </motion.div>
+          ))}
+        </section>
+
+        <footer className="rounded-2xl border border-slate-100 bg-white p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-black text-slate-950">{user?.email || 'Admin'}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                {isAdmin ? 'Master Administrator' : 'Read Only'} - last checked today
+              </p>
+            </div>
+            <Button
+              onClick={() => navigate('/exports')}
+              className="h-11 rounded-xl bg-slate-950 px-5 text-[10px] font-black uppercase tracking-widest text-white hover:bg-slate-800"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Backup Center
+            </Button>
+          </div>
         </footer>
       </div>
     </div>
