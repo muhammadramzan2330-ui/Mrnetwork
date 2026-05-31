@@ -74,13 +74,40 @@ export default function CustomerDashboard() {
   const coveringPayments = userPayments.filter((payment: any) => ['approved', 'pending'].includes(payment.status));
   const coveredBillIds = new Set(coveringPayments.map((payment: any) => payment.billId).filter(Boolean));
   const coveredBillAmounts = new Set(coveringPayments.map((payment: any) => Number(payment.amount || 0)).filter((amount: number) => amount > 0));
-  const displayBills = userBills.map((bill: any) => {
+  const coveredBills = userBills.map((bill: any) => {
     const isCovered = bill.status === 'unpaid' && (
       coveredBillIds.has(bill.id) ||
       coveredBillAmounts.has(Number(bill.amount || 0))
     );
     return isCovered ? { ...bill, status: 'paid', paymentSubmitted: true } : bill;
   });
+  const displayBills = Array.from(
+    coveredBills.reduce((map: Map<string, any>, bill: any) => {
+      const billKey = [
+        String(bill.month || formatDate(bill.dueDate) || '').trim().toLowerCase(),
+        String(bill.packageName || bill.planName || bill.packageId || '').trim().toLowerCase(),
+        Number(bill.amount || 0),
+      ].join('|');
+      const existing = map.get(billKey);
+      if (!existing) {
+        map.set(billKey, bill);
+        return map;
+      }
+
+      const existingRank = existing.status === 'paid' ? 2 : existing.paymentSubmitted ? 1 : 0;
+      const billRank = bill.status === 'paid' ? 2 : bill.paymentSubmitted ? 1 : 0;
+      const existingDate = new Date(existing.paidAt || existing.updatedAt || existing.createdAt || existing.dueDate || 0).getTime();
+      const billDate = new Date(bill.paidAt || bill.updatedAt || bill.createdAt || bill.dueDate || 0).getTime();
+
+      if (billRank > existingRank || (billRank === existingRank && billDate > existingDate)) {
+        map.set(billKey, bill);
+      }
+      return map;
+    }, new Map<string, any>()).values()
+  ).sort((a: any, b: any) => (
+    new Date(b.paidAt || b.updatedAt || b.createdAt || b.dueDate || 0).getTime() -
+    new Date(a.paidAt || a.updatedAt || a.createdAt || a.dueDate || 0).getTime()
+  ));
   const userTickets = tickets.filter(t => ownerIds.has(t.userId));
   const now = new Date();
   const supportNumber = settings?.easypaisaNumber || "03001234567"; // Fallback to settings or default
@@ -121,8 +148,7 @@ export default function CustomerDashboard() {
     );
   });
 
-  const currentBill = displayBills
-    .sort((a, b) => new Date(b.month).getTime() - new Date(a.month).getTime())[0];
+  const currentBill = displayBills[0];
   
   // Get assigned package based on either packageId or plan string
   const assignedPackage = packages.find(p => p.id === (profile.packageId || profile.plan));
