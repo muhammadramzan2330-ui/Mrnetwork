@@ -14,7 +14,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useSystem } from '../contexts/SystemContext';
 
 export default function Layout({ children }: LayoutProps) {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, profile } = useAuth();
   const { tickets } = useSystem();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [panelTheme, setPanelTheme] = useState<'dark' | 'light'>(() => (
@@ -87,8 +87,13 @@ export default function Layout({ children }: LayoutProps) {
       { icon: MessageSquare, label: 'Support Tickets', to: '/tickets', badge: openTicketsCount > 0 ? openTicketsCount : null },
       { icon: User, label: 'Profile', to: '/profile' },
     ];
-    const accountName = user.displayName || (isAdmin ? 'Admin' : 'Customer');
-    const accountInitials = isAdmin ? 'AD' : (accountName.slice(0, 2) || 'CU').toUpperCase();
+    const accountName = profile?.name || user.displayName || user.email?.split('@')[0] || (isAdmin ? 'Admin' : 'Customer');
+    const nameParts = accountName.trim().split(/\s+/).filter(Boolean);
+    const accountInitials = (
+      nameParts.length > 1
+        ? `${nameParts[0][0]}${nameParts[nameParts.length - 1][0]}`
+        : accountName.slice(0, 2)
+    ).toUpperCase();
     const isLight = panelTheme === 'light';
     const shellBg = isLight ? 'bg-[#F4F7FB] text-slate-950' : 'bg-[#07111f] text-slate-100';
     const sideBg = isLight ? 'bg-white border-slate-200 shadow-xl' : 'bg-[#07101d] border-white/10';
