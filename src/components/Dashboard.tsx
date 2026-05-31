@@ -74,7 +74,13 @@ export default function Dashboard() {
   const activeUsersCount = users.filter(u => u.status === 'active').length;
   const suspendedUsersCount = users.filter(u => u.status === 'suspended').length;
   const expiredUsersCount = users.filter(u => u.status === 'expired').length;
+  const todayKey = new Date().toDateString();
   const pendingRequests = requests.filter(r => r.status === 'pending');
+  const todayApprovedPayments = payments.filter((p: any) => (
+    p.status === 'approved' &&
+    p.type === 'in' &&
+    new Date(p.approvedAt || p.date || p.createdAt).toDateString() === todayKey
+  ));
   const recentPayments = payments.slice(0, 5);
   const userPayments = isAdmin ? payments : payments.filter(p => p.userId === profile?.uid);
   const userRequests = isAdmin ? pendingRequests : pendingRequests.filter(r => r.userId === profile?.uid);
@@ -89,13 +95,55 @@ export default function Dashboard() {
   const paidBillsCount = bills.filter(b => b.status === 'paid').length;
   const overdueBillsCount = bills.filter(b => b.status === 'unpaid' && new Date(b.dueDate) < new Date()).length;
   const openTicketsCount = tickets.filter(t => t.status === 'open').length;
+  const todayPaymentTotal = todayApprovedPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  const overdueAmount = bills
+    .filter(b => b.status === 'unpaid' && new Date(b.dueDate) < new Date())
+    .reduce((sum, bill) => sum + Number(bill.amount || 0), 0);
+
+  const adminSummaryCards = [
+    {
+      label: 'Today Payments',
+      value: `Rs. ${todayPaymentTotal.toLocaleString()}`,
+      detail: `${todayApprovedPayments.length} approved today`,
+      icon: Wallet,
+      path: '/payments',
+      style: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+      accent: 'bg-emerald-500',
+    },
+    {
+      label: 'Pending Approvals',
+      value: pendingPaymentsCount.toString(),
+      detail: 'payments waiting',
+      icon: CreditCard,
+      path: '/payments',
+      style: pendingPaymentsCount > 0 ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-slate-50 text-slate-600 border-slate-100',
+      accent: pendingPaymentsCount > 0 ? 'bg-amber-500' : 'bg-slate-300',
+    },
+    {
+      label: 'Active Customers',
+      value: activeUsersCount.toString(),
+      detail: `${users.length} total accounts`,
+      icon: UserCheck,
+      path: '/users',
+      style: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+      accent: 'bg-indigo-500',
+    },
+    {
+      label: 'Overdue Bills',
+      value: overdueBillsCount.toString(),
+      detail: `Rs. ${overdueAmount.toLocaleString()} due`,
+      icon: AlertCircle,
+      path: '/payments',
+      style: overdueBillsCount > 0 ? 'bg-rose-50 text-rose-700 border-rose-100' : 'bg-slate-50 text-slate-600 border-slate-100',
+      accent: overdueBillsCount > 0 ? 'bg-rose-500' : 'bg-slate-300',
+    },
+  ];
 
   const stats = isAdmin ? [
-    { label: 'Active', value: activeUsersCount.toString(), icon: UserCheck, color: 'bg-emerald-100 text-emerald-600' },
     { label: 'Suspended', value: suspendedUsersCount.toString(), icon: ShieldOff, color: 'bg-rose-100 text-rose-600' },
     { label: 'Expired', value: expiredUsersCount.toString(), icon: AlertCircle, color: 'bg-amber-100 text-amber-600' },
     { label: 'Unpaid Bills', value: unpaidBillsCount.toString(), icon: CreditCard, color: 'bg-indigo-50 text-indigo-600' },
-    { label: 'Overdue Bills', value: overdueBillsCount.toString(), icon: AlertCircle, color: 'bg-rose-100 text-rose-600 animate-pulse' },
+    { label: 'Paid Bills', value: paidBillsCount.toString(), icon: CheckCircle2, color: 'bg-emerald-50 text-emerald-600' },
     { label: 'Tickets', value: openTicketsCount.toString(), icon: MessageSquare, color: openTicketsCount > 0 ? 'bg-indigo-600 text-white animate-bounce' : 'bg-slate-100 text-slate-600' },
     { label: 'Invoiced', value: `Rs. ${totalIncome.toLocaleString()}`, icon: Wallet, color: 'bg-indigo-100 text-indigo-600' },
   ] : [
@@ -314,8 +362,44 @@ export default function Dashboard() {
       </div>
 
       <div className="px-4 sm:px-8 pt-6 max-w-7xl mx-auto w-full relative z-20 space-y-6">
+        {/* Daily Operations Summary */}
+        {isAdmin && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+            {adminSummaryCards.map((card, i) => (
+              <motion.button
+                key={card.label}
+                type="button"
+                onClick={() => navigate(card.path)}
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08 }}
+                className={cn(
+                  "group relative overflow-hidden rounded-2xl border bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg",
+                  card.style
+                )}
+              >
+                <div className={cn("absolute inset-x-0 top-0 h-1", card.accent)} />
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] opacity-70">{card.label}</p>
+                    <p className="mt-3 text-2xl font-black tracking-tight text-slate-950">{card.value}</p>
+                    <p className="mt-1 text-xs font-bold opacity-70">{card.detail}</p>
+                  </div>
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm transition-transform group-hover:scale-105">
+                    <card.icon className="h-6 w-6" />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center gap-2 text-[10px] font-black uppercase tracking-widest opacity-70">
+                  Open
+                  <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                </div>
+              </motion.button>
+            ))}
+          </div>
+        )}
+
         {/* Main Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 sm:gap-5">
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
