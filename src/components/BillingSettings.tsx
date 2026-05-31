@@ -120,7 +120,7 @@ export default function BillingSettings() {
                       onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
                       placeholder={field.placeholder}
                       className={cn(
-                        "input-modern uppercase font-bold tracking-wider text-[11px] px-4 h-12",
+                        "input-modern font-bold tracking-wide text-[11px] px-4 h-12 normal-case",
                         field.icon && "pl-12"
                       )}
                     />
