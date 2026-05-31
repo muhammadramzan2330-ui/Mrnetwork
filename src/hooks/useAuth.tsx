@@ -98,7 +98,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const userData = docSnapshot.data() as UserProfile;
             console.log("AUTH_DEBUG: Profile Found:", userData.role);
 
-            setProfile({ ...userData, id: docSnapshot.id } as any);
+            let mergedUserData: any = { ...userData, id: docSnapshot.id };
+            const email = firebaseUser.email?.toLowerCase() || userData.email?.toLowerCase() || '';
+            const hasPhone = Boolean((userData as any).phone || (userData as any).whatsapp || (userData as any).mobile || (userData as any).phoneNumber);
+
+            if (email && !hasPhone) {
+              const existingProfileQuery = query(
+                collection(db, 'user'),
+                where('email', '==', email),
+                limit(3)
+              );
+              const existingProfile = await getDocs(existingProfileQuery);
+              const linkedDoc = existingProfile.docs.find((candidate) => candidate.id !== docSnapshot.id);
+
+              if (linkedDoc) {
+                const linkedData: any = linkedDoc.data();
+                mergedUserData = {
+                  ...linkedData,
+                  ...userData,
+                  phone: (userData as any).phone || linkedData.phone || linkedData.whatsapp || linkedData.mobile || linkedData.phoneNumber || '',
+                  whatsapp: (userData as any).whatsapp || linkedData.whatsapp || linkedData.phone || '',
+                  id: docSnapshot.id,
+                };
+              }
+            }
+
+            setProfile(mergedUserData as any);
             setError(null);
             setLoading(false);
           } else {

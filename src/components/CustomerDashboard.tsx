@@ -67,12 +67,16 @@ export default function CustomerDashboard() {
   const passwordStatus = validateStrongPassword(newPassword);
   const customerName = (profile.name || user?.displayName || profile.email?.split('@')[0] || 'Customer').trim();
   const headlineName = customerName.split(/\s+/)[0] || 'Customer';
-  const currentCustomer = users.find((customer: any) => customer.id === profile.id || customer.uid === user?.uid || customer.email === profile.email);
+  const getPhone = (source: any = {}) => source.phone || source.whatsapp || source.mobile || source.phoneNumber || source.userPhone || source.customerPhone || '';
+  const currentCustomer = users.find((customer: any) => (
+    customer.id === profile.id ||
+    customer.uid === user?.uid ||
+    (customer.email || '').toLowerCase() === (profile.email || '').toLowerCase()
+  ));
   const customerPhone = (
-    (profile as any).phone ||
-    (profile as any).whatsapp ||
-    currentCustomer?.phone ||
-    currentCustomer?.whatsapp ||
+    getPhone(profile) ||
+    getPhone(currentCustomer) ||
+    getPhone(userBills[0]) ||
     user?.phoneNumber ||
     'N/A'
   );
@@ -668,7 +672,7 @@ export default function CustomerDashboard() {
                                   generateInvoicePDF({
                                     invoiceNumber: bill.id.slice(-8).toUpperCase(),
                                     customerName,
-                                    phone: customerPhone !== 'N/A' ? customerPhone : (bill.phone || bill.userPhone || 'N/A'),
+                                    phone: customerPhone !== 'N/A' ? customerPhone : (getPhone(bill) || 'N/A'),
                                     packageName: bill.packageName || assignedPackage?.name || 'Service',
                                     speed: profile.packageSpeed || assignedPackage?.speed || 'Standard',
                                     amount: bill.amount,
