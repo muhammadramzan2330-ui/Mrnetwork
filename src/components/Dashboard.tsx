@@ -88,15 +88,39 @@ export default function Dashboard() {
   const totalIncome = payments
     .filter(p => p.status === 'approved' && p.type === 'in')
     .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+  const dedupeBills = (items: any[]) => Array.from(
+    items.reduce((map: Map<string, any>, bill: any) => {
+      const billUser = users.find((item: any) => item.id === bill.userId || item.uid === bill.userId);
+      const ownerKey = (billUser?.email || billUser?.uid || bill.userId || bill.userName || '').toString().toLowerCase();
+      const billKey = [
+        ownerKey,
+        String(bill.month || '').toLowerCase(),
+        String(bill.packageName || '').toLowerCase(),
+        Number(bill.amount || 0),
+        bill.status === 'paid' ? 'paid' : 'open',
+      ].join('|');
+      const existing = map.get(billKey);
+      if (!existing) {
+        map.set(billKey, bill);
+        return map;
+      }
+      const existingDate = new Date(existing.paidAt || existing.updatedAt || existing.createdAt || existing.dueDate || 0).getTime();
+      const billDate = new Date(bill.paidAt || bill.updatedAt || bill.createdAt || bill.dueDate || 0).getTime();
+      if (billDate > existingDate) map.set(billKey, bill);
+      return map;
+    }, new Map<string, any>()).values()
+  );
+  const cleanBills = dedupeBills(bills);
   
   const pendingPaymentsCount = payments.filter(p => p.status === 'pending').length;
   const pendingUsersCount = users.filter(u => u.status === 'pending').length;
-  const unpaidBillsCount = bills.filter(b => b.status === 'unpaid').length;
-  const paidBillsCount = bills.filter(b => b.status === 'paid').length;
-  const overdueBillsCount = bills.filter(b => b.status === 'unpaid' && new Date(b.dueDate) < new Date()).length;
+  const unpaidBillsCount = cleanBills.filter(b => b.status === 'unpaid').length;
+  const paidBillsCount = cleanBills.filter(b => b.status === 'paid').length;
+  const overdueBillsCount = cleanBills.filter(b => b.status === 'unpaid' && new Date(b.dueDate) < new Date()).length;
   const openTicketsCount = tickets.filter(t => t.status === 'open').length;
   const todayPaymentTotal = todayApprovedPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
-  const overdueAmount = bills
+  const overdueAmount = cleanBills
     .filter(b => b.status === 'unpaid' && new Date(b.dueDate) < new Date())
     .reduce((sum, bill) => sum + Number(bill.amount || 0), 0);
 

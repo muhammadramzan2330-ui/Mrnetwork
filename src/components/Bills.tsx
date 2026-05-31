@@ -37,8 +37,33 @@ export default function Bills() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   const now = new Date();
+  const dedupeBills = (items: any[]) => Array.from(
+    items.reduce((map: Map<string, any>, bill: any) => {
+      const user = users.find((item: any) => item.id === bill.userId || item.uid === bill.userId);
+      const ownerKey = (user?.email || user?.uid || bill.userId || bill.userName || '').toString().toLowerCase();
+      const billKey = [
+        ownerKey,
+        String(bill.month || '').toLowerCase(),
+        String(bill.packageName || '').toLowerCase(),
+        Number(bill.amount || 0),
+        bill.status === 'paid' ? 'paid' : 'open',
+      ].join('|');
+      const existing = map.get(billKey);
+      if (!existing) {
+        map.set(billKey, bill);
+        return map;
+      }
 
-  const filteredBills = bills.filter(bill => {
+      const existingDate = new Date(existing.paidAt || existing.updatedAt || existing.createdAt || existing.dueDate || 0).getTime();
+      const billDate = new Date(bill.paidAt || bill.updatedAt || bill.createdAt || bill.dueDate || 0).getTime();
+      if (billDate > existingDate) map.set(billKey, bill);
+      return map;
+    }, new Map<string, any>()).values()
+  );
+
+  const cleanBills = dedupeBills(bills);
+
+  const filteredBills = cleanBills.filter(bill => {
     const searchLower = searchTerm.toLowerCase();
     const isOverdue = bill.status === 'unpaid' && new Date(bill.dueDate) < now;
 
@@ -55,7 +80,7 @@ export default function Bills() {
     return matchesSearch && matchesStatus;
   });
 
-  const overdueBillsCount = bills.filter(b => b.status === 'unpaid' && new Date(b.dueDate) < now).length;
+  const overdueBillsCount = cleanBills.filter(b => b.status === 'unpaid' && new Date(b.dueDate) < now).length;
 
   const handleSMSReminder = async (bill: any, user: any) => {
     if (!user || (!user.phone && !user.whatsapp)) {
@@ -93,7 +118,7 @@ export default function Bills() {
     }
   };
 
-  const overdueAmount = bills
+  const overdueAmount = cleanBills
     .filter(b => b.status === 'unpaid' && new Date(b.dueDate) < now)
     .reduce((sum, b) => sum + b.amount, 0);
 
@@ -143,7 +168,7 @@ export default function Bills() {
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Collected Amount</p>
                 <p className="text-2xl font-black text-slate-900 leading-none">
-                  RS. {bills.filter(b => b.status === 'paid').reduce((sum, b) => sum + b.amount, 0).toLocaleString()}
+                  RS. {cleanBills.filter(b => b.status === 'paid').reduce((sum, b) => sum + b.amount, 0).toLocaleString()}
                 </p>
               </div>
             </CardContent>
@@ -156,7 +181,7 @@ export default function Bills() {
               </div>
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Active Invoices</p>
-                <p className="text-2xl font-black text-slate-900 leading-none">{bills.length}</p>
+                <p className="text-2xl font-black text-slate-900 leading-none">{cleanBills.length}</p>
               </div>
             </CardContent>
           </Card>

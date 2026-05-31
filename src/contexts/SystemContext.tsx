@@ -896,6 +896,26 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       
       if (amount <= 0) throw new Error("User has no plan price or package price set");
 
+      const relatedOwnerIds = Array.from(new Set([
+        user.id,
+        user.uid,
+        ...state.users
+          .filter((candidate: any) => candidate.email && user.email && candidate.email === user.email)
+          .flatMap((candidate: any) => [candidate.id, candidate.uid]),
+      ].filter(Boolean)));
+
+      const existingBill = state.bills.find((bill: any) => (
+        relatedOwnerIds.includes(bill.userId) &&
+        bill.month === currentMonth &&
+        Number(bill.amount || 0) === Number(amount || 0) &&
+        bill.status !== 'paid'
+      ));
+
+      if (existingBill) {
+        toast.info(`${user.name} ka ${currentMonth} bill already exists`);
+        return;
+      }
+
       const dueDate = new Date(today.getFullYear(), today.getMonth(), 10);
       if (dueDate < today) dueDate.setMonth(dueDate.getMonth() + 1);
 
@@ -935,7 +955,18 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
     
     for (const user of activeCustomers) {
       // Check if bill for this month already exists
-      const existingBill = state.bills.find(b => b.userId === user.id && b.month === currentMonth);
+      const relatedOwnerIds = Array.from(new Set([
+        user.id,
+        user.uid,
+        ...state.users
+          .filter((candidate: any) => candidate.email && user.email && candidate.email === user.email)
+          .flatMap((candidate: any) => [candidate.id, candidate.uid]),
+      ].filter(Boolean)));
+      const existingBill = state.bills.find((b: any) => (
+        relatedOwnerIds.includes(b.userId) &&
+        b.month === currentMonth &&
+        b.status !== 'paid'
+      ));
       
       if (!existingBill) {
         const pkg = state.packages.find(p => p.id === user.packageId);
