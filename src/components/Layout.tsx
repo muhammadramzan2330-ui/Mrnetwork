@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, User, History, ShieldCheck as ShieldCheckIcon, LogOut, Settings, Bell, Radio, Search } from 'lucide-react';
+import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, User, History, ShieldCheck as ShieldCheckIcon, LogOut, Settings, Bell, Radio, Search, Moon, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -17,12 +17,19 @@ export default function Layout({ children }: LayoutProps) {
   const { isAdmin, user } = useAuth();
   const { tickets } = useSystem();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [panelTheme, setPanelTheme] = useState<'dark' | 'light'>(() => (
+    localStorage.getItem('mrnetwork-panel-theme') === 'light' ? 'light' : 'dark'
+  ));
 
   useEffect(() => {
     if (isAdmin) {
       console.log('NEW_ADMIN_LAYOUT_ACTIVE');
     }
   }, [isAdmin]);
+
+  useEffect(() => {
+    localStorage.setItem('mrnetwork-panel-theme', panelTheme);
+  }, [panelTheme]);
 
   const openTicketsCount = tickets.filter(t => t.status === 'open').length;
   
@@ -82,65 +89,95 @@ export default function Layout({ children }: LayoutProps) {
     ];
     const accountName = user.displayName || (isAdmin ? 'Admin' : 'Customer');
     const accountInitials = isAdmin ? 'AD' : (accountName.slice(0, 2) || 'CU').toUpperCase();
+    const isLight = panelTheme === 'light';
+    const shellBg = isLight ? 'bg-[#F4F7FB] text-slate-950' : 'bg-[#07111f] text-slate-100';
+    const sideBg = isLight ? 'bg-white border-slate-200 shadow-xl' : 'bg-[#07101d] border-white/10';
+    const headerBg = isLight ? 'bg-white/95 border-slate-200 shadow-sm' : 'bg-[#07111f]/95 border-white/10';
+    const navIdle = isLight ? 'text-slate-600 hover:bg-blue-50 hover:text-blue-700' : 'text-slate-300 hover:bg-white/7 hover:text-white';
+    const softPanel = isLight ? 'border-slate-200 bg-slate-50 text-slate-600' : 'border-white/10 bg-white/[0.04] text-slate-300';
+    const titleText = isLight ? 'text-slate-950' : 'text-white';
+    const mutedText = isLight ? 'text-slate-500' : 'text-slate-400';
+
+    const renderShellNav = (onNavigate?: () => void) => (
+      <nav className="flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
+        {shellNav.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            onClick={onNavigate}
+            className={({ isActive }) => cn(
+              "group flex items-center gap-4 rounded-xl px-4 py-3.5 text-sm font-bold transition-all",
+              isActive
+                ? "bg-blue-600/90 text-white shadow-lg shadow-blue-950/30 ring-1 ring-blue-300/20"
+                : navIdle
+            )}
+          >
+            <item.icon className="h-5 w-5 text-current opacity-90 transition-transform group-hover:scale-110" />
+            <span className="flex-1">{item.label}</span>
+            {item.badge && (
+              <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-black text-white">{item.badge}</span>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+    );
 
     return (
-      <div className="min-h-screen bg-[#07111f] text-slate-100 font-sans selection:bg-blue-500/30 selection:text-white">
+      <div className={cn("min-h-screen font-sans selection:bg-blue-500/30 selection:text-white", shellBg)}>
         <div className="flex min-h-screen">
-          <aside className="hidden lg:flex w-[290px] shrink-0 flex-col border-r border-white/10 bg-[#07101d] px-4 py-6">
+          <aside className={cn("hidden lg:flex w-[290px] shrink-0 flex-col border-r px-4 py-6", sideBg)}>
             <div className="mb-8 flex items-center gap-4 px-2">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-700 shadow-lg shadow-blue-700/30">
                 <span className="text-2xl font-black text-white">M</span>
               </div>
               <div>
-                <p className="text-lg font-black tracking-tight text-white">MR NETWORK</p>
-                <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">ISP Management System</p>
+                <p className={cn("text-lg font-black tracking-tight", titleText)}>MR NETWORK</p>
+                <p className={cn("text-[10px] font-bold uppercase tracking-[0.18em]", mutedText)}>ISP Management System</p>
               </div>
             </div>
 
-            <nav className="flex-1 space-y-2 overflow-y-auto pr-1 custom-scrollbar">
-              {shellNav.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) => cn(
-                    "group flex items-center gap-4 rounded-xl px-4 py-3.5 text-sm font-bold transition-all",
-                    isActive
-                      ? "bg-blue-600/90 text-white shadow-lg shadow-blue-950/30 ring-1 ring-blue-300/20"
-                      : "text-slate-300 hover:bg-white/7 hover:text-white"
-                  )}
-                >
-                  <item.icon className="h-5 w-5 text-current opacity-90 transition-transform group-hover:scale-110" />
-                  <span className="flex-1">{item.label}</span>
-                  {item.badge && (
-                    <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[10px] font-black text-white">{item.badge}</span>
-                  )}
-                </NavLink>
-              ))}
-            </nav>
+            {renderShellNav()}
 
-            <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+            <div className={cn("mt-6 rounded-2xl border p-5", softPanel)}>
               <div className="mb-3 flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/40" />
-                <p className="text-xs font-bold text-slate-300">System Status</p>
+                <p className="text-xs font-bold">System Status</p>
               </div>
               <p className="text-base font-black text-emerald-400">All Systems Operational</p>
-              <p className="mt-3 text-xs font-medium text-slate-400">Last updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+              <p className={cn("mt-3 text-xs font-medium", mutedText)}>Last updated: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
             </div>
           </aside>
 
           <div className="flex min-w-0 flex-1 flex-col">
-            <header className="sticky top-0 z-50 flex min-h-20 items-center justify-between gap-4 border-b border-white/10 bg-[#07111f]/95 px-4 py-4 backdrop-blur-xl sm:px-7">
-              <div className="flex items-center gap-3 text-emerald-400">
+            <header className={cn("sticky top-0 z-50 flex min-h-20 items-center justify-between gap-4 border-b px-4 py-4 backdrop-blur-xl sm:px-7", headerBg)}>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setIsDrawerOpen(true)}
+                  className={cn("rounded-xl p-2 transition-all", isLight ? "text-slate-600 hover:bg-slate-100" : "text-slate-300 hover:bg-white/7")}
+                  aria-label="Open menu"
+                >
+                  <Menu className="h-6 w-6" />
+                </button>
+                <div className="hidden items-center gap-3 text-emerald-400 sm:flex">
                 <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-lg shadow-emerald-400/40" />
                 <span className="text-sm font-bold">System Online</span>
+                </div>
               </div>
-              <div className="hidden min-w-0 max-w-xl flex-1 items-center rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-slate-400 md:flex">
+              <div className={cn("hidden min-w-0 max-w-xl flex-1 items-center rounded-xl border px-4 py-3 md:flex", isLight ? "border-slate-200 bg-slate-50 text-slate-500" : "border-white/10 bg-white/[0.04] text-slate-400")}>
                 <Search className="mr-3 h-5 w-5" />
                 <span className="truncate text-sm">Search customers, invoices, payments...</span>
-                <span className="ml-auto rounded-lg bg-white/7 px-2 py-1 text-[10px] font-black text-slate-300">Ctrl + K</span>
+                <span className={cn("ml-auto rounded-lg px-2 py-1 text-[10px] font-black", isLight ? "bg-white text-slate-500 border border-slate-200" : "bg-white/7 text-slate-300")}>Ctrl + K</span>
               </div>
               <div className="flex items-center gap-4">
-                <button className="relative rounded-xl p-2 text-slate-300 hover:bg-white/7 hover:text-white" aria-label="Notifications">
+                <button
+                  onClick={() => setPanelTheme(isLight ? 'dark' : 'light')}
+                  className={cn("rounded-xl p-2 transition-all", isLight ? "text-slate-600 hover:bg-slate-100" : "text-slate-300 hover:bg-white/7 hover:text-white")}
+                  aria-label="Toggle light dark mode"
+                  title={isLight ? 'Dark mode' : 'Light mode'}
+                >
+                  {isLight ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                </button>
+                <button className={cn("relative rounded-xl p-2 transition-all", isLight ? "text-slate-600 hover:bg-slate-100" : "text-slate-300 hover:bg-white/7 hover:text-white")} aria-label="Notifications">
                   <Bell className="h-5 w-5" />
                   {openTicketsCount > 0 && (
                     <span className="absolute -right-1 -top-1 rounded-full bg-rose-500 px-1.5 text-[10px] font-black text-white">{openTicketsCount}</span>
@@ -149,8 +186,8 @@ export default function Layout({ children }: LayoutProps) {
                 <NavLink to="/profile" className="flex items-center gap-3 rounded-2xl px-2 py-1.5 hover:bg-white/7">
                   <span className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white">{accountInitials}</span>
                   <span className="hidden sm:block">
-                    <span className="block text-sm font-black text-white">{accountName}</span>
-                    <span className="block text-xs font-medium text-slate-400">{isAdmin ? 'Super Administrator' : 'Customer Portal'}</span>
+                    <span className={cn("block text-sm font-black", titleText)}>{accountName}</span>
+                    <span className={cn("block text-xs font-medium", mutedText)}>{isAdmin ? 'Super Administrator' : 'Customer Portal'}</span>
                   </span>
                 </NavLink>
                 <button onClick={handleLogout} className="rounded-xl p-2 text-slate-400 hover:bg-rose-500/10 hover:text-rose-300" aria-label="Sign out">
@@ -158,6 +195,43 @@ export default function Layout({ children }: LayoutProps) {
                 </button>
               </div>
             </header>
+
+            <AnimatePresence>
+              {isDrawerOpen && (
+                <div className="fixed inset-0 z-[10000]">
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setIsDrawerOpen(false)}
+                    className={cn("absolute inset-0 backdrop-blur-[4px]", isLight ? "bg-slate-900/30" : "bg-black/60")}
+                  />
+                  <motion.aside
+                    initial={{ x: '-100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '-100%' }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                    className={cn("absolute inset-y-0 left-0 flex w-[300px] flex-col border-r px-4 py-6 shadow-2xl", sideBg)}
+                  >
+                    <div className="mb-6 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-700 shadow-lg shadow-blue-700/30">
+                          <span className="text-xl font-black text-white">M</span>
+                        </div>
+                        <div>
+                          <p className={cn("text-base font-black", titleText)}>MR NETWORK</p>
+                          <p className={cn("text-[9px] font-bold uppercase tracking-widest", mutedText)}>{isAdmin ? 'Admin Panel' : 'Customer Portal'}</p>
+                        </div>
+                      </div>
+                      <button onClick={() => setIsDrawerOpen(false)} className="rounded-xl p-2 text-rose-400 hover:bg-rose-500/10" aria-label="Close menu">
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                    {renderShellNav(() => setIsDrawerOpen(false))}
+                  </motion.aside>
+                </div>
+              )}
+            </AnimatePresence>
 
             <main className="flex-1 p-4 sm:p-7">
               {children}
