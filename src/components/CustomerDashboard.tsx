@@ -74,37 +74,38 @@ export default function CustomerDashboard() {
   const coveringPayments = userPayments.filter((payment: any) => ['approved', 'pending'].includes(payment.status));
   const coveredBillIds = new Set(coveringPayments.map((payment: any) => payment.billId).filter(Boolean));
   const coveredBillAmounts = new Set(coveringPayments.map((payment: any) => Number(payment.amount || 0)).filter((amount: number) => amount > 0));
-  const coveredBills = userBills.map((bill: any) => {
-    const isCovered = bill.status === 'unpaid' && (
-      coveredBillIds.has(bill.id) ||
-      coveredBillAmounts.has(Number(bill.amount || 0))
-    );
-    return isCovered ? { ...bill, status: 'paid', paymentSubmitted: true } : bill;
+  const paymentHistoryBills = coveringPayments.map((payment: any) => {
+    const matchedBill = userBills.find((bill: any) => (
+      bill.id === payment.billId ||
+      (Number(bill.amount || 0) === Number(payment.amount || 0) && bill.status === 'unpaid')
+    ));
+
+    return {
+      ...(matchedBill || {}),
+      id: `payment-${payment.id}`,
+      sourceBillId: matchedBill?.id || payment.billId || '',
+      packageName: matchedBill?.packageName || payment.packageName || 'Monthly Bill',
+      month: matchedBill?.month || new Date(payment.date || payment.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      amount: Number(payment.amount || matchedBill?.amount || 0),
+      dueDate: matchedBill?.dueDate || payment.date || payment.createdAt || new Date().toISOString(),
+      createdAt: payment.date || payment.createdAt || matchedBill?.createdAt,
+      updatedAt: payment.approvedAt || payment.date || payment.createdAt || matchedBill?.updatedAt,
+      paidAt: payment.approvedAt || payment.date || payment.createdAt,
+      status: payment.status === 'pending' ? 'pending' : 'paid',
+      paymentSubmitted: payment.status === 'pending',
+    };
   });
-  const displayBills = Array.from(
-    coveredBills.reduce((map: Map<string, any>, bill: any) => {
-      const billKey = [
-        String(bill.month || formatDate(bill.dueDate) || '').trim().toLowerCase(),
-        String(bill.packageName || bill.planName || bill.packageId || '').trim().toLowerCase(),
-        Number(bill.amount || 0),
-      ].join('|');
-      const existing = map.get(billKey);
-      if (!existing) {
-        map.set(billKey, bill);
-        return map;
-      }
 
-      const existingRank = existing.status === 'paid' ? 2 : existing.paymentSubmitted ? 1 : 0;
-      const billRank = bill.status === 'paid' ? 2 : bill.paymentSubmitted ? 1 : 0;
-      const existingDate = new Date(existing.paidAt || existing.updatedAt || existing.createdAt || existing.dueDate || 0).getTime();
-      const billDate = new Date(bill.paidAt || bill.updatedAt || bill.createdAt || bill.dueDate || 0).getTime();
+  const paidOrSubmittedAmounts = new Set(paymentHistoryBills.map((bill: any) => Number(bill.amount || 0)).filter((amount: number) => amount > 0));
+  const paidOrSubmittedBillIds = new Set(paymentHistoryBills.flatMap((bill: any) => [bill.sourceBillId, bill.id]).filter(Boolean));
+  const remainingUnpaidBills = userBills.filter((bill: any) => (
+    bill.status === 'unpaid' &&
+    !coveredBillIds.has(bill.id) &&
+    !paidOrSubmittedBillIds.has(bill.id) &&
+    !paidOrSubmittedAmounts.has(Number(bill.amount || 0))
+  ));
 
-      if (billRank > existingRank || (billRank === existingRank && billDate > existingDate)) {
-        map.set(billKey, bill);
-      }
-      return map;
-    }, new Map<string, any>()).values()
-  ).sort((a: any, b: any) => (
+  const displayBills = [...paymentHistoryBills, ...remainingUnpaidBills].sort((a: any, b: any) => (
     new Date(b.paidAt || b.updatedAt || b.createdAt || b.dueDate || 0).getTime() -
     new Date(a.paidAt || a.updatedAt || a.createdAt || a.dueDate || 0).getTime()
   ));
