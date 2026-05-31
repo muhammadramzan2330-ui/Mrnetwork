@@ -125,7 +125,7 @@ export default function Layout({ children }: LayoutProps) {
     return (
       <div className={cn("min-h-screen font-sans selection:bg-blue-500/30 selection:text-white", shellBg)}>
         <div className="flex min-h-screen">
-          <aside className={cn("hidden lg:flex w-[290px] shrink-0 flex-col border-r px-4 py-6", sideBg)}>
+          <aside className={cn("hidden w-[290px] shrink-0 flex-col border-r px-4 py-6", sideBg)}>
             <div className="mb-8 flex items-center gap-4 px-2">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-700 shadow-lg shadow-blue-700/30">
                 <span className="text-2xl font-black text-white">M</span>
