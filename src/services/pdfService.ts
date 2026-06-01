@@ -133,7 +133,7 @@ export const generateInvoicePDF = (data: InvoiceData) => {
   doc.save(`Invoice_${data.invoiceNumber}.pdf`);
 };
 
-export const generateReceiptPDF = (data: InvoiceData & { paymentMethod: string; reference: string }) => {
+export const generateReceiptPDF = (data: InvoiceData & { paymentMethod: string; reference: string; proofImage?: string; proofName?: string }) => {
   const doc = new jsPDF();
   const themeColor: [number, number, number] = [16, 185, 129]; // Emerald-500 for Receipt
 
@@ -174,6 +174,7 @@ export const generateReceiptPDF = (data: InvoiceData & { paymentMethod: string; 
     body: [
       ['Reference ID', data.reference],
       ['Payment Method', data.paymentMethod],
+      ['Payment Proof', data.proofImage ? `Attached${data.proofName ? ` - ${data.proofName}` : ''}` : 'Not attached'],
       ['Package', data.packageName],
       ['Amount Paid', `Rs. ${data.amount.toLocaleString()}`],
       ['Date', data.createdDate],
@@ -186,6 +187,23 @@ export const generateReceiptPDF = (data: InvoiceData & { paymentMethod: string; 
       0: { fontStyle: 'bold', fillColor: [248, 250, 252], cellWidth: 50 },
     }
   });
+
+  if (data.proofImage) {
+    const proofY = Math.min(((doc as any).lastAutoTable.finalY || 178) + 12, 205);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(themeColor[0], themeColor[1], themeColor[2]);
+    doc.text('PAYMENT SCREENSHOT PROOF', 20, proofY);
+
+    try {
+      doc.addImage(data.proofImage, 'JPEG', 20, proofY + 5, 70, 45, undefined, 'FAST');
+    } catch (error) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(120, 120, 120);
+      doc.text('Proof image could not be embedded, but it is saved with the payment record.', 20, proofY + 10);
+    }
+  }
 
   // Footer
   doc.setFontSize(8);

@@ -547,7 +547,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      await addDocument('payments', {
+      const paymentDoc = await addDocument('payments', {
         ...paymentData,
         userId: customer.id,
         userName: customer.name,
@@ -564,6 +564,22 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
         date: new Date().toISOString(),
         type: 'in',
         category: 'subscription'
+      });
+
+      await addDocument('notifications', {
+        userId: 'admin',
+        targetRole: 'admin',
+        paymentId: paymentDoc?.id || '',
+        customerId: customer.id,
+        customerName: customer.name,
+        amount,
+        reference,
+        hasProof: Boolean(paymentData.proofImage),
+        type: 'payment_request',
+        title: 'New Payment Request',
+        message: `${customer.name} ne Rs. ${amount.toLocaleString()} payment submit ki hai. Admin approval required.`,
+        status: 'unread',
+        date: new Date().toISOString()
       });
       await addLog('Payment Recorded', paymentData.userName, 'payment', `Amount: Rs. ${paymentData.amount} | ID: ${paymentData.reference}`);
       toast.success('Your payment is submitted and awaiting approval');

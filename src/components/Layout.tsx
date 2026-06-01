@@ -16,7 +16,7 @@ import { useSystem } from '../contexts/SystemContext';
 
 export default function Layout({ children }: LayoutProps) {
   const { isAdmin, user, profile } = useAuth();
-  const { tickets } = useSystem();
+  const { tickets, notifications } = useSystem();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [panelTheme, setPanelTheme] = useState<'dark' | 'light'>(() => (
@@ -34,6 +34,10 @@ export default function Layout({ children }: LayoutProps) {
   }, [panelTheme]);
 
   const openTicketsCount = tickets.filter(t => t.status === 'open').length;
+  const adminPaymentRequestCount = isAdmin
+    ? notifications.filter((notification: any) => notification.type === 'payment_request' && notification.status !== 'read').length
+    : 0;
+  const notificationCount = openTicketsCount + adminPaymentRequestCount;
   
   const navItems = [
     { icon: LayoutDashboard, label: 'Home', to: isAdmin ? '/admin' : '/dashboard', show: !!user },
@@ -225,12 +229,17 @@ export default function Layout({ children }: LayoutProps) {
                 >
                   {isCapturing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
                 </button>
-                <button className={cn("relative rounded-xl p-2 transition-all", isLight ? "text-slate-600 hover:bg-slate-100" : "text-slate-300 hover:bg-white/7 hover:text-white")} aria-label="Notifications">
+                <NavLink
+                  to={isAdmin && adminPaymentRequestCount > 0 ? '/payments' : '/tickets'}
+                  className={cn("relative rounded-xl p-2 transition-all", isLight ? "text-slate-600 hover:bg-slate-100" : "text-slate-300 hover:bg-white/7 hover:text-white")}
+                  aria-label="Notifications"
+                  title={adminPaymentRequestCount > 0 ? `${adminPaymentRequestCount} new payment request` : 'Notifications'}
+                >
                   <Bell className="h-5 w-5" />
-                  {openTicketsCount > 0 && (
-                    <span className="absolute -right-1 -top-1 rounded-full bg-rose-500 px-1.5 text-[10px] font-black text-white">{openTicketsCount}</span>
+                  {notificationCount > 0 && (
+                    <span className="absolute -right-1 -top-1 rounded-full bg-rose-500 px-1.5 text-[10px] font-black text-white">{notificationCount}</span>
                   )}
-                </button>
+                </NavLink>
                 <NavLink to="/profile" className={cn("flex min-w-0 items-center gap-2 rounded-2xl px-1.5 py-1.5 transition-all sm:gap-3 sm:px-2", isLight ? "hover:bg-slate-100" : "hover:bg-white/7")}>
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-black text-white sm:h-11 sm:w-11 sm:text-sm">{accountInitials}</span>
                   <span className="hidden sm:block">

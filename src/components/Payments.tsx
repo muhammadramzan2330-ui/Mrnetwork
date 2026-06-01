@@ -679,7 +679,9 @@ export default function Payments() {
                                 status: 'PAID',
                                 createdDate: formatDate(item.date),
                                 paymentMethod: item.method,
-                                reference: item.reference || item.id.slice(-8)
+                                reference: item.reference || item.id.slice(-8),
+                                proofImage: item.proofImage,
+                                proofName: item.proofName
                               });
                               if (addLog) addLog('Receipt Printed', item.userName, 'admin', `Ref: ${item.reference}`);
                             } else {
@@ -719,7 +721,9 @@ export default function Payments() {
                                 status: 'PAID',
                                 createdDate: formatDate(item.date),
                                 paymentMethod: item.method,
-                                reference: item.reference || item.id.slice(-8)
+                                reference: item.reference || item.id.slice(-8),
+                                proofImage: item.proofImage,
+                                proofName: item.proofName
                               });
                               if (addLog) addLog('Receipt Downloaded', item.userName, 'admin', `Ref: ${item.reference}`);
                             } else {
