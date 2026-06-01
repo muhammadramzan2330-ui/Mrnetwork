@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, User, History, ShieldCheck as ShieldCheckIcon, LogOut, Settings, Bell, Radio, Search, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, User, History, ShieldCheck as ShieldCheckIcon, LogOut, Settings, Bell, Radio, Search, Moon, Sun, Camera, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
 import BrandLogo from '@/components/BrandLogo';
+import { toast } from 'sonner';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ export default function Layout({ children }: LayoutProps) {
   const { isAdmin, user, profile } = useAuth();
   const { tickets } = useSystem();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
   const [panelTheme, setPanelTheme] = useState<'dark' | 'light'>(() => (
     localStorage.getItem('mrnetwork-panel-theme') === 'light' ? 'light' : 'dark'
   ));
@@ -66,6 +68,35 @@ export default function Layout({ children }: LayoutProps) {
     const { signOut } = await import('firebase/auth');
     await signOut(auth);
     setIsDrawerOpen(false);
+  };
+
+  const handleScreenshot = async () => {
+    if (isCapturing) return;
+    setIsCapturing(true);
+    try {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const html2canvas = (await import('html2canvas')).default;
+      const target = document.querySelector('[data-screenshot-root]') as HTMLElement | null;
+      const canvas = await html2canvas(target || document.body, {
+        backgroundColor: null,
+        scale: Math.min(window.devicePixelRatio || 1, 2),
+        useCORS: true,
+        logging: false,
+        ignoreElements: (element) => element.hasAttribute('data-screenshot-exclude'),
+      });
+      const link = document.createElement('a');
+      const role = isAdmin ? 'admin' : 'customer';
+      const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+      link.download = `MR-NETWORK-${role}-screenshot-${stamp}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      toast.success('Screenshot downloaded');
+    } catch (error) {
+      console.error('Screenshot failed:', error);
+      toast.error('Screenshot failed. Please try again.');
+    } finally {
+      setIsCapturing(false);
+    }
   };
 
   if (user) {
@@ -177,11 +208,22 @@ export default function Layout({ children }: LayoutProps) {
               <div className="flex min-w-0 items-center gap-1.5 sm:gap-3 lg:gap-4">
                 <button
                   onClick={() => setPanelTheme(isLight ? 'dark' : 'light')}
+                  data-screenshot-exclude
                   className={cn("rounded-xl p-2 transition-all", isLight ? "text-slate-600 hover:bg-slate-100" : "text-slate-300 hover:bg-white/7 hover:text-white")}
                   aria-label="Toggle light dark mode"
                   title={isLight ? 'Dark mode' : 'Light mode'}
                 >
                   {isLight ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                </button>
+                <button
+                  onClick={handleScreenshot}
+                  disabled={isCapturing}
+                  data-screenshot-exclude
+                  className={cn("rounded-xl p-2 transition-all disabled:cursor-not-allowed disabled:opacity-60", isLight ? "text-slate-600 hover:bg-slate-100" : "text-slate-300 hover:bg-white/7 hover:text-white")}
+                  aria-label="Download screenshot"
+                  title="Download screenshot"
+                >
+                  {isCapturing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
                 </button>
                 <button className={cn("relative rounded-xl p-2 transition-all", isLight ? "text-slate-600 hover:bg-slate-100" : "text-slate-300 hover:bg-white/7 hover:text-white")} aria-label="Notifications">
                   <Bell className="h-5 w-5" />
@@ -240,7 +282,7 @@ export default function Layout({ children }: LayoutProps) {
               )}
             </AnimatePresence>
 
-            <main className="min-w-0 flex-1 overflow-x-hidden p-3 sm:p-5 lg:p-7">
+            <main data-screenshot-root className="min-w-0 flex-1 overflow-x-hidden p-3 sm:p-5 lg:p-7">
               {children}
             </main>
           </div>
