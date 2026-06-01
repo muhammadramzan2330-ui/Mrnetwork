@@ -119,11 +119,10 @@ export default function Dashboard() {
   const pendingUsersCount = users.filter(u => u.status === 'pending').length;
   const unpaidBillsCount = cleanBills.filter(b => b.status === 'unpaid').length;
   const paidBillsCount = cleanBills.filter(b => b.status === 'paid').length;
-  const overdueBillsCount = cleanBills.filter(b => b.status === 'unpaid' && new Date(b.dueDate) < new Date()).length;
   const openTicketsCount = tickets.filter(t => t.status === 'open').length;
   const todayPaymentTotal = todayApprovedPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
-  const overdueAmount = cleanBills
-    .filter(b => b.status === 'unpaid' && new Date(b.dueDate) < new Date())
+  const unpaidAmount = cleanBills
+    .filter(b => b.status === 'unpaid')
     .reduce((sum, bill) => sum + Number(bill.amount || 0), 0);
 
   const adminSummaryCards = [
@@ -155,13 +154,13 @@ export default function Dashboard() {
       accent: 'bg-indigo-500',
     },
     {
-      label: 'Overdue Bills',
-      value: overdueBillsCount.toString(),
-      detail: `Rs. ${overdueAmount.toLocaleString()} due`,
-      icon: AlertCircle,
+      label: 'Unpaid Bills',
+      value: unpaidBillsCount.toString(),
+      detail: `Rs. ${unpaidAmount.toLocaleString()} unpaid`,
+      icon: CreditCard,
       path: '/payments',
-      style: overdueBillsCount > 0 ? 'bg-rose-50 text-rose-700 border-rose-100' : 'bg-slate-50 text-slate-600 border-slate-100',
-      accent: overdueBillsCount > 0 ? 'bg-rose-500' : 'bg-slate-300',
+      style: unpaidBillsCount > 0 ? 'bg-indigo-50 text-indigo-700 border-indigo-100' : 'bg-slate-50 text-slate-600 border-slate-100',
+      accent: unpaidBillsCount > 0 ? 'bg-indigo-500' : 'bg-slate-300',
     },
   ];
 
@@ -175,7 +174,7 @@ export default function Dashboard() {
   ] : [
     { label: 'Active', value: activeUsersCount.toString(), icon: UserCheck, color: 'bg-emerald-100 text-emerald-600' },
     { label: 'Pending', value: pendingRequests.length.toString(), icon: Activity, color: 'bg-amber-100 text-amber-600' },
-    { label: 'Overdue Bills', value: overdueBillsCount.toString(), icon: AlertCircle, color: 'bg-rose-100 text-rose-600' },
+    { label: 'Unpaid Bills', value: unpaidBillsCount.toString(), icon: CreditCard, color: 'bg-indigo-100 text-indigo-600' },
     { label: 'Plans', value: packages.length.toString(), icon: Package, color: 'bg-indigo-100 text-indigo-600' },
   ];
 
@@ -290,7 +289,7 @@ export default function Dashboard() {
       {
         label: 'Unpaid Bills',
         value: unpaidBillsCount.toLocaleString(),
-        trend: overdueBillsCount > 0 ? `${overdueBillsCount} overdue` : 'clear',
+        trend: unpaidBillsCount > 0 ? `${unpaidBillsCount} unpaid` : 'clear',
         icon: CreditCard,
         color: 'from-amber-500 to-orange-600',
         path: '/bills',

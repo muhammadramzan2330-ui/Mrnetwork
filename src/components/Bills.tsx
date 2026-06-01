@@ -80,7 +80,7 @@ export default function Bills() {
     return matchesSearch && matchesStatus;
   });
 
-  const overdueBillsCount = cleanBills.filter(b => b.status === 'unpaid' && new Date(b.dueDate) < now).length;
+  const unpaidBillsCount = cleanBills.filter(b => b.status === 'unpaid').length;
 
   const handleSMSReminder = async (bill: any, user: any) => {
     if (!user || (!user.phone && !user.whatsapp)) {
@@ -118,8 +118,8 @@ export default function Bills() {
     }
   };
 
-  const overdueAmount = cleanBills
-    .filter(b => b.status === 'unpaid' && new Date(b.dueDate) < now)
+  const unpaidAmount = cleanBills
+    .filter(b => b.status === 'unpaid')
     .reduce((sum, b) => sum + b.amount, 0);
 
   return (
@@ -145,16 +145,16 @@ export default function Bills() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-white rounded-3xl border-slate-100 shadow-sm overflow-hidden border-b-4 border-b-rose-500">
+          <Card className="bg-white rounded-3xl border-slate-100 shadow-sm overflow-hidden border-b-4 border-b-indigo-500">
             <CardContent className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center animate-pulse">
-                <AlertCircle className="w-6 h-6" />
+              <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
+                <CreditCard className="w-6 h-6" />
               </div>
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Overdue Bills</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Unpaid Bills</p>
                 <div className="flex items-baseline gap-2">
-                  <p className="text-2xl font-black text-rose-600 leading-none">{overdueBillsCount}</p>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-tight">RS. {overdueAmount.toLocaleString()}</p>
+                  <p className="text-2xl font-black text-indigo-600 leading-none">{unpaidBillsCount}</p>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-tight">RS. {unpaidAmount.toLocaleString()}</p>
                 </div>
               </div>
             </CardContent>
@@ -200,7 +200,7 @@ export default function Bills() {
             />
           </div>
           <div className="flex bg-white p-1 rounded-2xl border border-slate-100 shadow-sm overflow-x-auto no-scrollbar">
-            {(['all', 'paid', 'unpaid', 'overdue'] as const).map((filter) => (
+            {(['all', 'paid', 'unpaid'] as const).map((filter) => (
               <Button
                 key={filter}
                 variant={statusFilter === filter ? 'default' : 'ghost'}
@@ -221,7 +221,6 @@ export default function Bills() {
           <AnimatePresence>
             {filteredBills.map((bill, index) => {
               const user = users.find(u => u.id === bill.userId);
-              const isOverdue = bill.status === 'unpaid' && new Date(bill.dueDate) < now;
               
               return (
                 <motion.div
@@ -232,15 +231,12 @@ export default function Bills() {
                   transition={{ delay: index * 0.05 }}
                   key={bill.id}
                 >
-                  <Card className={cn(
-                    "bg-white rounded-[2.5rem] p-6 border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative",
-                    isOverdue && "border-rose-200 bg-rose-50/10"
-                  )}>
+                  <Card className="bg-white rounded-[2.5rem] p-6 border-slate-100 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex items-center gap-4">
                         <div className={cn(
                           "w-12 h-12 rounded-2xl flex items-center justify-center transition-all",
-                          isOverdue ? "bg-rose-100 text-rose-600" : "bg-slate-50 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600"
+                          "bg-slate-50 text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600"
                         )}>
                           <User className="w-6 h-6" />
                         </div>
@@ -251,9 +247,6 @@ export default function Bills() {
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 flex items-center gap-1">
                               <Calendar className="w-3 h-3" /> {bill.month}
                             </p>
-                            {isOverdue && (
-                              <p className="text-[9px] font-black text-rose-600 uppercase tracking-widest mt-1.5 px-2 py-0.5 bg-rose-100 rounded-md">OVERDUE</p>
-                            )}
                           </div>
                         </div>
                       </div>
@@ -313,7 +306,7 @@ export default function Bills() {
                     <div className="space-y-4">
                       <div className={cn(
                         "p-4 rounded-2xl border transition-colors",
-                        isOverdue ? "bg-rose-50 border-rose-100" : "bg-slate-50 border-slate-100"
+                        "bg-slate-50 border-slate-100"
                       )}>
                         <div className="flex justify-between items-center mb-3">
                           <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Plan</span>
@@ -322,14 +315,14 @@ export default function Bills() {
                         <div className="flex justify-between items-center">
                           <span className={cn(
                             "text-xl font-black tracking-tight",
-                            isOverdue ? "text-rose-600" : "text-slate-900"
+                            "text-slate-900"
                           )}>RS. {bill.amount.toLocaleString()}</span>
                           <Badge className={cn(
                             "px-3 py-1 rounded-lg border-none font-black text-[9px] uppercase tracking-widest",
                             bill.status === 'paid' ? "bg-emerald-100 text-emerald-600 shadow-sm" : 
-                            isOverdue ? "bg-rose-600 text-white shadow-lg animate-pulse" : "bg-rose-100 text-rose-600 animate-pulse"
+                            "bg-rose-100 text-rose-600 animate-pulse"
                           )}>
-                            {isOverdue ? 'Overdue' : bill.status}
+                            {bill.status}
                           </Badge>
                         </div>
                       </div>
@@ -338,11 +331,11 @@ export default function Bills() {
                         <div className="flex items-center gap-2">
                           <div className={cn(
                             "w-1.5 h-1.5 rounded-full",
-                            isOverdue ? "bg-rose-400 animate-ping" : "bg-slate-300"
+                            "bg-slate-300"
                           )} />
                           <span className={cn(
                             "text-[10px] font-bold uppercase tracking-widest",
-                            isOverdue ? "text-rose-500" : "text-slate-400"
+                            "text-slate-400"
                           )}>Due Date: {formatDate(bill.dueDate)}</span>
                         </div>
                         {bill.status === 'unpaid' && (
@@ -371,7 +364,7 @@ export default function Bills() {
                     <div className={cn(
                       "absolute inset-y-0 left-0 w-1",
                       bill.status === 'paid' ? "bg-emerald-500" : 
-                      isOverdue ? "bg-rose-600" : "bg-rose-400"
+                      "bg-rose-400"
                     )} />
                   </Card>
                 </motion.div>

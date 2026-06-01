@@ -62,7 +62,7 @@ export default function Reports() {
 
   const activeCustomers = users.filter(u => u.status === 'active').length;
   const pendingCustomers = users.filter(u => u.status === 'pending').length;
-  const overdueBills = bills.filter(b => b.status === 'unpaid' && new Date(b.dueDate) < now).length;
+  const unpaidBills = bills.filter(b => b.status === 'unpaid').length;
 
   const handlePrint = () => {
     window.print();
@@ -97,13 +97,13 @@ export default function Reports() {
       description: 'Outstanding receivables'
     },
     { 
-      label: 'Overdue Bills', 
-      value: overdueBills, 
-      subValue: 'Urgent Action Needed',
-      icon: AlertTriangle, 
-      color: 'text-rose-600', 
-      bg: 'bg-rose-50',
-      description: 'Past due payments'
+      label: 'Unpaid Bills', 
+      value: unpaidBills, 
+      subValue: 'Awaiting Payment',
+      icon: Clock, 
+      color: 'text-indigo-600', 
+      bg: 'bg-indigo-50',
+      description: 'Bills waiting for collection'
     }
   ];
 

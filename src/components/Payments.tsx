@@ -377,14 +377,14 @@ export default function Payments() {
             <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0 custom-scrollbar ml-auto">
                 {viewMode === 'dues' && (
                   <div className="flex items-center bg-white/50 p-1 rounded-xl border border-slate-200/60 shadow-sm whitespace-nowrap">
-                    {(['all', 'unpaid', 'paid', 'overdue'] as const).map((filter) => (
+                    {(['all', 'unpaid', 'paid'] as const).map((filter) => (
                       <button
                         key={filter}
                         onClick={() => setBillFilter(filter)}
                         className={cn(
                           "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
                           billFilter === filter 
-                            ? (filter === 'overdue' ? "bg-rose-500 text-white shadow-md shadow-rose-500/20" : "bg-indigo-600 text-white shadow-md shadow-indigo-500/20")
+                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-500/20"
                             : "text-slate-400 hover:text-slate-600"
                         )}
                       >

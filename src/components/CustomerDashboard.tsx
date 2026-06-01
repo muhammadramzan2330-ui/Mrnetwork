@@ -321,7 +321,6 @@ export default function CustomerDashboard() {
     }
   };
 
-  const hasOverdueBills = displayBills.some(b => b.status === 'unpaid' && new Date(b.dueDate) < now);
   const hasUnpaidBills = displayBills.some(b => b.status === 'unpaid');
   const isSuspended = profile.status === 'suspended';
   const isExpired = profile.status === 'expired' && hasUnpaidBills;
@@ -329,13 +328,6 @@ export default function CustomerDashboard() {
 
   return (
     <div className="flex flex-col min-h-full bg-[#F8FAFC]">
-      {hasOverdueBills && !isSuspended && (
-        <div className="bg-rose-600 text-white py-3 px-4 text-center font-black text-[10px] uppercase tracking-widest flex flex-wrap items-center justify-center gap-3 animate-pulse shadow-xl">
-          <AlertCircle className="w-4 h-4 text-white" />
-          Attention: You have overdue bills. Please clear your balance to avoid service interruption.
-          <AlertCircle className="w-4 h-4 text-white" />
-        </div>
-      )}
       {/* Premium Gradient Header */}
       <div className={cn(
         "header-gradient pt-16 pb-16 px-4 sm:px-8 text-white relative overflow-hidden md:rounded-b-[2.5rem] transition-all",
@@ -638,13 +630,11 @@ export default function CustomerDashboard() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
             <Card className={cn(
               "shadow-lg rounded-2xl overflow-hidden hover:opacity-95 transition-all text-white border-none h-full cursor-pointer",
-              currentBill?.status === 'unpaid' && new Date(currentBill.dueDate) < now ? "bg-rose-600 shadow-rose-600/20" :
               currentBill?.status === 'unpaid' ? "bg-rose-500 shadow-rose-500/20" : "bg-indigo-600 shadow-indigo-600/20"
             )} onClick={() => navigate('/payments')}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-[11px] font-bold text-white/60 uppercase tracking-widest">
-                  {currentBill?.status === 'unpaid' && new Date(currentBill.dueDate) < now ? 'OVERDUE BALANCE' : 
-                   currentBill?.status === 'unpaid' ? 'Pending Balance' : 'Payment Status'}
+                  {currentBill?.status === 'unpaid' ? 'Pending Balance' : 'Payment Status'}
                 </CardTitle>
                 <CreditCard className="h-4 w-4 text-white/40" />
               </CardHeader>
@@ -657,7 +647,7 @@ export default function CustomerDashboard() {
                     <div className="flex items-center gap-2 bg-white/10 px-2.5 py-1 rounded inline-flex">
                       <AlertCircle className="w-3 h-3 text-white" />
                       <p className="text-[11px] text-white font-black uppercase tracking-widest">
-                        {new Date(currentBill.dueDate) < now ? 'OVERDUE SINCE: ' : 'DUE: '}
+                        DUE: 
                         {formatDate(currentBill.dueDate)}
                       </p>
                     </div>
@@ -698,30 +688,22 @@ export default function CustomerDashboard() {
                 {filteredBills.length > 0 ? (
                   <div className="divide-y divide-slate-50">
                     {filteredBills.map((bill) => {
-                      const isOverdue = bill.status === 'unpaid' && new Date(bill.dueDate) < now;
                       return (
-                        <div key={bill.id} className={cn(
-                          "p-5 flex items-center justify-between hover:bg-slate-50/70 transition-all group",
-                          isOverdue && "bg-rose-50/30 hover:bg-rose-50/50"
-                        )}>
+                        <div key={bill.id} className="p-5 flex items-center justify-between hover:bg-slate-50/70 transition-all group">
                           <div className="flex items-center gap-5">
                             <div className={cn(
                               "w-12 h-12 rounded-2xl flex items-center justify-center border transition-all",
                               bill.status === 'paid' 
                                 ? "bg-emerald-50 text-emerald-600 border-emerald-100" 
-                                : isOverdue ? "bg-rose-600 text-white border-rose-500 shadow-lg shadow-rose-200" : "bg-rose-50 text-rose-600 border-rose-100"
+                                : "bg-rose-50 text-rose-600 border-rose-100"
                             )}>
                               <CreditCard className="w-6 h-6" />
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
                                 <p className="text-sm font-extrabold text-slate-900">{bill.packageName || 'Monthly Bill'} - {bill.month}</p>
-                                {isOverdue && <Badge className="bg-rose-600 text-white border-none text-[8px] h-4 font-black">OVERDUE</Badge>}
                               </div>
-                              <p className={cn(
-                                "text-[10px] font-bold uppercase tracking-widest mt-0.5",
-                                isOverdue ? "text-rose-500" : "text-slate-400"
-                              )}>Due: {formatDate(bill.dueDate)}</p>
+                              <p className="text-[10px] font-bold uppercase tracking-widest mt-0.5 text-slate-400">Due: {formatDate(bill.dueDate)}</p>
                             </div>
                           </div>
                           <div className="text-right flex flex-col items-end gap-2">
@@ -740,7 +722,7 @@ export default function CustomerDashboard() {
                                     speed: profile.packageSpeed || assignedPackage?.speed || 'Standard',
                                     amount: bill.amount,
                                     dueDate: formatDate(bill.dueDate),
-                                    status: isOverdue ? 'overdue' : bill.status,
+                                    status: bill.status,
                                     createdDate: formatDate(bill.createdAt || new Date())
                                   });
                                   if (addLog) addLog('Invoice Downloaded', customerName, 'customer', `Invoice #${bill.id.slice(-8)}`);
@@ -750,15 +732,15 @@ export default function CustomerDashboard() {
                               </Button>
                               <p className={cn(
                                 "text-base font-black tracking-tight",
-                                isOverdue ? "text-rose-600" : "text-slate-900"
+                                "text-slate-900"
                               )}>{formatCurrency(bill.amount)}</p>
                             </div>
                             <Badge className={cn(
                               "px-3 py-1 font-bold text-[9px] uppercase tracking-widest rounded-lg border-none",
                               bill.status === 'paid' ? "bg-emerald-100 text-emerald-700" : 
-                              isOverdue ? "bg-rose-600 text-white shadow-md animate-pulse" : "bg-rose-100 text-rose-700"
+                              "bg-rose-100 text-rose-700"
                             )}>
-                              {isOverdue ? 'Overdue' : bill.status}
+                              {bill.status}
                             </Badge>
                           </div>
                         </div>

@@ -481,7 +481,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       } else {
         // Mark as expired/overdue
         await updateDocument('user', user.id, { status: 'expired' });
-        await addLog('Account Expired/Overdue', user.name, 'system', 'Unpaid bill or plan expired');
+        await addLog('Account Expired', user.name, 'system', 'Unpaid bill or plan expired');
         await sendSMS(user.id, user.whatsapp || user.phone, `Your service has been suspended due to non-payment or expiry. Please recharge.`, 'expiry_alert');
       }
     }
