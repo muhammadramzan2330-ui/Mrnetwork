@@ -16,7 +16,7 @@ import { useSystem } from '../contexts/SystemContext';
 
 export default function Layout({ children }: LayoutProps) {
   const { isAdmin, user, profile } = useAuth();
-  const { tickets, notifications } = useSystem();
+  const { tickets, notifications, payments } = useSystem();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [panelTheme, setPanelTheme] = useState<'dark' | 'light'>(() => (
@@ -35,9 +35,36 @@ export default function Layout({ children }: LayoutProps) {
 
   const openTicketsCount = tickets.filter(t => t.status === 'open').length;
   const adminPaymentRequestCount = isAdmin
-    ? notifications.filter((notification: any) => notification.type === 'payment_request' && notification.status !== 'read').length
+    ? payments.filter((payment: any) => payment.status === 'pending' && payment.type === 'in').length
     : 0;
   const notificationCount = openTicketsCount + adminPaymentRequestCount;
+
+  useEffect(() => {
+    if (!isAdmin || !user) return;
+
+    const recentWindow = Date.now() - (10 * 60 * 1000);
+    const notifiedIds = new Set(JSON.parse(localStorage.getItem('mrnetwork-notified-payment-requests') || '[]'));
+    const newRequests = notifications
+      .filter((notification: any) => (
+        notification.type === 'payment_request' &&
+        notification.id &&
+        !notifiedIds.has(notification.id) &&
+        new Date(notification.date || notification.createdAt || 0).getTime() > recentWindow
+      ))
+      .sort((a: any, b: any) => new Date(a.date || a.createdAt || 0).getTime() - new Date(b.date || b.createdAt || 0).getTime());
+
+    newRequests.forEach((notification: any) => {
+      toast.info(notification.title || 'New Payment Request', {
+        description: notification.message || 'Customer ne payment request submit ki hai.',
+        duration: 7000,
+      });
+      notifiedIds.add(notification.id);
+    });
+
+    if (newRequests.length > 0) {
+      localStorage.setItem('mrnetwork-notified-payment-requests', JSON.stringify(Array.from(notifiedIds).slice(-80)));
+    }
+  }, [isAdmin, user, notifications]);
   
   const navItems = [
     { icon: LayoutDashboard, label: 'Home', to: isAdmin ? '/admin' : '/dashboard', show: !!user },

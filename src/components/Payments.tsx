@@ -248,6 +248,11 @@ export default function Payments() {
     });
 
   const displayData = viewMode === 'payments' ? filteredPayments : filteredBills;
+  const pendingPaymentRequests = isAdmin
+    ? payments
+      .filter((payment: any) => payment.status === 'pending' && payment.type === 'in')
+      .sort((a: any, b: any) => new Date(b.date || b.createdAt || 0).getTime() - new Date(a.date || a.createdAt || 0).getTime())
+    : [];
 
   return (
     <div className="flex flex-col min-h-full bg-[#F8FAFC] pb-8">
@@ -535,6 +540,111 @@ export default function Payments() {
               </div>
             </Card>
           </div>
+        )}
+
+        {isAdmin && pendingPaymentRequests.length > 0 && (
+          <section className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600 border border-amber-100">
+                    <Clock className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <h3 className="text-lg font-black uppercase tracking-tight text-slate-900">Pending Approvals</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Customer payment requests awaiting admin review</p>
+                  </div>
+                </div>
+              </div>
+              <Badge className="w-fit rounded-full border-none bg-amber-100 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-amber-700">
+                {pendingPaymentRequests.length} Pending
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {pendingPaymentRequests.map((payment: any) => {
+                const customer = users.find((item: any) => item.id === payment.userId || item.uid === payment.userId);
+                return (
+                  <Card key={payment.id} className="overflow-hidden rounded-2xl border-amber-100 bg-white shadow-sm">
+                    <CardContent className="p-4 sm:p-5">
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        <a
+                          href={payment.proofImage || '#'}
+                          target={payment.proofImage ? '_blank' : undefined}
+                          rel="noreferrer"
+                          className={cn(
+                            "flex h-36 sm:h-40 sm:w-44 shrink-0 items-center justify-center overflow-hidden rounded-xl border",
+                            payment.proofImage ? "border-indigo-100 bg-indigo-50" : "border-slate-100 bg-slate-50"
+                          )}
+                        >
+                          {payment.proofImage ? (
+                            <img src={payment.proofImage} alt="Payment screenshot proof" className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="text-center">
+                              <ImageIcon className="mx-auto h-7 w-7 text-slate-300" />
+                              <p className="mt-2 text-[9px] font-black uppercase tracking-widest text-slate-400">No proof</p>
+                            </div>
+                          )}
+                        </a>
+                        <div className="min-w-0 flex-1 space-y-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-black uppercase tracking-tight text-slate-900">{payment.userName || customer?.name || 'Customer'}</p>
+                              <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-indigo-600">{customer?.phone || payment.phone || payment.userPhone || 'No number'}</p>
+                            </div>
+                            {getStatusBadge(payment.status)}
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                              <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Amount</p>
+                              <p className="text-sm font-black text-slate-900">Rs. {Number(payment.amount || 0).toLocaleString()}</p>
+                            </div>
+                            <div className="rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                              <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Method</p>
+                              <p className="text-sm font-black uppercase text-slate-900">{payment.method || 'N/A'}</p>
+                            </div>
+                          </div>
+
+                          <div className="rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2">
+                            <p className="text-[8px] font-black uppercase tracking-widest text-indigo-400">Reference ID</p>
+                            <p className="truncate font-mono text-[11px] font-black text-indigo-700">{payment.reference || 'N/A'}</p>
+                          </div>
+
+                          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-4">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleReject(payment.id)}
+                              disabled={processingPaymentId === payment.id}
+                              className="h-9 rounded-lg px-4 text-[9px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50"
+                            >
+                              Reject
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleApprove(payment.id)}
+                              disabled={processingPaymentId === payment.id}
+                              className="h-9 rounded-lg bg-indigo-600 px-5 text-[9px] font-black uppercase tracking-widest text-white hover:bg-indigo-700 disabled:bg-slate-300"
+                            >
+                              {processingPaymentId === payment.id ? (
+                                <>
+                                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                                  Processing
+                                </>
+                              ) : (
+                                'Approve Payment'
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
         )}
 
       </div>
