@@ -53,8 +53,10 @@ export default function SystemCheck() {
   const activeCustomers = users.filter((item: any) => item.status === 'active').length;
   const customersWithPhone = users.filter((item: any) => item.phone || item.whatsapp || item.mobile || item.phoneNumber).length;
   const pendingPlanRequests = requests.filter((item: any) => item.type === 'package_change' && item.status === 'pending').length;
-  const pendingPayments = payments.filter((item: any) => item.status === 'pending').length;
-  const overdueBills = bills.filter((item: any) => item.status === 'unpaid' && new Date(item.dueDate) < new Date()).length;
+  const pendingPayments = payments.filter((item: any) => (
+    item.status === 'pending' &&
+    (item.type === 'in' || item.category === 'subscription' || item.method)
+  )).length;
   const approvedPayments = payments.filter((item: any) => item.status === 'approved').length;
   const settingsReady = Boolean(settings?.adminPhone && settings?.adminEmail);
 
@@ -117,16 +119,6 @@ export default function SystemCheck() {
       page: '/payments',
       action: 'Open Payments',
       metric: `${pendingPayments} pending`,
-    },
-    {
-      id: 'overdue',
-      title: 'Overdue Notification',
-      desc: 'Paid/approved bill ke baad customer overdue warning hide ho.',
-      status: overdueBills === 0 ? 'success' : 'warning',
-      icon: AlertCircle,
-      page: '/payments',
-      action: 'Review Dues',
-      metric: `${overdueBills} overdue`,
     },
     {
       id: 'invoice',

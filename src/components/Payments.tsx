@@ -393,6 +393,7 @@ export default function Payments() {
                     ))}
                   </div>
                 )}
+                {viewMode === 'payments' && (
                 <div className="min-w-[120px]">
                   <Select onValueChange={setFilterStatus} defaultValue="all">
                     <SelectTrigger className="input-modern h-11 text-[9px] font-black uppercase tracking-widest px-4 border-slate-200/60 bg-white/50 shadow-sm">
@@ -406,6 +407,7 @@ export default function Payments() {
                     </SelectContent>
                   </Select>
                 </div>
+                )}
             </div>
           </div>
         </div>
@@ -430,7 +432,7 @@ export default function Payments() {
               </div>
             </Card>
             <Card className="bg-white border-slate-100 shadow-sm rounded-2xl overflow-hidden p-6 group hover:shadow-md transition-all">
-              <p className="text-rose-500 text-[10px] font-bold uppercase tracking-widest mb-2 leading-none">Pending Bills</p>
+              <p className="text-rose-500 text-[10px] font-bold uppercase tracking-widest mb-2 leading-none">Unpaid Bills</p>
               <div className="flex items-center gap-3">
                 <div className="w-1 h-6 bg-rose-500 rounded-full" />
                 <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
