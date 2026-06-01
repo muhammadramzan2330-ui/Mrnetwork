@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Receipt, Printer, Download, ArrowUpRight, ArrowDownRight, Wallet, CreditCard, Banknote, Building2, Filter, CheckCircle2, XCircle, Clock, ChevronDown, RefreshCw, MessageSquare, Phone, Loader2 } from 'lucide-react';
+import { Plus, Search, Receipt, Printer, Download, ArrowUpRight, ArrowDownRight, Wallet, CreditCard, Banknote, Building2, Filter, CheckCircle2, XCircle, Clock, ChevronDown, RefreshCw, MessageSquare, Phone, Loader2, Image as ImageIcon, UploadCloud } from 'lucide-react';
 import { generateInvoicePDF, generateReceiptPDF } from '@/services/pdfService';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,12 +36,16 @@ export default function Payments() {
     amount: string;
     method: string;
     reference: string;
+    proofImage: string;
+    proofName: string;
   }>({
     userId: profile?.id || '',
     userName: profile?.name || '',
     amount: '',
-    method: 'cash',
-    reference: ''
+    method: isAdmin ? 'cash' : 'easypaisa',
+    reference: '',
+    proofImage: '',
+    proofName: ''
   });
 
   const selectedPaymentUserId = isAdmin ? newPayment.userId : profile?.id;
@@ -51,11 +55,61 @@ export default function Payments() {
     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
   const secureAmount = selectedUnpaidBill?.amount || selectedPaymentUser?.packagePrice || '';
   const requiresReference = newPayment.method !== 'cash';
+  const requiresProof = !isAdmin && newPayment.method !== 'cash';
   const canSubmitPayment = Boolean(
     (isAdmin ? newPayment.userId : profile?.id) &&
     Number(newPayment.amount) > 0 &&
-    (!requiresReference || newPayment.reference.trim().replace(/\s+/g, '').length >= 6)
+    (!requiresReference || newPayment.reference.trim().replace(/\s+/g, '').length >= 6) &&
+    (!requiresProof || newPayment.proofImage)
   );
+
+  const compressProofImage = (file: File) => new Promise<{ dataUrl: string; name: string }>((resolve, reject) => {
+    if (!file.type.startsWith('image/')) {
+      reject(new Error('Please upload image screenshot only'));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      reject(new Error('Screenshot size 5MB se kam honi chahiye'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const maxWidth = 900;
+        const ratio = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * ratio);
+        canvas.height = Math.round(img.height * ratio);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Image process nahi ho saki'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve({
+          dataUrl: canvas.toDataURL('image/jpeg', 0.72),
+          name: file.name,
+        });
+      };
+      img.onerror = () => reject(new Error('Screenshot read nahi ho saki'));
+      img.src = String(reader.result || '');
+    };
+    reader.onerror = () => reject(new Error('Screenshot read nahi ho saki'));
+    reader.readAsDataURL(file);
+  });
+
+  const handleProofUpload = async (file?: File) => {
+    if (!file) return;
+    try {
+      const proof = await compressProofImage(file);
+      setNewPayment(prev => ({ ...prev, proofImage: proof.dataUrl, proofName: proof.name }));
+      toast.success('Payment screenshot attached');
+    } catch (error: any) {
+      toast.error(error.message || 'Screenshot upload failed');
+    }
+  };
 
   const handleAddPayment = async () => {
     if ((isAdmin && !newPayment.userId) || !newPayment.amount) return;
@@ -68,6 +122,10 @@ export default function Payments() {
       toast.error(`Amount must match your unpaid bill: Rs. ${Number(selectedUnpaidBill.amount || 0).toLocaleString()}`);
       return;
     }
+    if (requiresProof && !newPayment.proofImage) {
+      toast.error("Payment screenshot upload karein");
+      return;
+    }
 
     await recordPayment({
       ...newPayment,
@@ -77,7 +135,7 @@ export default function Payments() {
       billId: selectedUnpaidBill?.id || '',
     });
 
-    setNewPayment({ userId: profile?.id || '', userName: profile?.name || '', amount: '', method: 'cash', reference: '' });
+    setNewPayment({ userId: profile?.id || '', userName: profile?.name || '', amount: '', method: isAdmin ? 'cash' : 'easypaisa', reference: '', proofImage: '', proofName: '' });
     setIsOpen(false);
   };
 
@@ -311,6 +369,42 @@ export default function Payments() {
                             Duplicate transaction IDs are blocked before approval.
                           </p>
                         </div>
+                        {!isAdmin && newPayment.method !== 'cash' && (
+                          <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Payment Screenshot</Label>
+                            <label className={cn(
+                              "flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-5 text-center transition-all",
+                              newPayment.proofImage
+                                ? "border-emerald-200 bg-emerald-50"
+                                : "border-indigo-100 bg-indigo-50/60 hover:border-indigo-300 hover:bg-indigo-50"
+                            )}>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(event) => handleProofUpload(event.target.files?.[0])}
+                              />
+                              {newPayment.proofImage ? (
+                                <div className="w-full space-y-3">
+                                  <img
+                                    src={newPayment.proofImage}
+                                    alt="Payment proof preview"
+                                    className="mx-auto max-h-36 rounded-xl border border-emerald-100 object-contain shadow-sm"
+                                  />
+                                  <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600">
+                                    Screenshot attached: {newPayment.proofName || 'payment-proof.jpg'}
+                                  </p>
+                                </div>
+                              ) : (
+                                <>
+                                  <UploadCloud className="mb-3 h-8 w-8 text-indigo-500" />
+                                  <p className="text-[10px] font-black uppercase tracking-widest text-indigo-700">Upload payment screenshot</p>
+                                  <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-indigo-400">Easypaisa / JazzCash / Bank proof</p>
+                                </>
+                              )}
+                            </label>
+                          </div>
+                        )}
                         <div className="rounded-2xl bg-indigo-50 border border-indigo-100 p-4">
                           <p className="text-[10px] font-black text-indigo-700 uppercase tracking-widest">Secure Payment Flow</p>
                           <p className="text-[10px] font-bold text-indigo-500 mt-1 leading-relaxed">
@@ -533,7 +627,28 @@ export default function Payments() {
                           </p>
                         </div>
                       </div>
-                    )}                     <div className="mt-6 flex justify-between items-center pt-4 border-t border-slate-50">
+                    )}
+                    {viewMode === 'payments' && item.proofImage && (
+                      <a
+                        href={item.proofImage}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-3 block overflow-hidden rounded-xl border border-indigo-100 bg-indigo-50/50 p-2 transition-all hover:border-indigo-300"
+                      >
+                        <div className="mb-2 flex items-center gap-2 px-1">
+                          <ImageIcon className="h-3.5 w-3.5 text-indigo-600" />
+                          <p className="text-[8px] font-black uppercase tracking-widest text-indigo-600">
+                            Payment Screenshot
+                          </p>
+                        </div>
+                        <img
+                          src={item.proofImage}
+                          alt="Payment screenshot proof"
+                          className="h-28 w-full rounded-lg object-cover"
+                        />
+                      </a>
+                    )}
+                    <div className="mt-6 flex justify-between items-center pt-4 border-t border-slate-50">
                        <div className="flex gap-2">
                         <button
                           aria-label={viewMode === 'dues' ? 'Print invoice' : 'Print receipt'}
