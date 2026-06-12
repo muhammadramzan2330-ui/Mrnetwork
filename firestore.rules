@@ -151,7 +151,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // 11. Settings
+    // 11. Purchases and operating expenses
+    match /expenses/{expenseId} {
+      allow read, write: if isAdmin();
+    }
+
+    // 12. Settings
     match /settings/{docId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();

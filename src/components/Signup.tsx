@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { registerWithEmail, createUserProfile } from '@/services/firebase';
-import { UserPlus, Loader2, Mail, Lock, User, Phone } from 'lucide-react';
+import { UserPlus, Loader2, Mail, Lock, User, Phone, Shield } from 'lucide-react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';

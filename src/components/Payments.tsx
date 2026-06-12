@@ -201,7 +201,7 @@ export default function Payments() {
         (filterStatus === 'all' || p.status === filterStatus);
     });
 
-  const dedupeBills = (items: any[]) => Array.from(
+  const dedupeBills = (items: any[]): any[] => Array.from<any>(
     items.reduce((map: Map<string, any>, bill: any) => {
       const user = users.find((item: any) => item.id === bill.userId || item.uid === bill.userId);
       const ownerKey = (user?.email || user?.uid || bill.userId || bill.userName || '').toString().toLowerCase();

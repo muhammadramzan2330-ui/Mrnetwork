@@ -4,6 +4,7 @@ import {
   Users, 
   FileText, 
   CreditCard, 
+  ReceiptText,
   Calendar, 
   Filter, 
   Database,
@@ -22,7 +23,7 @@ import { formatDate, downloadCSV, cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 export default function ExportData() {
-  const { users, bills, payments } = useSystem();
+  const { users, bills, payments, expenses } = useSystem();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -95,6 +96,25 @@ export default function ExportData() {
     toast.success(`${filtered.length} payments exported`);
   };
 
+  const exportExpenses = () => {
+    const filtered = filterByDate(expenses, 'date');
+    const headers = ['Expense ID', 'Date', 'Title', 'Category', 'Vendor', 'Payment Method', 'Invoice', 'Amount', 'Notes'];
+    const data = filtered.map(expense => [
+      expense.id,
+      formatDate(expense.date),
+      expense.title,
+      expense.category,
+      expense.vendor || '-',
+      expense.paymentMethod,
+      expense.invoiceNumber || '-',
+      expense.amount,
+      expense.notes || '-'
+    ]);
+
+    downloadCSV(`Expenses_Export_${formatDate(new Date())}`, headers, data);
+    toast.success(`${filtered.length} expenses exported`);
+  };
+
   const exportOptions = [
     {
       title: 'Customer Directory',
@@ -119,6 +139,14 @@ export default function ExportData() {
       action: exportPayments,
       count: payments.length,
       color: 'bg-emerald-50 text-emerald-600 border-emerald-100'
+    },
+    {
+      title: 'Purchases & Expenses',
+      description: 'Export bandwidth, electricity, salary, equipment and operating costs.',
+      icon: ReceiptText,
+      action: exportExpenses,
+      count: expenses.length,
+      color: 'bg-rose-50 text-rose-600 border-rose-100'
     }
   ];
 
@@ -195,7 +223,7 @@ export default function ExportData() {
         </Card>
 
         {/* Export Options Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
           {exportOptions.map((option, index) => (
             <motion.div
               initial={{ opacity: 0, y: 20 }}

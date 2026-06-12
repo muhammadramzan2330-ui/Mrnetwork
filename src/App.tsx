@@ -22,6 +22,7 @@ import CustomerDashboard from './components/CustomerDashboard';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import Profile from './components/Profile';
 import ExportData from './components/ExportData';
+import Expenses from './components/Expenses';
 import { SystemProvider } from './contexts/SystemContext';
 import { Toaster } from '@/components/ui/sonner';
 import { ShieldOff, Loader2, AlertCircle, User } from 'lucide-react';
@@ -164,6 +165,7 @@ function AppRoutes() {
                 <Route path="/packages" element={<Packages />} />
                 <Route path="/subdealers" element={<Subdealers />} />
                 <Route path="/treasury" element={<Treasury />} />
+                <Route path="/expenses" element={<Expenses />} />
                 <Route path="/audit-logs" element={<AuditLogs />} />
                 <Route path="/billing-settings" element={<BillingSettings />} />
                 <Route path="/bills" element={<Bills />} />

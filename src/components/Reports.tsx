@@ -30,7 +30,7 @@ import { cn, formatDate } from '@/lib/utils';
 import { toast } from 'sonner';
 
 export default function Reports() {
-  const { payments, bills, users, loading } = useSystem();
+  const { payments, bills, users, expenses, loading } = useSystem();
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7)); // YYYY-MM
   const [viewMode, setViewMode] = useState<'overview' | 'detailed'>('overview');
 
@@ -43,14 +43,29 @@ export default function Reports() {
   }
 
   // Filter calculations
-  const now = new Date();
+  const toDate = (value: any) => value?.seconds ? new Date(value.seconds * 1000) : new Date(value);
   const currentMonthPayments = payments.filter(p => {
-    if (p.status !== 'approved') return false;
-    const dateStr = typeof p.date === 'string' ? p.date : new Date(p.date?.seconds * 1000).toISOString();
-    return dateStr.startsWith(selectedMonth);
+    if (p.status !== 'approved' || p.type !== 'in') return false;
+    const paymentDate = toDate(p.date || p.createdAt);
+    return !Number.isNaN(paymentDate.getTime()) && paymentDate.toISOString().slice(0, 7) === selectedMonth;
   });
 
-  const monthlyIncome = currentMonthPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+  const currentMonthExpenses = expenses.filter((expense: any) => {
+    const expenseDate = toDate(expense.date || expense.createdAt);
+    return !Number.isNaN(expenseDate.getTime()) && expenseDate.toISOString().slice(0, 7) === selectedMonth;
+  });
+  const selectedMonthBills = bills.filter((bill: any) => {
+    const billDate = toDate(bill.dueDate || bill.createdAt);
+    const billMonth = bill.month || (!Number.isNaN(billDate.getTime()) ? billDate.toISOString().slice(0, 7) : '');
+    return billMonth === selectedMonth;
+  });
+
+  const monthlyIncome = currentMonthPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+  const monthlyExpenses = currentMonthExpenses.reduce((sum: number, expense: any) => sum + Number(expense.amount || 0), 0);
+  const netProfit = monthlyIncome - monthlyExpenses;
+  const monthlyPending = selectedMonthBills
+    .filter((bill: any) => bill.status === 'unpaid')
+    .reduce((sum: number, bill: any) => sum + Number(bill.remainingAmount ?? bill.amount ?? 0), 0);
   
   const totalPaid = payments
     .filter(p => p.status === 'approved' && p.type === 'in')
@@ -70,40 +85,40 @@ export default function Reports() {
 
   const stats = [
     { 
-      label: 'Monthly Income', 
+      label: 'Monthly Sales', 
       value: monthlyIncome, 
       subValue: `${currentMonthPayments.length} Transactions`,
       icon: TrendingUp, 
       color: 'text-emerald-600', 
       bg: 'bg-emerald-50',
-      description: `Revenue for ${selectedMonth}`
+      description: `Approved customer collections for ${selectedMonth}`
     },
     { 
-      label: 'Total Paid', 
-      value: totalPaid, 
-      subValue: 'Lifetime Collections',
-      icon: CheckCircle2, 
-      color: 'text-indigo-600', 
-      bg: 'bg-indigo-50',
-      description: 'Total approved revenue'
+      label: 'Monthly Expenses', 
+      value: monthlyExpenses, 
+      subValue: `${currentMonthExpenses.length} Expense Entries`,
+      icon: TrendingDown, 
+      color: 'text-rose-600', 
+      bg: 'bg-rose-50',
+      description: 'Purchases and operating expenses'
     },
     { 
-      label: 'Total Unpaid', 
-      value: totalUnpaid, 
-      subValue: `${bills.filter(b => b.status === 'unpaid').length} Pending Bills`,
+      label: 'Net Profit', 
+      value: netProfit, 
+      subValue: 'Sales minus Expenses',
+      icon: netProfit >= 0 ? TrendingUp : TrendingDown, 
+      color: netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600', 
+      bg: netProfit >= 0 ? 'bg-emerald-50' : 'bg-rose-50',
+      description: 'Monthly business result'
+    },
+    { 
+      label: 'Pending Recovery', 
+      value: monthlyPending, 
+      subValue: `${selectedMonthBills.filter((bill: any) => bill.status === 'unpaid').length} Unpaid Bills`,
       icon: Clock, 
       color: 'text-amber-600', 
       bg: 'bg-amber-50',
-      description: 'Outstanding receivables'
-    },
-    { 
-      label: 'Unpaid Bills', 
-      value: unpaidBills, 
-      subValue: 'Awaiting Payment',
-      icon: Clock, 
-      color: 'text-indigo-600', 
-      bg: 'bg-indigo-50',
-      description: 'Bills waiting for collection'
+      description: 'Selected month customer dues'
     }
   ];
 

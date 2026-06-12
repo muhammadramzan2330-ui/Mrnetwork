@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, User, History, ShieldCheck as ShieldCheckIcon, LogOut, Settings, Bell, Radio, Search, Moon, Sun, Camera, Loader2 } from 'lucide-react';
+import { LayoutDashboard, CreditCard, MessageSquare, Users, Package, Store, Castle, Menu, X, TrendingUp, Activity, FileText, Download, User, History, ShieldCheck as ShieldCheckIcon, LogOut, Settings, Bell, Radio, Search, Moon, Sun, Camera, Loader2, ReceiptText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -78,6 +78,7 @@ export default function Layout({ children }: LayoutProps) {
     { icon: Download, label: 'Exports', to: '/exports', show: !!user && isAdmin },
     { icon: Store, label: 'Dealers', to: '/subdealers', show: !!user && isAdmin },
     { icon: TrendingUp, label: 'Reports', to: '/reports', show: !!user && isAdmin },
+    { icon: ReceiptText, label: 'Expenses', to: '/expenses', show: !!user && isAdmin },
     { icon: Castle, label: 'Ledger', to: '/treasury', show: !!user && isAdmin },
     { icon: Users, label: 'Subscribers', to: '/users', show: !!user && isAdmin },
     { icon: Activity, label: 'Troubleshoot', to: '/status', show: !!user && isAdmin },
@@ -90,6 +91,7 @@ export default function Layout({ children }: LayoutProps) {
     { icon: FileText, label: 'Bills', to: '/bills' },
     { icon: CreditCard, label: 'Payments', to: '/payments' },
     { icon: TrendingUp, label: 'Reports', to: '/reports' },
+    { icon: ReceiptText, label: 'Purchases/Expenses', to: '/expenses' },
     { icon: MessageSquare, label: 'Complaints/Tickets', to: '/tickets', badge: openTicketsCount > 0 ? openTicketsCount : null },
     { icon: Settings, label: 'Settings', to: '/billing-settings' },
   ];
@@ -138,6 +140,7 @@ export default function Layout({ children }: LayoutProps) {
       { icon: CreditCard, label: 'Payments', to: '/payments' },
       { icon: Radio, label: 'Network', to: '/status' },
       { icon: TrendingUp, label: 'Reports', to: '/reports' },
+      { icon: ReceiptText, label: 'Purchases & Expenses', to: '/expenses' },
       { icon: MessageSquare, label: 'Support Tickets', to: '/tickets', badge: openTicketsCount > 0 ? openTicketsCount : null },
       { icon: History, label: 'System Logs', to: '/audit-logs' },
       { icon: Settings, label: 'Settings', to: '/billing-settings' },

@@ -91,7 +91,7 @@ export default function Dashboard() {
     .filter(p => p.status === 'approved' && p.type === 'in')
     .reduce((sum, p) => sum + (p.amount || 0), 0);
 
-  const dedupeBills = (items: any[]) => Array.from(
+  const dedupeBills = (items: any[]): any[] => Array.from<any>(
     items.reduce((map: Map<string, any>, bill: any) => {
       const billUser = users.find((item: any) => item.id === bill.userId || item.uid === bill.userId);
       const ownerKey = (billUser?.email || billUser?.uid || bill.userId || bill.userName || '').toString().toLowerCase();

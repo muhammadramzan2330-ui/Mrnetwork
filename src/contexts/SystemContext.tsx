@@ -27,6 +27,7 @@ interface SystemState {
   tickets: any[];
   logs: any[];
   notifications: any[];
+  expenses: any[];
   settings: any;
   treasury: any;
   loading: boolean;
@@ -38,6 +39,8 @@ interface SystemActions {
   rejectPayment: (paymentId: string) => Promise<void>;
   requestWithdrawal: (amount: number, details: string) => Promise<void>;
   adminWithdrawal: (amount: number, details: string) => Promise<void>;
+  addExpense: (expense: any) => Promise<void>;
+  deleteExpense: (expenseId: string) => Promise<void>;
   processWithdrawal: (requestId: string, approved: boolean) => Promise<void>;
   markBillAsPaid: (billId: string, method?: string) => Promise<void>;
   generateManualBill: (userId: string) => Promise<void>;
@@ -72,6 +75,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
     tickets: [],
     logs: [],
     notifications: [],
+    expenses: [],
     settings: null,
     treasury: null,
     loading: true,
@@ -104,6 +108,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
     let unsubNotifs = () => {};
     let unsubSettings = () => {};
     let unsubTreasury = () => {};
+    let unsubExpenses = () => {};
 
     if (isAdmin) {
       unsubUsers = subscribeToCollection('user', (data) => setState(prev => ({ ...prev, users: data })), [], errorHandler('user'));
@@ -114,6 +119,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       unsubTickets = subscribeToCollection('tickets', (data) => setState(prev => ({ ...prev, tickets: data })), [orderBy('createdAt', 'desc')], errorHandler('tickets'));
       unsubLogs = subscribeToCollection('logs', (data) => setState(prev => ({ ...prev, logs: data })), [orderBy('date', 'desc')], errorHandler('logs'));
       unsubNotifs = subscribeToCollection('notifications', (data) => setState(prev => ({ ...prev, notifications: data })), [orderBy('date', 'desc')], errorHandler('notifications'));
+      unsubExpenses = subscribeToCollection('expenses', (data) => setState(prev => ({ ...prev, expenses: data })), [orderBy('date', 'desc')], errorHandler('expenses'));
       unsubSettings = subscribeToCollection('settings', (data) => setState(prev => ({ ...prev, settings: getLatestSettings(data) })), [], errorHandler('settings'));
       unsubTreasury = subscribeToCollection('treasury', (data) => {
         setState(prev => ({ ...prev, treasury: data[0] || null, loading: false }));
@@ -184,6 +190,7 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       unsubNotifs();
       unsubSettings();
       unsubTreasury();
+      unsubExpenses();
     };
   }, [user, profile?.id, isAdmin]);
 
@@ -772,6 +779,72 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const addExpense = async (expense: any) => {
+    const amount = Number(expense.amount || 0);
+    const title = String(expense.title || '').trim();
+    if (!title) throw new Error('Expense title is required');
+    if (!Number.isFinite(amount) || amount <= 0) throw new Error('Enter a valid expense amount');
+
+    const expenseDate = expense.date ? new Date(expense.date) : new Date();
+    if (Number.isNaN(expenseDate.getTime())) throw new Error('Enter a valid expense date');
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const expenseRef = doc(collection(db, 'expenses'));
+        transaction.set(expenseRef, {
+          title,
+          amount,
+          category: expense.category || 'other',
+          vendor: String(expense.vendor || '').trim(),
+          paymentMethod: expense.paymentMethod || 'cash',
+          invoiceNumber: String(expense.invoiceNumber || '').trim(),
+          notes: String(expense.notes || '').trim(),
+          date: Timestamp.fromDate(expenseDate),
+          createdBy: user?.email || 'admin',
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
+        });
+
+        transaction.set(doc(db, 'treasury', 'current'), {
+          balance: increment(-amount),
+          todayOut: increment(amount),
+          monthOut: increment(amount),
+          updatedAt: Timestamp.now()
+        }, { merge: true });
+      });
+
+      await addLog('Expense Added', title, 'expense', `Amount: Rs. ${amount}`);
+      toast.success('Expense recorded successfully');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to record expense');
+      throw error;
+    }
+  };
+
+  const deleteExpense = async (expenseId: string) => {
+    const expense = state.expenses.find(item => item.id === expenseId);
+    if (!expense) throw new Error('Expense not found');
+    const amount = Number(expense.amount || 0);
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        transaction.delete(doc(db, 'expenses', expenseId));
+        transaction.set(doc(db, 'treasury', 'current'), {
+          balance: increment(amount),
+          todayOut: increment(-amount),
+          monthOut: increment(-amount),
+          updatedAt: Timestamp.now()
+        }, { merge: true });
+      });
+
+      await addLog('Expense Deleted', expense.title || expenseId, 'expense', `Reversed: Rs. ${amount}`);
+      toast.success('Expense deleted and ledger reversed');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to delete expense');
+      throw error;
+    }
+  };
+
   const processWithdrawal = async (requestId: string, approved: boolean) => {
     try {
       await runTransaction(db, async (transaction) => {
@@ -1072,6 +1145,8 @@ export function SystemProvider({ children }: { children: React.ReactNode }) {
       rejectPayment, 
       requestWithdrawal,
       adminWithdrawal,
+      addExpense,
+      deleteExpense,
       processWithdrawal, 
       addLog, 
       sendSMS, 
